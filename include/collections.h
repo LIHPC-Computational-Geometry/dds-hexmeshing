@@ -75,9 +75,7 @@ bool expand_collection(const std::filesystem::path& collection, std::set<std::fi
                 std::cerr << "Error : the depth of " << line << " (in " << collection.string() << ") is different from the previous entries" << std::endl;
                 return 1;
             }
-            else {
-                entries.emplace(new_entry);
-            }
+            entries.emplace(new_entry);
         }
         else if(std::filesystem::is_regular_file(new_entry)) {
             if(new_entry.extension()==".txt") {
