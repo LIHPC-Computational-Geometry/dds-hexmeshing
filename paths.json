@@ -1,3 +1,4 @@
 {
-    "shared_data": "~/SharedData/"
+    "shared_data": "~/SharedData/",
+    "salome": "~/.local/salome/SALOME-9.9.0-native-FD34-SRC/"
 }

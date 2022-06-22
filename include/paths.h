@@ -15,6 +15,7 @@ public:
         if (i.good()) {
             i >> _j;
             _shared_data = to_canonical_path(_j.value<std::string>("/shared_data"_json_pointer,""));
+            _salome = to_canonical_path(_j.value<std::string>("/salome"_json_pointer,""));
         }
         else
             std::cerr << "Error : paths.json doesn't exist" << std::endl;
@@ -25,9 +26,14 @@ public:
         return _shared_data;
     };
 
+    std::filesystem::path salome() {
+        return _salome;
+    };
+
 private:
     nlohmann::json _j;
     std::filesystem::path _shared_data;
+    std::filesystem::path _salome;
 
     std::filesystem::path to_canonical_path(std::string path_as_str) {
         if(path_as_str.size()>=1 && path_as_str[0]=='~') {

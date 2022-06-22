@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 # from https://gitlab.com/franck.ledoux/mambo/-/blob/master/Scripts/gen_tet_mesh.py
 
 # Copyright 2019 Franck Ledoux
