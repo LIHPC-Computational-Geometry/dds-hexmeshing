@@ -17,8 +17,8 @@ set(LIBS
 
 file(GLOB SRCFILES src/*.cpp)
 
-add_executable(test apps/test.cpp ${SRCFILES})
-target_link_libraries(test ${LIBS})
+add_executable(expand apps/expand.cpp ${SRCFILES})
+target_link_libraries(expand ${LIBS})
 
 add_executable(step2mesh apps/step2mesh.cpp ${SRCFILES})
 target_link_libraries(step2mesh ${LIBS})
