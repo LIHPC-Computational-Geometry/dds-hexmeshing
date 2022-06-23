@@ -5,6 +5,7 @@
 
 #include "paths.h"
 #include "collections.h"
+#include "parameters.h"
 
 int main(int argc, char *argv[]) {
 
@@ -44,11 +45,8 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    paths p;//read paths.json
-    if(p.salome().empty()) {
-        std::cerr << "Error : the 'salome' path is not defined in paths.json" << std::endl;
-        return 1;
-    }
+    PathList path_list;//read paths.json
+    path_list.require(SALOME);
 
     std::string output_folder_name = result["output"].as<std::string>();
     if(output_folder_name.empty()) {
@@ -67,7 +65,8 @@ int main(int argc, char *argv[]) {
 
     std::string cmd;
     for(auto& input_folder : input_folders) {
-        std::cout << input_folder.string() << "...";// TODO only for multiple input folders
+        std::cout << input_folder.string() << "...";
+        //TODO check if the output folder already exist. if so, ask for confirmation
         std::filesystem::create_directory(input_folder / output_folder_name);//create the output folder
         if(result["algorithm"].as<std::string>()=="gmsh") {
             cmd = "../python-scripts/step2mesh_GMSH.py " +
@@ -77,7 +76,7 @@ int main(int argc, char *argv[]) {
                   " &> " + (input_folder / output_folder_name / "logs.txt").string();//redirect stdout and stderr to file
         }
         else { //for 'meshgems' or 'netgen', use SALOME
-            cmd = "source " + (p.salome() / "env_launch.sh").string() + "\n" +
+            cmd = "source " + (path_list[SALOME] / "env_launch.sh").string() + "\n" +
                   "../python-scripts/step2mesh_SALOME.py " +
                   (input_folder / "CAD.step").string() + " " +
                   (input_folder / output_folder_name / "tetra.mesh").string() + " " +
@@ -87,12 +86,12 @@ int main(int argc, char *argv[]) {
         }
         std::cout << (system(cmd.c_str()) ? "Error" : "Done") << std::endl;
 
-        // TODO write logs.json
+        // TODO write info.json
     }
 
     // TODO write output collections
 
-    // TODO in case of a single input folder, open it
+    // TODO in case of a single input folder, open the output folder or graphite
 
     return 0;
 }

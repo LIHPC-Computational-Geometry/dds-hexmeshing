@@ -1,7 +1,6 @@
 #include <iostream>
 #include <cxxopts.hpp>
 
-#include "paths.h"
 #include "collections.h"
 
 int main(int argc, char *argv[]) {
