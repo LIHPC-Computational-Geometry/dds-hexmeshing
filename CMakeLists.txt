@@ -22,3 +22,6 @@ target_link_libraries(expand ${LIBS})
 
 add_executable(step2mesh apps/step2mesh.cpp ${SRCFILES})
 target_link_libraries(step2mesh ${LIBS})
+
+add_executable(custom_command apps/custom_command.cpp ${SRCFILES})
+target_link_libraries(custom_command ${LIBS})

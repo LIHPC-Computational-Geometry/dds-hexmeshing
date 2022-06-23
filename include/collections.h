@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <filesystem>
+#include <fstream>
 #include <set>
 
 #define SET_CONTAINS(set,value) ((set).find(value) != (set).end())
