@@ -37,6 +37,7 @@ public:
         if (i.good()) {
             i >> _j;
             try_to_insert(_j,_string2path,SALOME);
+            try_to_insert(_j,_string2path,GRAPHITE);
         }
         else
             std::cerr << "Error : paths.json doesn't exist" << std::endl;

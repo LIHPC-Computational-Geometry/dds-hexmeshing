@@ -5,14 +5,17 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 add_subdirectory(json)
 add_subdirectory(cxxopts)
+add_subdirectory(ultimaille)
 
 include_directories(json/single_include)
 include_directories(cxxopts/include)
+include_directories(ultimaille ultimaille/ext)
 include_directories(include)
 
 set(LIBS
     nlohmann_json
     cxxopts
+    ultimaille
 )
 
 file(GLOB SRCFILES src/*.cpp)

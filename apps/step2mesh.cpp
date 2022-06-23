@@ -2,10 +2,12 @@
 #include <cxxopts.hpp>
 #include <regex>
 #include <cstdlib>
+#include <ultimaille/all.h>
 
 #include "paths.h"
 #include "collections.h"
 #include "parameters.h"
+#include "trace.h"
 
 int main(int argc, char *argv[]) {
 
@@ -46,7 +48,7 @@ int main(int argc, char *argv[]) {
     }
 
     PathList path_list;//read paths.json
-    path_list.require(SALOME);
+    path_list.require(SALOME);//TODO do not require SALOME if GMSH is used
 
     std::string output_folder_name = result["output"].as<std::string>();
     if(output_folder_name.empty()) {
@@ -91,7 +93,18 @@ int main(int argc, char *argv[]) {
 
     // TODO write output collections
 
-    // TODO in case of a single input folder, open the output folder or graphite
+    //in case of a single input folder, open the mesh with Graphite
+    //TODO modif (or replace) Trace to put the lua script in the output folder, not in build
+#ifdef OPEN_GRAPHITE_AT_THE_END
+    if(input_folders.size()==1) {
+        path_list.require(GRAPHITE);
+        Trace::initialize(path_list[GRAPHITE]);
+        UM::Tetrahedra m;
+        UM::read_by_extension((*input_folders.begin() / output_folder_name / "tetra.mesh").string(),m);
+        Trace::drop_volume(m, "volume", {});
+        Trace::conclude();
+    }
+#endif
 
     return 0;
 }
