@@ -48,7 +48,9 @@ int main(int argc, char *argv[]) {
     }
 
     PathList path_list;//read paths.json
-    path_list.require(SALOME);//TODO do not require SALOME if GMSH is used
+    if(result["algorithm"].as<std::string>()!="gmsh") {
+        path_list.require(SALOME);//except GMSH, the other meshing algorithms use SMESH of SALOME
+    }
 
     std::string output_folder_name = result["output"].as<std::string>();
     if(output_folder_name.empty()) {
@@ -72,19 +74,19 @@ int main(int argc, char *argv[]) {
         std::filesystem::create_directory(input_folder / output_folder_name);//create the output folder
         if(result["algorithm"].as<std::string>()=="gmsh") {
             cmd = "../python-scripts/step2mesh_GMSH.py " +
-                  (input_folder / "CAD.step").string() + " " +
-                  (input_folder / output_folder_name / "tetra.mesh").string() + " " +
+                  (input_folder / STEP_FILE).string() + " " +
+                  (input_folder / output_folder_name / TETRA_MESH_FILE).string() + " " +
                   result["size"].as<std::string>() +
-                  " &> " + (input_folder / output_folder_name / "logs.txt").string();//redirect stdout and stderr to file
+                  " &> " + (input_folder / output_folder_name / STD_PRINTINGS_FILE).string();//redirect stdout and stderr to file
         }
         else { //for 'meshgems' or 'netgen', use SALOME
-            cmd = "source " + (path_list[SALOME] / "env_launch.sh").string() + "\n" +
+            cmd = "source " + (path_list[SALOME] / "env_launch.sh").string() + " && " +
                   "../python-scripts/step2mesh_SALOME.py " +
-                  (input_folder / "CAD.step").string() + " " +
-                  (input_folder / output_folder_name / "tetra.mesh").string() + " " +
+                  (input_folder / STEP_FILE).string() + " " +
+                  (input_folder / output_folder_name / TETRA_MESH_FILE).string() + " " +
                   result["algorithm"].as<std::string>() + " " +
                   result["size"].as<std::string>() +
-                  " &> " + (input_folder / output_folder_name / "logs.txt").string();//redirect stdout and stderr to file
+                  " &> " + (input_folder / output_folder_name / STD_PRINTINGS_FILE).string();//redirect stdout and stderr to file
         }
         std::cout << (system(cmd.c_str()) ? "Error" : "Done") << std::endl;
 
@@ -102,7 +104,7 @@ int main(int argc, char *argv[]) {
         path_list.require(GRAPHITE);
         Trace::initialize(path_list[GRAPHITE]);
         UM::Tetrahedra m;
-        UM::read_by_extension((*input_folders.begin() / output_folder_name / "tetra.mesh").string(),m);
+        UM::read_by_extension((*input_folders.begin() / output_folder_name / TETRA_MESH_FILE).string(),m);
         Trace::drop_volume(m, "volume", {});
         Trace::conclude();
     }

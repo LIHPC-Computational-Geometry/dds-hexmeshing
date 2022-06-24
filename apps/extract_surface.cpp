@@ -4,6 +4,7 @@
 #include "collections.h"
 #include "paths.h"
 #include "trace.h"
+#include "parameters.h"
 
 int main(int argc, char *argv[]) {
 
@@ -44,10 +45,10 @@ int main(int argc, char *argv[]) {
         std::cout << input_folder.string();
         //TODO check if the output files already exist
         cmd = (path_list[GENOMESH] / "build/tris_to_tets").string() + " " +
-              (input_folder / "tetra.mesh").string() + " " +
-              (input_folder / "surface.obj").string() + " " +
-              (input_folder / "surface_map.txt").string() +
-              " &>> " + (input_folder / "logs.txt").string();//redirect stdout and stderr to file (append to the logs of step2mesh)
+              (input_folder / TETRA_MESH_FILE).string() + " " +
+              (input_folder / SURFACE_OBJ_FILE).string() + " " +
+              (input_folder / TRIANGLE_TO_TETRA_FILE).string() +
+              " &>> " + (input_folder / STD_PRINTINGS_FILE).string();//redirect stdout and stderr to file (append to the logs of step2mesh)
         //TODO add a separator in logs.txt between the printings of step2mesh and the ones of extract_surface
         std::cout << (system(cmd.c_str()) ? "Error" : "Done") << std::endl;
     }
@@ -61,7 +62,7 @@ int main(int argc, char *argv[]) {
         path_list.require(GRAPHITE);
         Trace::initialize(path_list[GRAPHITE]);
         UM::Triangles m;
-        UM::read_by_extension((*input_folders.begin() / "surface.obj").string(),m);
+        UM::read_by_extension((*input_folders.begin() / SURFACE_OBJ_FILE).string(),m);
         Trace::drop_surface(m, "surface", {});
         Trace::conclude();
     }
