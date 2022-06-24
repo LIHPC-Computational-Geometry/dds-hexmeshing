@@ -28,3 +28,6 @@ target_link_libraries(step2mesh ${LIBS})
 
 add_executable(custom_command apps/custom_command.cpp ${SRCFILES})
 target_link_libraries(custom_command ${LIBS})
+
+add_executable(extract_surface apps/extract_surface.cpp ${SRCFILES})
+target_link_libraries(extract_surface ${LIBS})

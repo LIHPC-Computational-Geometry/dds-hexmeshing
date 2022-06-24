@@ -89,6 +89,8 @@ int main(int argc, char *argv[]) {
         std::cout << (system(cmd.c_str()) ? "Error" : "Done") << std::endl;
 
         // TODO write info.json
+
+        // TODO also extract the surface
     }
 
     // TODO write output collections

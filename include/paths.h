@@ -11,10 +11,16 @@
 #include "parameters.h"
 
 std::filesystem::path to_canonical_path(std::string path_as_str) {
+    //case of a path relative to the home folder
     if(path_as_str.size()>=1 && path_as_str[0]=='~') {
         //replace "~" with the value of $HOME
         path_as_str = getenv("HOME") + path_as_str.substr(1);
     }
+    //case of a path relative to paths.json
+    else if(path_as_str.size()>=2 && path_as_str[0]=='.' && path_as_str[1]=='.') {
+        path_as_str = "../" + path_as_str;//from the build folder, paths.json is one level higher
+    }
+    //else its an absolute path, no modification needed
     return std::filesystem::weakly_canonical(path_as_str);//do not check if the path exist
 };
 
@@ -38,6 +44,7 @@ public:
             i >> _j;
             try_to_insert(_j,_string2path,SALOME);
             try_to_insert(_j,_string2path,GRAPHITE);
+            try_to_insert(_j,_string2path,GENOMESH);
         }
         else
             std::cerr << "Error : paths.json doesn't exist" << std::endl;
@@ -57,6 +64,7 @@ public:
     void require(std::string entry) const {
         try {
             _string2path.at(entry);
+            //also check if the path exist
         }
         catch (std::out_of_range) {
             std::cerr << "Error : '" << entry << "' is required in paths.json" << std::endl;

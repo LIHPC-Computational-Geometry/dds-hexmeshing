@@ -1,4 +1,5 @@
 {
     "salome": "~/.local/salome/SALOME-9.9.0-native-FD34-SRC/",
-    "graphite": "graphite"
+    "graphite": "graphite",
+    "genomesh": "../genomesh/"
 }
