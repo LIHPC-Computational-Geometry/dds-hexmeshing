@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include <cxxopts.hpp>
 #include <regex>
 #include <cstdlib>
@@ -8,8 +9,11 @@
 #include "collections.h"
 #include "parameters.h"
 #include "trace.h"
+#include "date_time.h"
 
 int main(int argc, char *argv[]) {
+
+    //TODO add an option to skip the surface mesh extraction
 
     cxxopts::Options options(argv[0], "Tetrahedral meshing of a .step geometry file");
     options
@@ -51,6 +55,7 @@ int main(int argc, char *argv[]) {
     if(result["algorithm"].as<std::string>()!="gmsh") {
         path_list.require(SALOME);//except GMSH, the other meshing algorithms use SMESH of SALOME
     }
+    path_list.require(GENOMESH);//to extract the surface after
 
     std::string output_folder_name = result["output"].as<std::string>();
     if(output_folder_name.empty()) {
@@ -68,16 +73,31 @@ int main(int argc, char *argv[]) {
     std::cout << "Found " << input_folders.size() << " input folder(s)" << std::endl;
 
     std::string cmd;
+    int returncode = 0;
     for(auto& input_folder : input_folders) {
-        std::cout << input_folder.string() << "...";
+        std::cout << input_folder.string() << "..." << std::flush;
         //TODO check if the output folder already exist. if so, ask for confirmation
         std::filesystem::create_directory(input_folder / output_folder_name);//create the output folder
+
+        std::ofstream txt_logs(input_folder / output_folder_name / STD_PRINTINGS_FILE,std::ios_base::out);
+        if(!txt_logs.is_open()) {
+            std::cerr << "Error : Failed to open " << (input_folder / output_folder_name / STD_PRINTINGS_FILE).string() << std::endl;
+            return 1;
+        }
+
+        DateTimeStr date_time_str;//get current time
+        txt_logs << "\n+-----------------------+";
+        txt_logs << "\n|       step2mesh       |";
+        txt_logs << "\n|  " << date_time_str.pretty_string() << "  |";
+        txt_logs << "\n+-----------------------+\n\n";
+        txt_logs.close();
+
         if(result["algorithm"].as<std::string>()=="gmsh") {
             cmd = "../python-scripts/step2mesh_GMSH.py " +
                   (input_folder / STEP_FILE).string() + " " +
                   (input_folder / output_folder_name / TETRA_MESH_FILE).string() + " " +
                   result["size"].as<std::string>() +
-                  " &> " + (input_folder / output_folder_name / STD_PRINTINGS_FILE).string();//redirect stdout and stderr to file
+                  " &>> " + (input_folder / output_folder_name / STD_PRINTINGS_FILE).string();//redirect stdout and stderr to file (append to the previous logs)
         }
         else { //for 'meshgems' or 'netgen', use SALOME
             cmd = "source " + (path_list[SALOME] / "env_launch.sh").string() + " && " +
@@ -86,26 +106,40 @@ int main(int argc, char *argv[]) {
                   (input_folder / output_folder_name / TETRA_MESH_FILE).string() + " " +
                   result["algorithm"].as<std::string>() + " " +
                   result["size"].as<std::string>() +
-                  " &> " + (input_folder / output_folder_name / STD_PRINTINGS_FILE).string();//redirect stdout and stderr to file
+                  " &>> " + (input_folder / output_folder_name / STD_PRINTINGS_FILE).string();//redirect stdout and stderr to file (append to the previous logs)
         }
-        std::cout << (system(cmd.c_str()) ? "Error" : "Done") << std::endl;
+        returncode = system(cmd.c_str());
+
+        if(returncode!=0) {
+            std::cout << "Error" << std::endl;
+            continue;
+        }
 
         // TODO write info.json
 
-        // TODO also extract the surface
+        //also extract the surface
+        cmd = (path_list[GENOMESH] / "build/tris_to_tets").string() + " " +
+              (input_folder / output_folder_name / TETRA_MESH_FILE).string() + " " +
+              (input_folder / output_folder_name / SURFACE_OBJ_FILE).string() + " " +
+              (input_folder / output_folder_name / TRIANGLE_TO_TETRA_FILE).string() +
+              " &>> " + (input_folder / output_folder_name / STD_PRINTINGS_FILE).string();//redirect stdout and stderr to file (append to the previous logs)
+        std::cout << (system(cmd.c_str()) ? "Error" : "Done") << std::endl;
     }
 
     // TODO write output collections
 
-    //in case of a single input folder, open the mesh with Graphite
+    //in case of a single input folder, open the tetra mesh and the surface mesh with Graphite
     //TODO modif (or replace) Trace to put the lua script in the output folder, not in build
 #ifdef OPEN_GRAPHITE_AT_THE_END
-    if(input_folders.size()==1) {
+    if(input_folders.size()==1 && returncode==0) { //TODO if returncode!=0, open the logs
         path_list.require(GRAPHITE);
         Trace::initialize(path_list[GRAPHITE]);
-        UM::Tetrahedra m;
-        UM::read_by_extension((*input_folders.begin() / output_folder_name / TETRA_MESH_FILE).string(),m);
-        Trace::drop_volume(m, "volume", {});
+        UM::Tetrahedra tetra_mesh;
+        UM::read_by_extension((*input_folders.begin() / output_folder_name / TETRA_MESH_FILE).string(),tetra_mesh);
+        Trace::drop_volume(tetra_mesh, "volume", {});
+        UM::Triangles surface_mesh;
+        UM::read_by_extension((*input_folders.begin() / output_folder_name / SURFACE_OBJ_FILE).string(),surface_mesh);
+        Trace::drop_surface(surface_mesh, "surface", {});
         Trace::conclude();
     }
 #endif
