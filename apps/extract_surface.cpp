@@ -1,10 +1,12 @@
 #include <iostream>
+#include <fstream>
 #include <cxxopts.hpp>
 
 #include "collections.h"
 #include "paths.h"
 #include "trace.h"
 #include "parameters.h"
+#include "date_time.h"
 
 int main(int argc, char *argv[]) {
 
@@ -42,14 +44,29 @@ int main(int argc, char *argv[]) {
 
     std::string cmd;
     for(auto& input_folder : input_folders) {
-        std::cout << input_folder.string();
+        std::cout << input_folder.string() << "..." << std::flush;
         //TODO check if the output files already exist
+
+        std::ofstream txt_logs(input_folder / STD_PRINTINGS_FILE,std::ios_base::app);//append mode
+        if(!txt_logs.is_open()) {
+            std::cerr << "Error : Failed to open " << (input_folder / STD_PRINTINGS_FILE).string() << std::endl;
+            return 1;
+        }
+
+        //add a separator between the existing printings of step2mesh and the ones of extract_surface
+
+        DateTimeStr date_time_str;//get current time
+        txt_logs << "\n+-----------------------+";
+        txt_logs << "\n|    extract_surface    |";
+        txt_logs << "\n|  " << date_time_str.pretty_string() << "  |";
+        txt_logs << "\n+-----------------------+\n\n";
+        txt_logs.close();
+
         cmd = (path_list[GENOMESH] / "build/tris_to_tets").string() + " " +
               (input_folder / TETRA_MESH_FILE).string() + " " +
               (input_folder / SURFACE_OBJ_FILE).string() + " " +
               (input_folder / TRIANGLE_TO_TETRA_FILE).string() +
               " &>> " + (input_folder / STD_PRINTINGS_FILE).string();//redirect stdout and stderr to file (append to the logs of step2mesh)
-        //TODO add a separator in logs.txt between the printings of step2mesh and the ones of extract_surface
         std::cout << (system(cmd.c_str()) ? "Error" : "Done") << std::endl;
     }
 

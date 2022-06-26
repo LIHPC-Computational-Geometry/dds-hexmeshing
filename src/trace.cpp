@@ -319,7 +319,7 @@ namespace Trace {
 	};
 	void conclude() {
 		if (drop_mesh_is_active) {
-			std::string cmd = graphite_path + " " + outputdir + "view.lua";
+			std::string cmd = graphite_path + " " + outputdir + "view.lua > /dev/null";//silent output
 			system(cmd.c_str());
 		}
 	}

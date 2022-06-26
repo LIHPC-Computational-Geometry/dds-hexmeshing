@@ -1,5 +1,7 @@
 //some parameters that are/may be used by multiple apps
 
+#pragma once
+
 //expected entries in paths.json
 #define SALOME      "salome"
 #define GRAPHITE    "graphite"
