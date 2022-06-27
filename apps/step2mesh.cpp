@@ -146,7 +146,7 @@ int main(int argc, char *argv[]) {
     //TODO modif (or replace) Trace to put the lua script in the output folder, not in build
 #ifdef OPEN_GRAPHITE_AT_THE_END
     if(input_folders.size()==1 && returncode==0) { //TODO if returncode!=0, open the logs
-        path_list.require(GRAPHITE);
+        path_list.require(GRAPHITE,false);
         Trace::initialize(path_list[GRAPHITE]);
         UM::Tetrahedra tetra_mesh;
         UM::read_by_extension((*input_folders.begin() / output_folder_name / TETRA_MESH_FILE).string(),tetra_mesh);

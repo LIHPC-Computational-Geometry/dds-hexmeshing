@@ -62,14 +62,19 @@ public:
         return _string2path.at(entry);
     }
 
-    void require(std::string entry) const {
+    void require(std::string entry, bool must_be_valid_path = true) const {
         try {
-            // try to access this entry + check if the path exist
-            if(!std::filesystem::exists(_string2path.at(entry))) {
-                std::cerr << "Error : '" << entry << "' is required in paths.json, but the given path is invalid" << std::endl;
-                exit(1);
+            if(must_be_valid_path) {
+                // try to access this entry + check if the path exist
+                if(!std::filesystem::exists(_string2path.at(entry))) {
+                    std::cerr << "Error : '" << entry << "' is required in paths.json, but the given path is invalid" << std::endl;
+                    exit(1);
+                }
             }
-            
+            else {
+                // try to access this entry
+                _string2path.at(entry);
+            }
         }
         catch (std::out_of_range) {
             std::cerr << "Error : '" << entry << "' is required in paths.json" << std::endl;

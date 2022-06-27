@@ -5,6 +5,8 @@
 #include <fstream>
 #include <set>
 
+#include "paths.h"
+
 #define SET_CONTAINS(set,value) ((set).find(value) != (set).end())
 
 //count the number of folders +1 between a file/folder and the root

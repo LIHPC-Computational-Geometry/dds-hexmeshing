@@ -76,7 +76,7 @@ int main(int argc, char *argv[]) {
     //TODO modif (or replace) Trace to put the lua script in the output folder, not in build
 #ifdef OPEN_GRAPHITE_AT_THE_END
     if(input_folders.size()==1) {
-        path_list.require(GRAPHITE);
+        path_list.require(GRAPHITE,false);
         Trace::initialize(path_list[GRAPHITE]);
         UM::Triangles m;
         UM::read_by_extension((*input_folders.begin() / SURFACE_OBJ_FILE).string(),m);
