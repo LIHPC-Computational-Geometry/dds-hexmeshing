@@ -105,3 +105,34 @@ bool expand_collection(const std::filesystem::path& collection, std::set<std::fi
 
     return 0;
 }
+
+class OutputCollection {
+public:
+    OutputCollection(std::string filename, const PathList& path_list) : _path_list(path_list) {
+        _path_list.require(OUTPUT_COLLECTIONS);
+        _full_path = path_list[OUTPUT_COLLECTIONS] / (filename+".txt");
+        //TODO check if the file already exists
+        _ofs.open(_full_path,std::ios_base::out);
+        if(!_ofs.is_open()) {
+            std::cerr << "Error : Failed to open " << _full_path.string() << std::endl;
+            exit(1);
+        }
+    }
+
+    ~OutputCollection() {
+        _ofs.close();
+    }
+
+    void new_entry(std::filesystem::path entry) {
+        _ofs << std::filesystem::relative(entry,_path_list[OUTPUT_COLLECTIONS]).string() << std::endl;
+    }
+
+    void new_comments(std::string str) {
+        _ofs << "# " << str << std::endl;
+    }
+
+private:
+    std::ofstream _ofs;
+    std::filesystem::path _full_path;
+    const PathList& _path_list;
+};

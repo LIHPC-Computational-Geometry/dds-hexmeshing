@@ -42,6 +42,7 @@ public:
         std::ifstream i("../paths.json");
         if (i.good()) {
             i >> _j;
+            try_to_insert(_j,_string2path,OUTPUT_COLLECTIONS);
             try_to_insert(_j,_string2path,SALOME);
             try_to_insert(_j,_string2path,GRAPHITE);
             try_to_insert(_j,_string2path,GENOMESH);
@@ -63,8 +64,12 @@ public:
 
     void require(std::string entry) const {
         try {
-            _string2path.at(entry);
-            //also check if the path exist
+            // try to access this entry + check if the path exist
+            if(!std::filesystem::exists(_string2path.at(entry))) {
+                std::cerr << "Error : '" << entry << "' is required in paths.json, but the given path is invalid" << std::endl;
+                exit(1);
+            }
+            
         }
         catch (std::out_of_range) {
             std::cerr << "Error : '" << entry << "' is required in paths.json" << std::endl;

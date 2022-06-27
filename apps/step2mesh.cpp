@@ -72,6 +72,12 @@ int main(int argc, char *argv[]) {
     }
     std::cout << "Found " << input_folders.size() << " input folder(s)" << std::endl;
 
+    //create the ouput collection files
+    //TODO check if the files already exist
+    OutputCollection failed_cases("fails",path_list), successed_cases("successes",path_list);
+    failed_cases.new_comments("error cases");
+    successed_cases.new_comments("success cases");
+
     std::string cmd;
     int returncode = 0;
     for(auto& input_folder : input_folders) {
@@ -112,6 +118,7 @@ int main(int argc, char *argv[]) {
 
         if(returncode!=0) {
             std::cout << "Error" << std::endl;
+            failed_cases.new_entry(input_folder / output_folder_name);
             continue;
         }
 
@@ -123,10 +130,17 @@ int main(int argc, char *argv[]) {
               (input_folder / output_folder_name / SURFACE_OBJ_FILE).string() + " " +
               (input_folder / output_folder_name / TRIANGLE_TO_TETRA_FILE).string() +
               " &>> " + (input_folder / output_folder_name / STD_PRINTINGS_FILE).string();//redirect stdout and stderr to file (append to the previous logs)
-        std::cout << (system(cmd.c_str()) ? "Error" : "Done") << std::endl;
+        returncode = system(cmd.c_str());
+        if(returncode!=0) {
+            std::cout << "Error" << std::endl;
+            failed_cases.new_entry(input_folder / output_folder_name);
+            continue;
+        }
+        else {
+            std::cout << "Done" << std::endl;
+            successed_cases.new_entry(input_folder / output_folder_name);
+        }
     }
-
-    // TODO write output collections
 
     //in case of a single input folder, open the tetra mesh and the surface mesh with Graphite
     //TODO modif (or replace) Trace to put the lua script in the output folder, not in build
