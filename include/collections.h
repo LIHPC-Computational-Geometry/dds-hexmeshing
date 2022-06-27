@@ -110,9 +110,10 @@ bool expand_collection(const std::filesystem::path& collection, std::set<std::fi
 
 class OutputCollection {
 public:
-    OutputCollection(std::string filename, const PathList& path_list) : _path_list(path_list) {
-        _path_list.require(OUTPUT_COLLECTIONS);
-        _full_path = path_list[OUTPUT_COLLECTIONS] / (filename+".txt");
+    OutputCollection(std::string filename, const PathList& path_list, bool remove_if_empty = true) : _remove_if_empty(remove_if_empty), _nb_entries(0) {
+        path_list.require(OUTPUT_COLLECTIONS);
+        _output_collections_path = path_list[OUTPUT_COLLECTIONS];//store a copy of the path in the object
+        _full_path = _output_collections_path / (filename+".txt");
         //TODO check if the file already exists
         _ofs.open(_full_path,std::ios_base::out);
         if(!_ofs.is_open()) {
@@ -123,10 +124,14 @@ public:
 
     ~OutputCollection() {
         _ofs.close();
+        if(_remove_if_empty && _nb_entries==0) {
+            std::filesystem::remove(_full_path);
+        }
     }
 
     void new_entry(std::filesystem::path entry) {
-        _ofs << std::filesystem::relative(entry,_path_list[OUTPUT_COLLECTIONS]).string() << std::endl;
+        _ofs << std::filesystem::relative(entry,_output_collections_path).string() << std::endl;
+        _nb_entries++;
     }
 
     void new_comments(std::string str) {
@@ -136,5 +141,7 @@ public:
 private:
     std::ofstream _ofs;
     std::filesystem::path _full_path;
-    const PathList& _path_list;
+    std::filesystem::path _output_collections_path;
+    unsigned int _nb_entries;
+    const bool _remove_if_empty;
 };
