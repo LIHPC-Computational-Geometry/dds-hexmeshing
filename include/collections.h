@@ -9,6 +9,10 @@
 
 #define SET_CONTAINS(set,value) ((set).find(value) != (set).end())
 
+// for the constructor of OutputCollection
+#define NOTIFY          true
+#define DO_NOT_NOTIFY   false
+
 //count the number of folders +1 between a file/folder and the root
 int get_depth(std::filesystem::path p) {
     if(p == p.parent_path()) {
@@ -60,7 +64,7 @@ bool expand_collection(const std::filesystem::path& collection, std::set<std::fi
     
     while (std::getline(input_file,line)) { //read line by line
 
-        if(line[0] == '#') { //ignore lines starting with '#'
+        if(line.empty() || line[0] == '#') { //ignore empty lines and the ones starting with '#'
             continue;
         }
 
@@ -110,15 +114,17 @@ bool expand_collection(const std::filesystem::path& collection, std::set<std::fi
 
 class OutputCollection {
 public:
-    OutputCollection(std::string filename, const PathList& path_list, bool remove_if_empty = true) : _remove_if_empty(remove_if_empty), _nb_entries(0) {
+    OutputCollection(std::string filename, const PathList& path_list, bool notify, bool remove_if_empty = true) : _remove_if_empty(remove_if_empty), _nb_entries(0) {
         path_list.require(OUTPUT_COLLECTIONS);
         _output_collections_path = path_list[OUTPUT_COLLECTIONS];//store a copy of the path in the object
         _full_path = _output_collections_path / (filename+".txt");
-        //TODO check if the file already exists
-        _ofs.open(_full_path,std::ios_base::out);
+        _ofs.open(_full_path,std::ios_base::app);//always append to existing file
         if(!_ofs.is_open()) {
             std::cerr << "Error : Failed to open " << _full_path.string() << std::endl;
             exit(1);
+        }
+        if(notify) {
+            std::cout << "Output collection : " << _full_path.string() << std::endl;
         }
     }
 
@@ -136,6 +142,10 @@ public:
 
     void new_comments(std::string str) {
         _ofs << "# " << str << std::endl;
+    }
+
+    void new_line() {
+        _ofs << std::endl;
     }
 
 private:
