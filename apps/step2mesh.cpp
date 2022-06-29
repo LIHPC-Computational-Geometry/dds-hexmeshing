@@ -11,6 +11,7 @@
 #include "parameters.h"
 #include "trace.h"
 #include "date_time.h"
+#include "cxxopts_ParseResult_custom.h"
 
 int main(int argc, char *argv[]) {
 
@@ -29,44 +30,23 @@ int main(int argc, char *argv[]) {
             ("o,output", "Name of the output folder(s) to create. \%a is replaced by 'algorithm' and \%s by 'size'", cxxopts::value<std::string>()->default_value("\%a_\%s"),"NAME")
             ("s,size", "For 'gmsh', it is a factor in ]0,1]\nFor 'meshgems' and 'netgen', it is the max mesh size", cxxopts::value<std::string>(),"SIZE");
     options.parse_positional({"input", "algorithm", "size", "output"});
-    cxxopts::ParseResult result = options.parse(argc, argv);
 
-    if(result.count("help"))
-    {
-        std::cout << options.help() << std::endl;
-        return 0;
-    }
-
-    if(!result.count("input")) { //if <input> is missing
-        std::cerr << "Error : first positional argument <input> is required" << std::endl;
-        return 1;
-    }
-    std::filesystem::path input_as_path(result["input"].as<std::string>());
-
-    if(!result.count("algorithm")) { //if <algorithm> is missing
-        std::cerr << "Error : second positional argument <algorithm> is required" << std::endl;
-        return 1;
-    }
-
-    if(!result.count("size")) { //if <size> is missing
-        std::cerr << "Error : third positional argument <size> is required" << std::endl;
-        return 1;
-    }
+    //parse results
+    cxxopts::ParseResult_custom result(options,argc, argv);
+    result.require({"input", "algorithm", "size"});
+    result.require_not_empty({"output"});
+    std::filesystem::path input_as_path(result["input"]);
+    std::string output_folder_name = result["output"];
 
     PathList path_list;//read paths.json
-    if(result["algorithm"].as<std::string>()!="gmsh") {
+    if(result["algorithm"]!="gmsh") {
         path_list.require(SALOME);//except GMSH, the other meshing algorithms use SMESH of SALOME
     }
     path_list.require(GENOMESH);//to extract the surface after
 
-    std::string output_folder_name = result["output"].as<std::string>();
-    if(output_folder_name.empty()) {
-        std::cerr << "Error : [output] must not be empty" << std::endl;
-        return 1;
-    }
     //format the output folder name
-    output_folder_name = std::regex_replace(output_folder_name, std::regex("\%a"), result["algorithm"].as<std::string>());
-    output_folder_name = std::regex_replace(output_folder_name, std::regex("\%s"), result["size"].as<std::string>());
+    output_folder_name = std::regex_replace(output_folder_name, std::regex("\%a"), result["algorithm"]);
+    output_folder_name = std::regex_replace(output_folder_name, std::regex("\%s"), result["size"]);
 
     std::set<std::filesystem::path> input_folders, subcollections;
     if(expand_collection(input_as_path,input_folders,subcollections)) {
@@ -80,7 +60,7 @@ int main(int argc, char *argv[]) {
     std::string output_success_collection_filename, output_error_collection_filename;
     if(input_as_path.extension() == ".txt") {
         //create a collection '<input_collection>_<algorithm>_<date>'
-        output_success_collection_filename = input_as_path.stem().string() + "_" + result["algorithm"].as<std::string>() + "_" + global_beginning.filename_string();
+        output_success_collection_filename = input_as_path.stem().string() + "_" + result["algorithm"] + "_" + global_beginning.filename_string();
     }
     else {
         //case of a single folder as input
@@ -117,11 +97,11 @@ int main(int argc, char *argv[]) {
         txt_logs << "\n+-----------------------+\n\n";
         txt_logs.close();
 
-        if(result["algorithm"].as<std::string>()=="gmsh") {
+        if(result["algorithm"]=="gmsh") {
             cmd = "../python-scripts/step2mesh_GMSH.py " +
                   (input_folder / STEP_FILE).string() + " " +
                   (input_folder / output_folder_name / TETRA_MESH_FILE).string() + " " +
-                  result["size"].as<std::string>() +
+                  result["size"] +
                   " &>> " + (input_folder / output_folder_name / STD_PRINTINGS_FILE).string();//redirect stdout and stderr to file (append to the previous logs)
         }
         else { //for 'meshgems' or 'netgen', use SALOME
@@ -129,8 +109,8 @@ int main(int argc, char *argv[]) {
                   "../python-scripts/step2mesh_SALOME.py " +
                   (input_folder / STEP_FILE).string() + " " +
                   (input_folder / output_folder_name / TETRA_MESH_FILE).string() + " " +
-                  result["algorithm"].as<std::string>() + " " +
-                  result["size"].as<std::string>() +
+                  result["algorithm"] + " " +
+                  result["size"] +
                   " &>> " + (input_folder / output_folder_name / STD_PRINTINGS_FILE).string();//redirect stdout and stderr to file (append to the previous logs)
         }
         returncode = system(cmd.c_str());
