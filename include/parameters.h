@@ -12,8 +12,10 @@
 #define OPEN_GRAPHITE_AT_THE_END
 
 //names of the files in the shared data folder
-#define STEP_FILE               "CAD.step"          // input.step in evocube
+#define STEP_FILE               "CAD.step"                  // input.step in evocube
 #define TETRA_MESH_FILE         "tetra.mesh"
 #define STD_PRINTINGS_FILE      "logs.txt"
-#define SURFACE_OBJ_FILE        "surface.obj"       // boundary.obj in evocube
-#define TRIANGLE_TO_TETRA_FILE  "surface_map.txt"   // tris_to_tets.txt in evocube
+#define SURFACE_OBJ_FILE        "surface.obj"               // boundary.obj in evocube
+#define TRIANGLE_TO_TETRA_FILE  "surface_map.txt"           // tris_to_tets.txt in evocube
+#define GRAPHITE_BASH_SCRIPT    "graphite.sh"
+#define TETRA_MESH_LUA_SCRIPT   "tetra_and_surface_mesh.lua"
