@@ -31,3 +31,6 @@ target_link_libraries(custom_command ${LIBS})
 
 add_executable(extract_surface apps/extract_surface.cpp ${SRCFILES})
 target_link_libraries(extract_surface ${LIBS})
+
+add_executable(naive_labeling apps/naive_labeling.cpp ${SRCFILES})
+target_link_libraries(naive_labeling ${LIBS})

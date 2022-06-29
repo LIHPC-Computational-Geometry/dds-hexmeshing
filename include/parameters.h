@@ -19,3 +19,5 @@
 #define TRIANGLE_TO_TETRA_FILE  "surface_map.txt"           // tris_to_tets.txt in evocube
 #define GRAPHITE_BASH_SCRIPT    "graphite.sh"
 #define TETRA_MESH_LUA_SCRIPT   "tetra_and_surface_mesh.lua"
+#define PER_SURFACE_TRIANGLE_LABELING_FILE  "surface_labeling.txt"
+#define PER_TETRA_FACES_LABELING_FILE       "tetra_labeling.txt"

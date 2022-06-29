@@ -48,10 +48,10 @@ int main(int argc, char *argv[]) {
 
         //add a separator between the existing printings of step2mesh and the ones of extract_surface
 
-        DateTimeStr date_time_str;//get current time
+        DateTimeStr current_input_beginning;//get current time
         txt_logs << "\n+-----------------------+";
         txt_logs << "\n|    extract_surface    |";
-        txt_logs << "\n|  " << date_time_str.pretty_string() << "  |";
+        txt_logs << "\n|  " << current_input_beginning.pretty_string() << "  |";
         txt_logs << "\n+-----------------------+\n\n";
         txt_logs.close();
 

@@ -15,7 +15,7 @@ public:
 
         //manage help printing
         if(_result.count("help")) {
-            std::cout << _options.help() << std::endl;
+            std::cout << _options.help();
             exit(0);
         }
     }
