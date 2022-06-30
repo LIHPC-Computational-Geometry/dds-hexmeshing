@@ -58,12 +58,24 @@ public:
         _ofs_lua << "scene_graph.current().visible = " << BOOL_TO_STRING(visible) << std::endl;
     }
 
+    void set_lighting(bool lighting) {
+        _ofs_lua << "scene_graph.current().shader.lighting = " << BOOL_TO_STRING(lighting) << std::endl;
+    }
+
     void set_mesh_style(bool visible, float red, float green, float blue, int width) {
         _ofs_lua << "scene_graph.current().shader.mesh_style = '" << BOOL_TO_STRING(visible) << "; " << red << " " << green << " " << blue << " 1; " << width << "'" << std::endl;
     }
 
     void set_surface_style(bool visible, float red, float green, float blue) {
         _ofs_lua << "scene_graph.current().shader.surface_style = '" << BOOL_TO_STRING(visible) << "; " << red << " " << green << " " << blue << " 1'" << std::endl;
+    }
+
+    void set_painting_on_attribute(std::string attribute_name, std::string colormap, float min, float max) {
+        _ofs_lua << "scene_graph.current().shader.painting = 'ATTRIBUTE'" << std::endl;
+        _ofs_lua << "scene_graph.current().shader.attribute = 'facets." << attribute_name << "'" << std::endl;
+        _ofs_lua << "scene_graph.current().shader.attribute_min = '" << min << "'" << std::endl;
+        _ofs_lua << "scene_graph.current().shader.attribute_max = '" << max << "'" << std::endl;
+        _ofs_lua << "scene_graph.current().shader.colormap = '" << colormap << ";true;0;false;false'" << std::endl;
     }
 
 private:
