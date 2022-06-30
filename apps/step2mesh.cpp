@@ -29,7 +29,7 @@ int main(int argc, char *argv[]) {
             ("h,help", "Print help")
             ("i,input", "Path to the input collection/folder", cxxopts::value<std::string>(),"PATH")
             ("n,no-output-collections", "The program will not write output collections for success/error cases")
-            ("o,output", "Name of the output folder(s) to create. \%a is replaced by 'algorithm' and \%s by 'size'", cxxopts::value<std::string>()->default_value("\%a_\%s"),"NAME")
+            ("o,output", "Name of the output folder(s) to create. \%a is replaced by 'algorithm', \%s by 'size' and \%d by the date and time", cxxopts::value<std::string>()->default_value("\%a_\%s"),"NAME")
             ("s,size", "For 'gmsh', it is a factor in ]0,1]\nFor 'meshgems' and 'netgen', it is the max mesh size", cxxopts::value<std::string>(),"SIZE");
     options.parse_positional({"input", "algorithm", "size", "output"});
 
@@ -47,17 +47,18 @@ int main(int argc, char *argv[]) {
     }
     path_list.require(GENOMESH);//to extract the surface after
 
+    DateTimeStr global_beginning;//get current time
+
     //format the output folder name
     output_folder_name = std::regex_replace(output_folder_name, std::regex("\%a"), result["algorithm"]);
     output_folder_name = std::regex_replace(output_folder_name, std::regex("\%s"), result["size"]);
+    output_folder_name = std::regex_replace(output_folder_name, std::regex("\%d"), global_beginning.filename_string());
 
     std::set<std::filesystem::path> input_folders, subcollections;
     if(expand_collection(input_as_path,input_folders,subcollections)) {
         return 1;
     }
     std::cout << "Found " << input_folders.size() << " input folder(s)" << std::endl;
-
-    DateTimeStr global_beginning;//get current time
 
     OutputCollection *success_cases, *error_cases;
     if(write_output_collections) {
