@@ -52,6 +52,10 @@ public:
         return _result[option].as<std::string>();
     }
 
+    bool is_specified(std::string option) {
+        return _result.count(option);
+    }
+
 private:
     cxxopts::ParseResult _result;
     const cxxopts::Options& _options;//store a reference to cxxopts::Options to call help()
