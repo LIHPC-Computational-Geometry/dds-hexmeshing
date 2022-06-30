@@ -43,19 +43,6 @@ int main(int argc, char *argv[]) {
 
     DateTimeStr global_beginning;//get current time
 
-    //create the ouput collection files
-    std::string output_success_collection_filename, output_error_collection_filename;
-    if(input_as_path.extension() == ".txt") {
-        //create a collection '<input_collection>_naive_<date>'
-        output_success_collection_filename = input_as_path.stem().string() + "_naive_" + global_beginning.filename_string();
-    }
-    else {
-        //case of a single folder as input
-        //append to collection 'naive'
-        output_success_collection_filename = "naive";
-    }
-    output_error_collection_filename = output_success_collection_filename + "_errors";
-
     OutputCollection *success_cases, *error_cases;
     if(write_output_collections) {
 
