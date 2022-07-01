@@ -151,7 +151,7 @@ int main(int argc, char *argv[]) {
         // TODO else, write that the PER_SURFACE_TRIANGLE_LABELING_FILE could not be opened in STD_PRINTINGS_FILE
     }
 
-    // TODO in case of a single input folder, open the labeling with Graphite
+    // in case of a single input folder, open the labeling with Graphite
 #ifdef OPEN_GRAPHITE_AT_THE_END
     if(input_folders.size()==1 && returncode==0) { //TODO if returncode!=0, open the logs
         // TODO check if LABELED_SURFACE_LUA_SCRIPT and GRAPHITE_BASH_SCRIPT were successfully created

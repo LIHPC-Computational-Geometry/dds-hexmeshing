@@ -12,6 +12,7 @@
 #define OPEN_GRAPHITE_AT_THE_END
 
 //names of the files in the shared data folder
+#define INFO_JSON_FILE          "info.json"
 #define STEP_FILE               "CAD.step"                  // input.step in evocube
 #define TETRA_MESH_FILE         "tetra.mesh"
 #define STD_PRINTINGS_FILE      "logs.txt"

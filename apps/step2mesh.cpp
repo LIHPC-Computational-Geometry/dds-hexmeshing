@@ -13,6 +13,7 @@
 #include "date_time.h"
 #include "cxxopts_ParseResult_custom.h"
 #include "graphite_script.h"
+#include "info_file.h"
 
 int main(int argc, char *argv[]) {
 
@@ -136,7 +137,11 @@ int main(int argc, char *argv[]) {
             continue;
         }
 
-        // TODO write info.json
+        // write info.json
+        TetraMeshInfo info(input_folder / output_folder_name / INFO_JSON_FILE);
+        info.generated_by(result["algorithm"]);
+        info.comments(result["comments"]);
+        info.date(current_input_beginning.pretty_string());
 
         //also extract the surface
         cmd = (path_list[GENOMESH] / "build/tris_to_tets").string() + " " +
