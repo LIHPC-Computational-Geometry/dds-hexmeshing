@@ -25,7 +25,7 @@ public:
         for(auto* option = required_options.begin(); option != required_options.end(); ++option) {
             if(!_result.count(*option)) {
                 missing_options = true;
-                std::cerr << "Error : argument '" << *option << " is required" << std::endl;
+                std::cerr << "Error : argument '" << *option << "' is required" << std::endl;
             }
         }
         if(missing_options) {
@@ -39,7 +39,7 @@ public:
         for(auto* option = required_not_empty_options.begin(); option != required_not_empty_options.end(); ++option) {
             if(_result[*option].as<std::string>().empty()) {
                 empty_options = true;
-                std::cerr << "Error : argument '" << *option << " must not be empty" << std::endl;
+                std::cerr << "Error : argument '" << *option << "' must not be empty" << std::endl;
             }
         }
         if(empty_options) {

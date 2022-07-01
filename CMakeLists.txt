@@ -34,3 +34,6 @@ target_link_libraries(extract_surface ${LIBS})
 
 add_executable(naive_labeling apps/naive_labeling.cpp ${SRCFILES})
 target_link_libraries(naive_labeling ${LIBS})
+
+add_executable(graphcut_labeling apps/graphcut_labeling.cpp ${SRCFILES})
+target_link_libraries(graphcut_labeling ${LIBS})
