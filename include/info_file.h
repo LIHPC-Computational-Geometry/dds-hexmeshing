@@ -73,6 +73,10 @@ public:
         add_entry("tetrahedra",value);
     }
 
+    void surface_vertices(int value) {
+        add_entry("surface_vertices",value);
+    }
+
     void surface_triangles(int value) {
         add_entry("surface_triangles",value);
     }

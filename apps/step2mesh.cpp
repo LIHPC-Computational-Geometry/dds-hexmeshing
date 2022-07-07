@@ -14,6 +14,7 @@
 #include "cxxopts_ParseResult_custom.h"
 #include "graphite_script.h"
 #include "info_file.h"
+#include "mesh_stats.h"
 
 int main(int argc, char *argv[]) {
 
@@ -111,12 +112,6 @@ int main(int argc, char *argv[]) {
             continue;
         }
 
-        // write info.json
-        TetraMeshInfo info(input_folder / output_folder_name / INFO_JSON_FILE);
-        info.generated_by(result["algorithm"]);
-        info.comments(result["comments"]);
-        info.date(current_input_beginning.pretty_string());
-
         //also extract the surface
         cmd = (path_list[GENOMESH] / "build/tris_to_tets").string() + " " +
               (input_folder / output_folder_name / TETRA_MESH_FILE).string() + " " +
@@ -132,6 +127,18 @@ int main(int argc, char *argv[]) {
         else {
             std::cout << "Done" << std::endl;
             output_collections.success_cases->new_entry(input_folder / output_folder_name);
+
+            // write info.json
+            TetraMeshInfo info(input_folder / output_folder_name / INFO_JSON_FILE);
+            info.generated_by(result["algorithm"]);
+            info.comments(result["comments"]);
+            info.date(current_input_beginning.pretty_string());
+            TetraMeshStats mesh_stats(input_folder / output_folder_name / TETRA_MESH_FILE,
+                                      input_folder / output_folder_name / SURFACE_OBJ_FILE);
+            info.vertices(mesh_stats.get_nb_vertices());
+            info.tetrahedra(mesh_stats.get_nb_tetrahedra());
+            info.surface_vertices(mesh_stats.get_nb_surface_vertices());
+            info.surface_triangles(mesh_stats.get_nb_surface_triangles());
 
             //then create a Lua script for Graphite
             GraphiteScript graphite_script(input_folder / output_folder_name / TETRA_MESH_LUA_SCRIPT,path_list);
