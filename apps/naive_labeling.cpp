@@ -137,6 +137,8 @@ int main(int argc, char *argv[]) {
             graphite_script.set_mesh_style(true,0.0f,0.0f,0.0f,1);
             graphite_script.set_painting_on_attribute("attr","french",0.0f,5.0f);
             graphite_script.set_lighting(false);
+            graphite_script.load_object(TURNING_POINTS_OBJ_FILE);
+            graphite_script.set_vertices_style(true,1.0f,1.0f,0.0f,5);
         }
         // TODO else, write that the PER_SURFACE_TRIANGLE_LABELING_FILE could not be opened in STD_PRINTINGS_FILE
     }

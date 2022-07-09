@@ -70,6 +70,10 @@ public:
         _ofs_lua << "scene_graph.current().shader.surface_style = '" << BOOL_TO_STRING(visible) << "; " << red << " " << green << " " << blue << " 1'" << std::endl;
     }
 
+    void set_vertices_style(bool visible, float red, float green, float blue, int width) {
+        _ofs_lua << "scene_graph.current().shader.vertices_style = '" << BOOL_TO_STRING(visible) << "; " << red << " " << green << " " << blue << " 1; " << width << "'" << std::endl;
+    }
+
     void set_painting_on_attribute(std::string attribute_name, std::string colormap, float min, float max) {
         _ofs_lua << "scene_graph.current().shader.painting = 'ATTRIBUTE'" << std::endl;
         _ofs_lua << "scene_graph.current().shader.attribute = 'facets." << attribute_name << "'" << std::endl;
