@@ -13,6 +13,17 @@
 #define NOTIFY          true
 #define DO_NOT_NOTIFY   false
 
+std::filesystem::path parent_of(std::filesystem::path input) {
+    //TODO also manage case filename=".." ?
+    if ( (input.filename()=="") || (input.filename()=="."))
+    {
+        return input.parent_path().parent_path();// the first one remove the filename and the second give the real parent path
+    }
+    else {
+        return input.parent_path();
+    }
+}
+
 //count the number of folders +1 between a file/folder and the root
 int get_depth(std::filesystem::path p) {
     if(p == p.parent_path()) {

@@ -33,11 +33,19 @@ public:
         _json[key] = value;
     }
 
+    void add_entry(std::string key, double value) {
+        _json[key] = value;
+    }
+
     void add_entry(std::string key, std::string subkey, std::string value) {
         _json[key][subkey] = value;
     }
 
     void add_entry(std::string key, std::string subkey, int value) {
+        _json[key][subkey] = value;
+    }
+
+    void add_entry(std::string key, std::string subkey, double value) {
         _json[key][subkey] = value;
     }
 
@@ -81,12 +89,37 @@ public:
         add_entry("surface_triangles",value);
     }
 
-};
+    //TODO fill_from(TetraMeshStats)
 
+};
 
 
 class LabelingInfo : public InfoFile {
 
 public:
     LabelingInfo(std::filesystem::path path) : InfoFile(path) {}
+
+    //TODO fill_from(path/to/labeling_stats.txt)
+};
+
+
+class HexMeshInfo : public InfoFile {
+
+public:
+    HexMeshInfo(std::filesystem::path path) : InfoFile(path) {}
+
+    void vertices(int value) {
+        add_entry("vertices",value);
+    }
+
+    void hexahedra(int value) {
+        add_entry("hexahedra",value);
+    }
+
+    void min_SJ(double value) {
+        add_entry("min_SJ",value);
+    }
+
+    //TODO fill_from(HexMeshStats)
+
 };
