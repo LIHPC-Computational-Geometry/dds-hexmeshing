@@ -76,7 +76,7 @@ int main(int argc, char *argv[]) {
         txt_logs << "\n+-----------------------+\n\n";
         txt_logs.close();
 
-        cmd = (path_list[GENOMESH] / "build/naive_labeling").string() + " " +
+        cmd = (path_list[GENOMESH] / "naive_labeling").string() + " " +
               (input_folder / TRIANGLE_TO_TETRA_FILE).string() + " " +
               (input_folder / SURFACE_OBJ_FILE).string() + " " +
               (input_folder / output_folder_name / PER_SURFACE_TRIANGLE_LABELING_FILE).string() + " " +

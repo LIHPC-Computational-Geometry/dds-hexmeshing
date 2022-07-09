@@ -1,6 +1,6 @@
 {
     "output_collections": "~/SharedData/",
     "salome": "~/.local/salome/SALOME-9.9.0-native-FD34-SRC/",
-    "graphite": "graphite",
-    "genomesh": "../genomesh/"
+    "graphite": "~/.local/GraphiteThree/build/Linux64-gcc-dynamic-Release/bin/graphite",
+    "genomesh": "../genomesh/build_Debug/"
 }

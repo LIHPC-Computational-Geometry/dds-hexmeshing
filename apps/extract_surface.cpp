@@ -55,7 +55,7 @@ int main(int argc, char *argv[]) {
         txt_logs << "\n+-----------------------+\n\n";
         txt_logs.close();
 
-        cmd = (path_list[GENOMESH] / "build/tris_to_tets").string() + " " +
+        cmd = (path_list[GENOMESH] / "tris_to_tets").string() + " " +
               (input_folder / TETRA_MESH_FILE).string() + " " +
               (input_folder / SURFACE_OBJ_FILE).string() + " " +
               (input_folder / TRIANGLE_TO_TETRA_FILE).string() +

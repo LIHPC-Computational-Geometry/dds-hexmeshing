@@ -80,7 +80,7 @@ int main(int argc, char *argv[]) {
         txt_logs << "\n+-----------------------+\n\n";
         txt_logs.close();
 
-        cmd = (path_list[GENOMESH] / "build/graphcut_labeling").string() + " " +
+        cmd = (path_list[GENOMESH] / "graphcut_labeling").string() + " " +
               (input_folder / TRIANGLE_TO_TETRA_FILE).string() + " " +
               (input_folder / SURFACE_OBJ_FILE).string() + " " +
               result["compactness"] + " " +

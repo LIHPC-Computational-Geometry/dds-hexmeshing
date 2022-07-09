@@ -113,7 +113,7 @@ int main(int argc, char *argv[]) {
         }
 
         //also extract the surface
-        cmd = (path_list[GENOMESH] / "build/tris_to_tets").string() + " " +
+        cmd = (path_list[GENOMESH] / "tris_to_tets").string() + " " +
               (input_folder / output_folder_name / TETRA_MESH_FILE).string() + " " +
               (input_folder / output_folder_name / SURFACE_OBJ_FILE).string() + " " +
               (input_folder / output_folder_name / TRIANGLE_TO_TETRA_FILE).string() +
