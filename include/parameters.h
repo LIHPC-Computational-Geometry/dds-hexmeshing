@@ -24,3 +24,5 @@
 #define PER_TETRA_FACES_LABELING_FILE       "tetra_labeling.txt"
 #define LABELED_SURFACE_GEOGRAM_FILE        "labeled_surface.geogram"
 #define LABELED_SURFACE_LUA_SCRIPT          "labeled_surface.lua"
+#define LABELING_STATS_FILE                 "labeling_stats.txt"
+#define TURNING_POINTS_OBJ_FILE             "turning_points.obj"

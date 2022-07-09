@@ -81,11 +81,29 @@ int main(int argc, char *argv[]) {
               (input_folder / SURFACE_OBJ_FILE).string() + " " +
               (input_folder / output_folder_name / PER_SURFACE_TRIANGLE_LABELING_FILE).string() + " " +
               (input_folder / output_folder_name / PER_TETRA_FACES_LABELING_FILE).string() +
-              " &>> " + (input_folder / output_folder_name / STD_PRINTINGS_FILE).string();//redirect stdout and stderr to file (append to the logs of step2mesh)
+              " &>> " + (input_folder / output_folder_name / STD_PRINTINGS_FILE).string();//redirect stdout and stderr to file
         returncode = system(cmd.c_str());
         
         if(returncode!=0) {
             std::cout << "Error" << std::endl;
+            output_collections.error_cases->new_comments("error during naive_labeling call");
+            output_collections.error_cases->new_entry(input_folder / output_folder_name);
+            continue;
+        }
+
+        //evaluate the labeling and get scores and stats (nb charts, fidelity, turning-points...)
+
+        cmd = (path_list[GENOMESH] / "labeling_stats").string() + " " +
+              (input_folder / output_folder_name / PER_SURFACE_TRIANGLE_LABELING_FILE).string() + " " +
+              (input_folder / SURFACE_OBJ_FILE).string() + " " +
+              (input_folder / output_folder_name / LABELING_STATS_FILE).string() + " " +
+              (input_folder / output_folder_name / TURNING_POINTS_OBJ_FILE).string() +
+              " &>> " + (input_folder / output_folder_name / STD_PRINTINGS_FILE).string();//redirect stdout and stderr to file (append to the previous logs)
+        returncode = system(cmd.c_str());
+
+        if(returncode!=0) {
+            std::cout << "Error" << std::endl;
+            output_collections.error_cases->new_comments("error during labeling_stats call");
             output_collections.error_cases->new_entry(input_folder / output_folder_name);
             continue;
         }
