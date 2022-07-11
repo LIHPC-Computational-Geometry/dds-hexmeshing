@@ -9,6 +9,7 @@
 #include "date_time.h"
 #include "cxxopts_ParseResult_custom.h"
 #include "graphite_script.h"
+#include "info_file.h"
 
 int main(int argc, char *argv[]) {
 
@@ -116,6 +117,12 @@ int main(int argc, char *argv[]) {
 
         std::cout << "Done" << std::endl;
         output_collections.success_cases->new_entry(input_folder / output_folder_name);
+
+        LabelingInfo info(input_folder / output_folder_name / INFO_JSON_FILE);
+        info.generated_by("graphcut_labeling");
+        info.comments(result["comments"]);
+        info.date(current_input_beginning.pretty_string());
+        info.fill_from(input_folder / output_folder_name / LABELING_STATS_FILE);
 
         //with Ultimaille, load the surface mesh and the just-computed labeling
         UM::Triangles surface;
