@@ -13,15 +13,20 @@
 #define NOTIFY          true
 #define DO_NOT_NOTIFY   false
 
-std::filesystem::path parent_of(std::filesystem::path input) {
-    //TODO also manage case filename=".." ?
-    if ( (input.filename()=="") || (input.filename()=="."))
-    {
-        return input.parent_path().parent_path();// the first one remove the filename and the second give the real parent path
-    }
-    else {
-        return input.parent_path();
-    }
+//from https://stackoverflow.com/a/60532070
+std::filesystem::path normalized_trimed(const std::filesystem::path& p)
+{
+    auto r = std::filesystem::weakly_canonical(p).lexically_normal();
+    if (r.has_filename()) return r;
+    return r.parent_path();
+}
+bool is_subpath_of(const std::filesystem::path& base, const std::filesystem::path& sub)
+{
+    auto b = normalized_trimed(base);
+    auto s = normalized_trimed(sub).parent_path();
+    auto m = std::mismatch(b.begin(), b.end(), 
+                           s.begin(), s.end());
+    return m.first == b.end();
 }
 
 //count the number of folders +1 between a file/folder and the root
@@ -45,7 +50,13 @@ int get_depth(std::filesystem::path p) {
 //'subcollections' ensure there is no cyclic inclusion
 //'depth' ensure all the folders have the same depth (distance to root)
 //return 1 if an error occured
-bool expand_collection(const std::filesystem::path& collection, std::set<std::filesystem::path>& entries, std::set<std::filesystem::path>& subcollections, int depth=-1) {
+bool expand_collection(const std::filesystem::path& collection, const std::filesystem::path& working_data_folder, std::set<std::filesystem::path>& entries, std::set<std::filesystem::path>& subcollections, int depth=-1) {
+
+    if(!is_subpath_of(working_data_folder,collection)) {
+        std::cerr << "Error : " << collection.string() << " is not a subfolder of " << working_data_folder.string() << "," << std::endl;
+        std::cerr << "the working data folder defined in path.json" << std::endl;
+        return 1;
+    }
 
     if(!std::filesystem::exists(collection)) {
         std::cerr << "Error : " << collection.string() << " doesn't exist" << std::endl;
@@ -56,8 +67,7 @@ bool expand_collection(const std::filesystem::path& collection, std::set<std::fi
         //when expand_collection() is called recursively, 'collection' is ensured to be a .txt file
         //but the top level call of expand_collection() could recieve a folder,
         //which means the user only chose one entry
-        entries.emplace(collection);
-        return 0;
+        entries.emplace(normalized_trimed(collection));
     }
     else if(collection.extension()!=".txt") {
         std::cerr << "Error : " << collection.string() << " is neither a .txt file nor a folder" << std::endl;
@@ -80,6 +90,7 @@ bool expand_collection(const std::filesystem::path& collection, std::set<std::fi
         }
 
         new_entry = collection.parent_path() / line;
+        new_entry = normalized_trimed(new_entry);
 
         //a collection can only contains directories (the entries) or .txt files (subcollections)
 
@@ -104,7 +115,7 @@ bool expand_collection(const std::filesystem::path& collection, std::set<std::fi
                     continue;//jump to next line
                 }
                 subcollections.emplace(collection);
-                if(expand_collection(new_entry,entries,subcollections,depth)) {
+                if(expand_collection(new_entry,working_data_folder,entries,subcollections,depth)) {
                     return 1;
                 }
                 //else the recursive call of expand_collection() didn't encountered any issue -> continue reading
@@ -169,15 +180,15 @@ class OutputCollections {
 
 public:
     OutputCollections(std::string base_filename, const PathList& path_list, bool disabled) : _header("") {
-        path_list.require(OUTPUT_COLLECTIONS);
+        path_list.require(WORKING_DATA_FOLDER);
         
         if(disabled) {
             success_cases = new OutputCollection("/dev/null",_header);
             error_cases = new OutputCollection("/dev/null",_header);
         }
         else {
-            std::filesystem::path success_cases_path = path_list[OUTPUT_COLLECTIONS] / (base_filename+".txt");
-            std::filesystem::path error_cases_path = path_list[OUTPUT_COLLECTIONS] / (base_filename+"_errors.txt");
+            std::filesystem::path success_cases_path = path_list[WORKING_DATA_FOLDER] / (base_filename+".txt");
+            std::filesystem::path error_cases_path = path_list[WORKING_DATA_FOLDER] / (base_filename+"_errors.txt");
             success_cases = new OutputCollection(success_cases_path,_header);
             error_cases = new OutputCollection(error_cases_path,_header);
             std::cout << "Output collection : " << success_cases_path.string() << std::endl;

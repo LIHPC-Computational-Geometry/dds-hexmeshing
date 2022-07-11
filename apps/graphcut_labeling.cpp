@@ -37,10 +37,11 @@ int main(int argc, char *argv[]) {
     bool write_output_collections = !result.is_specified("no-output-collections");
 
     PathList path_list;//read paths.json
+    path_list.require(WORKING_DATA_FOLDER);
     path_list.require(GENOMESH);
 
     std::set<std::filesystem::path> input_folders, subcollections;
-    if(expand_collection(input_as_path,input_folders,subcollections)) {
+    if(expand_collection(input_as_path,path_list[WORKING_DATA_FOLDER],input_folders,subcollections)) {
         //an error occured
         return 1;
     }
@@ -63,7 +64,7 @@ int main(int argc, char *argv[]) {
     std::string cmd;
     int returncode = 0;
     for(auto& input_folder : input_folders) {
-        std::cout << input_folder.string() << "..." << std::flush;
+        std::cout << std::filesystem::relative(input_folder,path_list[WORKING_DATA_FOLDER]).string() << "..." << std::flush;
         //TODO check if the output folder already exist. if so, ask for confirmation
 
         std::filesystem::create_directory(input_folder / output_folder_name);//create the output folder

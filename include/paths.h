@@ -42,7 +42,7 @@ public:
         std::ifstream i("../paths.json");
         if (i.good()) {
             i >> _j;
-            try_to_insert(_j,_string2path,OUTPUT_COLLECTIONS);
+            try_to_insert(_j,_string2path,WORKING_DATA_FOLDER);
             try_to_insert(_j,_string2path,SALOME);
             try_to_insert(_j,_string2path,GRAPHITE);
             try_to_insert(_j,_string2path,GENOMESH);
@@ -55,7 +55,7 @@ public:
 
     void dump() {
         for(auto it = _string2path.begin(); it != _string2path.end(); ++it) {
-            std::cout << "_string2path[\"" << it->first << "\"]=" << it->second << std::endl;
+            std::cout << "_string2path[\"" << it->first << "\"]=" << (it->second).string() << std::endl;
         }
     }
 

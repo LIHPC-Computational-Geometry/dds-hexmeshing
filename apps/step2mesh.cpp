@@ -39,13 +39,14 @@ int main(int argc, char *argv[]) {
     cxxopts::ParseResult_custom result(options,argc, argv);
     result.require({"input", "algorithm", "size"});
     result.require_not_empty({"output"});
-    std::filesystem::path input_as_path(result["input"]);
+    std::filesystem::path input_as_path(normalized_trimed(result["input"]));
     std::string output_folder_name = result["output"];
 
     PathList path_list;//read paths.json
     if(result["algorithm"]!="gmsh") {
         path_list.require(SALOME);//except GMSH, the other meshing algorithms use SMESH of SALOME
     }
+    path_list.require(WORKING_DATA_FOLDER);
     path_list.require(GENOMESH);//to extract the surface after
 
     DateTimeStr global_beginning;//get current time
@@ -56,7 +57,7 @@ int main(int argc, char *argv[]) {
     output_folder_name = std::regex_replace(output_folder_name, std::regex("\%d"), global_beginning.filename_string());
 
     std::set<std::filesystem::path> input_folders, subcollections;
-    if(expand_collection(input_as_path,input_folders,subcollections)) {
+    if(expand_collection(input_as_path,path_list[WORKING_DATA_FOLDER],input_folders,subcollections)) {
         return 1;
     }
     std::cout << "Found " << input_folders.size() << " input folder(s)" << std::endl;
@@ -71,7 +72,7 @@ int main(int argc, char *argv[]) {
     std::string cmd;
     int returncode = 0;
     for(auto& input_folder : input_folders) {
-        std::cout << input_folder.string() << "..." << std::flush;
+        std::cout << std::filesystem::relative(input_folder,path_list[WORKING_DATA_FOLDER]).string() << "..." << std::flush;
         //TODO check if the output folder already exist. if so, ask for confirmation
         std::filesystem::create_directory(input_folder / output_folder_name);//create the output folder
 

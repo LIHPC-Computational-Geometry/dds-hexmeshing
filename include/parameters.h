@@ -3,7 +3,7 @@
 #pragma once
 
 //expected entries in paths.json
-#define OUTPUT_COLLECTIONS  "output_collections"
+#define WORKING_DATA_FOLDER "working_data_folder"
 #define SALOME              "salome"
 #define GRAPHITE            "graphite"
 #define GENOMESH            "genomesh"

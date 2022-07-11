@@ -32,17 +32,18 @@ int main(int argc, char *argv[]) {
     cxxopts::ParseResult_custom result(options,argc, argv);
     result.require({"input"});
     result.require_not_empty({"output","scale"});
-    std::filesystem::path input_as_path(result["input"]);
+    std::filesystem::path input_as_path(normalized_trimed(result["input"]));
     std::string output_folder_name = result["output"];
     bool write_output_collections = !result.is_specified("no-output-collections");
 
     PathList path_list;//read paths.json
+    path_list.require(WORKING_DATA_FOLDER);
     // 'polycube_withHexEx' is also in Genomesh, but the one in evocube has a more flexible API
     // the code comes from https://github.com/fprotais/polycube_withHexEx
     path_list.require(EVOCUBE_TWEAKS);
 
     std::set<std::filesystem::path> input_folders, subcollections;
-    if(expand_collection(input_as_path,input_folders,subcollections)) {
+    if(expand_collection(input_as_path,path_list[WORKING_DATA_FOLDER],input_folders,subcollections)) {
         //an error occured
         return 1;
     }
@@ -64,7 +65,7 @@ int main(int argc, char *argv[]) {
     std::string cmd;
     int returncode = 0;
     for(auto& input_folder : input_folders) {
-        std::cout << input_folder.string() << "..." << std::flush;
+        std::cout << std::filesystem::relative(input_folder,path_list[WORKING_DATA_FOLDER]).string() << "..." << std::flush;
         //TODO check if the output folder already exist. if so, ask for confirmation
 
         std::filesystem::create_directory(input_folder / output_folder_name);//create the output folder
@@ -83,7 +84,7 @@ int main(int argc, char *argv[]) {
         txt_logs.close();
 
         cmd = (path_list[EVOCUBE_TWEAKS] / "polycube_withHexEx").string() + " " +
-              (parent_of(input_folder) / TETRA_MESH_FILE).string() + " " +
+              (input_folder.parent_path() / TETRA_MESH_FILE).string() + " " +
               (input_folder / PER_TETRA_FACES_LABELING_FILE).string() + " " +
               (input_folder / output_folder_name / HEX_MESH_FILE).string() + " " +
               result["scale"] +

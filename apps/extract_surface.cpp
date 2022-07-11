@@ -26,10 +26,11 @@ int main(int argc, char *argv[]) {
     result.require({"input"});
 
     PathList path_list;//read paths.json
+    path_list.require(WORKING_DATA_FOLDER);
     path_list.require(GENOMESH);
 
     std::set<std::filesystem::path> input_folders, subcollections;
-    if(expand_collection(result["input"],input_folders,subcollections)) {
+    if(expand_collection(result["input"],path_list[WORKING_DATA_FOLDER],input_folders,subcollections)) {
         //an error occured
         return 1;
     }
@@ -37,7 +38,7 @@ int main(int argc, char *argv[]) {
 
     std::string cmd;
     for(auto& input_folder : input_folders) {
-        std::cout << input_folder.string() << "..." << std::flush;
+        std::cout << std::filesystem::relative(input_folder,path_list[WORKING_DATA_FOLDER]).string() << "..." << std::flush;
         //TODO check if the output files already exist
 
         std::ofstream txt_logs(input_folder / STD_PRINTINGS_FILE,std::ios_base::app);//append mode
