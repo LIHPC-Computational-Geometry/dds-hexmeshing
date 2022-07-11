@@ -28,4 +28,5 @@
 #define LABELING_STATS_FILE                 "labeling_stats.txt"
 #define TURNING_POINTS_OBJ_FILE             "turning_points.obj"
 #define HEX_MESH_FILE                       "hex.mesh"
-#define HEX_MESH_LUA_SCRIPT                 "hex_mesh.lua"
+#define HEX_MESH_WITH_SJ_GEOGRAM_FILE       "hex_mesh_with_SJ.geogram"
+#define HEX_MESH_WITH_SJ_LUA_SCRIPT         "hex_mesh_with_SJ.lua"

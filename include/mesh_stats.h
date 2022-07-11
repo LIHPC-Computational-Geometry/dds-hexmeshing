@@ -146,6 +146,11 @@ public:
         return min_SJ;
     }
 
+    void export_as(std::filesystem::path path) const {
+        //write a .geogram file with the hex mesh + per cell Scaled Jacobian, named "attr"
+        UM::write_by_extension(path.string(), hexahedra, UM::VolumeAttributes{ {}, { { "attr", (*SJ).ptr } }, {}, {} });
+    }
+
 private:
     UM::Hexahedra hexahedra;
     UM::CellAttribute<double> *SJ;
