@@ -15,7 +15,7 @@ def print_help():
     print("where:")
     print("\t - input.step is the input geometry file (step format),")
     print("\t - output.mesh is the output generated tetrahedral mesh (Medit format),")
-    print("\t - algorithm is 'netgen' or 'meshgems' (MeshGems requires a licence),")
+    print("\t - algorithm is 'NETGEN' or 'MeshGems' (MeshGems requires a licence),")
     print("\t - max_size is 'coarse' (={}), 'fine' (={}) or a custom value".format(max_size_coarse,max_size_fine))
 
 # check arguments
@@ -32,7 +32,7 @@ if(not isfile(input_name)):
 output_name = sys.argv[2]
 
 algorithm = sys.argv[3]
-if(algorithm not in {"netgen","meshgems"}):
+if(algorithm not in {"NETGEN","MeshGems"}):
     print("Error : Unknown algorithm '" + algorithm + "'\n")
     print_help()
     exit(1)
@@ -126,7 +126,7 @@ Mesh_1 = smesh.Mesh(shape_scaled, "Mesh_%s"%input_name)
 
 edges_group_1 = Mesh_1.GroupOnGeom(edges_group,'edges_group',SMESH.EDGE)
 
-if algorithm == "netgen":
+if algorithm == "NETGEN":
     NETGEN_1D_2D = Mesh_1.Triangle(algo=smeshBuilder.NETGEN_1D2D)
     NETGEN_1D_2D_Parameters_1 = NETGEN_1D_2D.Parameters()
     NETGEN_1D_2D_Parameters_1.SetFineness( 5 ) #5 means custom
@@ -135,7 +135,7 @@ if algorithm == "netgen":
     NETGEN_1D_2D_Parameters_1.SetGrowthRate( 0.3 )
     NETGEN_1D_2D_Parameters_1.SetMaxSize( max_size )
     Mesh_1.Tetrahedron()# comment this line if you want to check the mesh size before meshing volumes
-elif algorithm == "meshgems":
+elif algorithm == "MeshGems":
     # use MeshGems (requires a licence)
     MG_CADSurf = Mesh_1.Triangle(algo=smeshBuilder.MG_CADSurf)
     MG_CADSurf_Parameters_1 = MG_CADSurf.Parameters()

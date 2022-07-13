@@ -21,39 +21,34 @@ int main(int argc, char *argv[]) {
 
     //TODO add an option to skip the surface mesh extraction
 
-    cxxopts::Options options(argv[0], "Tetrahedral meshing of a .step geometry file");
+    cxxopts::Options options(argv[0], "Tetrahedral meshing of a .step geometry file with GMSH algorithm");
     options
         .set_width(80)
-        .positional_help("<input> <algorithm> <size> [output]")
+        .positional_help("<input> <size> [output]")
         .show_positional_help()
         .add_options()
-            ("a,algorithm", "Which meshing algorithm to use : 'meshgems', 'netgen' or 'gmsh'", cxxopts::value<std::string>(),"NAME")
             ("c,comments", "Comments about the aim of this execution", cxxopts::value<std::string>()->default_value(""),"TEXT")
             ("h,help", "Print help")
             ("i,input", "Path to the input collection/folder", cxxopts::value<std::string>(),"PATH")
             ("n,no-output-collections", "The program will not write output collections for success/error cases")
             ("o,output", "Name of the output folder(s) to create. \%a is replaced by 'algorithm', \%s by 'size' and \%d by the date and time", cxxopts::value<std::string>()->default_value("\%a_\%s"),"NAME")
-            ("s,size", "For 'gmsh', it is a factor in ]0,1]\nFor 'meshgems' and 'netgen', it is the max mesh size", cxxopts::value<std::string>(),"SIZE");
-    options.parse_positional({"input", "algorithm", "size", "output"});
+            ("s,size", "Size factor in ]0,1]", cxxopts::value<std::string>(),"VALUE");
+    options.parse_positional({"input", "size", "output"});
 
     //parse results
     cxxopts::ParseResult_custom result(options,argc, argv);
-    result.require({"input", "algorithm", "size"});
+    result.require({"input", "size"});
     result.require_not_empty({"output"});
     std::filesystem::path input_as_path = normalized_trimed(result["input"]);
     std::string output_folder_name = result["output"];
 
     PathList path_list;//read paths.json
-    if(result["algorithm"]!="gmsh") {
-        path_list.require(SALOME);//except GMSH, the other meshing algorithms use SMESH of SALOME
-    }
     path_list.require(WORKING_DATA_FOLDER);
     path_list.require(GENOMESH);//to extract the surface after
 
     DateTimeStr global_beginning;//get current time
 
     //format the output folder name
-    output_folder_name = std::regex_replace(output_folder_name, std::regex("\%a"), result["algorithm"]);
     output_folder_name = std::regex_replace(output_folder_name, std::regex("\%s"), result["size"]);
     output_folder_name = std::regex_replace(output_folder_name, std::regex("\%d"), global_beginning.filename_string());
 
@@ -65,10 +60,10 @@ int main(int argc, char *argv[]) {
 
     //create output collections
     std::string basename = (input_as_path.extension() == ".txt") ? 
-                            input_as_path.stem().string() + "_" + result["algorithm"] + "_" + global_beginning.filename_string() : //if the input is a collection
-                            "step2mesh"; //if the input is a single folder
+                            input_as_path.stem().string() + "_GMSH_" + global_beginning.filename_string() : //if the input is a collection
+                            "GMSH"; //if the input is a single folder
     OutputCollections output_collections(basename,path_list,result.is_specified("no-output-collections"));
-    output_collections.set_header("step2mesh",global_beginning.pretty_string(),result["comments"]);
+    output_collections.set_header("GMSH",global_beginning.pretty_string(),result["comments"]);
 
     std::string cmd;
     int returncode = 0;
@@ -120,27 +115,16 @@ int main(int argc, char *argv[]) {
 
         DateTimeStr current_input_beginning;//get current time
         txt_logs << "\n+-----------------------+";
-        txt_logs << "\n|       step2mesh       |";
+        txt_logs << "\n|         GMSH          |";
         txt_logs << "\n|  " << current_input_beginning.pretty_string() << "  |";
         txt_logs << "\n+-----------------------+\n\n";
         txt_logs.close();
 
-        if(result["algorithm"]=="gmsh") {
-            cmd = "../python-scripts/step2mesh_GMSH.py " +
-                  (input_folder / STEP_FILE).string() + " " +
-                  (input_folder / output_folder_name / TETRA_MESH_FILE).string() + " " +
-                  result["size"] +
-                  " &>> " + (input_folder / output_folder_name / STD_PRINTINGS_FILE).string();//redirect stdout and stderr to file (append to the previous logs)
-        }
-        else { //for 'meshgems' or 'netgen', use SALOME
-            cmd = "source " + (path_list[SALOME] / "env_launch.sh").string() + " && " +
-                  "../python-scripts/step2mesh_SALOME.py " +
-                  (input_folder / STEP_FILE).string() + " " +
-                  (input_folder / output_folder_name / TETRA_MESH_FILE).string() + " " +
-                  result["algorithm"] + " " +
-                  result["size"] +
-                  " &>> " + (input_folder / output_folder_name / STD_PRINTINGS_FILE).string();//redirect stdout and stderr to file (append to the previous logs)
-        }
+        cmd = "../python-scripts/step2mesh_GMSH.py " +
+              (input_folder / STEP_FILE).string() + " " +
+              (input_folder / output_folder_name / TETRA_MESH_FILE).string() + " " +
+              result["size"] +
+              " &>> " + (input_folder / output_folder_name / STD_PRINTINGS_FILE).string();//redirect stdout and stderr to file (append to the previous logs)
         returncode = system(cmd.c_str());
 
         if(returncode!=0) {
@@ -167,7 +151,7 @@ int main(int argc, char *argv[]) {
 
             // write info.json
             TetraMeshInfo info(input_folder / output_folder_name / INFO_JSON_FILE);
-            info.generated_by(result["algorithm"]);
+            info.generated_by("GMSH");
             info.comments(result["comments"]);
             info.date(current_input_beginning.pretty_string());
             TetraMeshStats mesh_stats(input_folder / output_folder_name / TETRA_MESH_FILE,
@@ -179,7 +163,7 @@ int main(int argc, char *argv[]) {
 
             //then create a Lua script for Graphite
             GraphiteScript graphite_script(input_folder / output_folder_name / TETRA_MESH_LUA_SCRIPT,path_list);
-            graphite_script.add_comments("generated by step2mesh");
+            graphite_script.add_comments("generated by the GMSH wrapper of shared-polycube-pipeline");
             graphite_script.add_comments(current_input_beginning.pretty_string());
             graphite_script.load_object(TETRA_MESH_FILE);
             graphite_script.set_mesh_style(true,0,0,0,1);//black wireframe

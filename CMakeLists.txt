@@ -23,8 +23,14 @@ file(GLOB SRCFILES src/*.cpp)
 add_executable(expand apps/expand.cpp ${SRCFILES})
 target_link_libraries(expand ${LIBS})
 
-add_executable(step2mesh apps/step2mesh.cpp ${SRCFILES})
-target_link_libraries(step2mesh ${LIBS})
+add_executable(MeshGems apps/MeshGems.cpp ${SRCFILES})
+target_link_libraries(MeshGems ${LIBS})
+
+add_executable(NETGEN apps/NETGEN.cpp ${SRCFILES})
+target_link_libraries(NETGEN ${LIBS})
+
+add_executable(GMSH apps/GMSH.cpp ${SRCFILES})
+target_link_libraries(GMSH ${LIBS})
 
 add_executable(custom_command apps/custom_command.cpp ${SRCFILES})
 target_link_libraries(custom_command ${LIBS})
