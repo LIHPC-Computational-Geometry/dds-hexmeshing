@@ -39,7 +39,7 @@ int main(int argc, char *argv[]) {
     cxxopts::ParseResult_custom result(options,argc, argv);
     result.require({"input", "algorithm", "size"});
     result.require_not_empty({"output"});
-    std::filesystem::path input_as_path(normalized_trimed(result["input"]));
+    std::filesystem::path input_as_path = normalized_trimed(result["input"]);
     std::string output_folder_name = result["output"];
 
     PathList path_list;//read paths.json
@@ -57,7 +57,7 @@ int main(int argc, char *argv[]) {
     output_folder_name = std::regex_replace(output_folder_name, std::regex("\%d"), global_beginning.filename_string());
 
     std::set<std::filesystem::path> input_folders, subcollections;
-    if(expand_collection(input_as_path,path_list[WORKING_DATA_FOLDER],input_folders,subcollections)) {
+    if(expand_collection(input_as_path,path_list[WORKING_DATA_FOLDER],DEPTH_1_CAD,input_folders,subcollections)) {
         return 1;
     }
     std::cout << "Found " << input_folders.size() << " input folder(s)" << std::endl;

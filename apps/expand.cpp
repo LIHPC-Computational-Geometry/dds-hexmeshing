@@ -24,7 +24,7 @@ int main(int argc, char *argv[]) {
     path_list.require(WORKING_DATA_FOLDER);
 
     std::set<std::filesystem::path> input_folders, subcollections;
-    if(expand_collection(result["input"],path_list[WORKING_DATA_FOLDER],input_folders,subcollections)) {
+    if(expand_collection(normalized_trimed(result["input"]),path_list[WORKING_DATA_FOLDER],ALL_DEPTH_FOLDERS,input_folders,subcollections)) {
         //an error occured
         return 1;
     }

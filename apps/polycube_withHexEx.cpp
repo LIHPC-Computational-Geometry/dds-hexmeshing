@@ -32,7 +32,7 @@ int main(int argc, char *argv[]) {
     cxxopts::ParseResult_custom result(options,argc, argv);
     result.require({"input"});
     result.require_not_empty({"output","scale"});
-    std::filesystem::path input_as_path(normalized_trimed(result["input"]));
+    std::filesystem::path input_as_path = normalized_trimed(result["input"]);
     std::string output_folder_name = result["output"];
     bool write_output_collections = !result.is_specified("no-output-collections");
 
@@ -43,7 +43,7 @@ int main(int argc, char *argv[]) {
     path_list.require(EVOCUBE_TWEAKS);
 
     std::set<std::filesystem::path> input_folders, subcollections;
-    if(expand_collection(input_as_path,path_list[WORKING_DATA_FOLDER],input_folders,subcollections)) {
+    if(expand_collection(input_as_path,path_list[WORKING_DATA_FOLDER],DEPTH_3_LABELING,input_folders,subcollections)) {
         //an error occured
         return 1;
     }

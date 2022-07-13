@@ -9,50 +9,32 @@
 
 #define SET_CONTAINS(set,value) ((set).find(value) != (set).end())
 
-// for the constructor of OutputCollection
-#define NOTIFY          true
-#define DO_NOT_NOTIFY   false
+#define ALL_DEPTH_FOLDERS   -1  //accept all kinds of subfolders in the working data folder
+//depth 0 is WORKING_DATA_FOLDER
+#define DEPTH_1_CAD         1   //accept only CAD input folders
+#define DEPTH_2_TETRA_MESH  2   //accept only tetra mesh input folders
+#define DEPTH_3_LABELING    3   //accept only labeling input folders
+#define DEPTH_4_HEX_MESH    4   //accept only hex mesh input folders
 
-//from https://stackoverflow.com/a/60532070
-std::filesystem::path normalized_trimed(const std::filesystem::path& p)
-{
-    auto r = std::filesystem::weakly_canonical(p).lexically_normal();
-    if (r.has_filename()) return r;
-    return r.parent_path();
-}
-bool is_subpath_of(const std::filesystem::path& base, const std::filesystem::path& sub)
-{
-    auto b = normalized_trimed(base);
-    auto s = normalized_trimed(sub).parent_path();
-    auto m = std::mismatch(b.begin(), b.end(), 
-                           s.begin(), s.end());
-    return m.first == b.end();
-}
+// #define DEBUG_EXPAND_COLLECTION
 
-//count the number of folders +1 between a file/folder and the root
-int get_depth(std::filesystem::path p) {
-    if(p == p.parent_path()) {
-        //we reached the root path
-        return 0;
-    }
-    else if (p.filename()=="")
-    {
-        //even though the parent path of /var/tmp/ is /var/tmp, consider they have the same depth
-        return get_depth(p.parent_path());
-    }
-    else {
-        return get_depth(p.parent_path())+1;
-    }
-}
+// INPUTS
+//   'collection' is the path to a .txt collection file (case multiple entries), or to a folder (case unique entry)
+//   'working_data_folder' is the path to the working data folder
+//   'requested_depth' is the depth (relative to 'working_data_folder') requested by the application for its inputs (ex: naive_labeling -> depth of 2). -1 = all depths accepted
+// OUTPUTS
+//   'entries' will list all the folders that 'collection' contains
+//   returne value : 1 if an error occured, else 0
+// INTERNALS (for recursion)
+//   'subcollections' ensure there is no cyclic inclusion
+bool expand_collection(const std::filesystem::path& collection_, const std::filesystem::path& working_data_folder, int requested_depth, std::set<std::filesystem::path>& entries, std::set<std::filesystem::path>& subcollections) {
 
-//'collection' is the path to a .txt collection file (case multiple entries), or to a folder (case unique entry)
-//'entries' will list all the folders that 'collection' contains
-//'subcollections' ensure there is no cyclic inclusion
-//'depth' ensure all the folders have the same depth (distance to root)
-//return 1 if an error occured
-bool expand_collection(const std::filesystem::path& collection, const std::filesystem::path& working_data_folder, std::set<std::filesystem::path>& entries, std::set<std::filesystem::path>& subcollections, int depth=-1) {
+    auto collection = normalized_trimed(collection_);
+    //working_data_folder must be normalized & trimed before
 
-    if(!is_subpath_of(working_data_folder,collection)) {
+    int depth = get_depth_relative(working_data_folder,collection);
+
+    if(depth==-1) {
         std::cerr << "Error : " << collection.string() << " is not a subfolder of " << working_data_folder.string() << "," << std::endl;
         std::cerr << "the working data folder defined in path.json" << std::endl;
         return 1;
@@ -67,7 +49,17 @@ bool expand_collection(const std::filesystem::path& collection, const std::files
         //when expand_collection() is called recursively, 'collection' is ensured to be a .txt file
         //but the top level call of expand_collection() could recieve a folder,
         //which means the user only chose one entry
-        entries.emplace(normalized_trimed(collection));
+        if( (requested_depth!=ALL_DEPTH_FOLDERS) && (depth != requested_depth) ) {
+            std::cerr << "Error : the depth (" << depth << ") of " << collection.string() << " is invalid." << std::endl;
+            std::cerr << "This application requires input folders of depth " << requested_depth << " relative to " << working_data_folder.string() << "." << std::endl;
+            return 1;
+        }
+        else {
+#ifdef DEBUG_EXPAND_COLLECTION
+            std::cout << "Found " << collection.string() << ", relative depth " << depth << std::endl;
+#endif
+            entries.emplace(normalized_trimed(collection));
+        }
     }
     else if(collection.extension()!=".txt") {
         std::cerr << "Error : " << collection.string() << " is neither a .txt file nor a folder" << std::endl;
@@ -96,14 +88,15 @@ bool expand_collection(const std::filesystem::path& collection, const std::files
 
         if(std::filesystem::is_directory(new_entry)) {
             //check if this new entry is of same depth as the others
-            new_entry_depth = get_depth(new_entry);
-            if(depth == -1) { //if depth is undefined (case of the first entry found)
-                depth = new_entry_depth;//store the depth ("distance" to root)
-            }
-            else if(new_entry_depth != depth) {//if the depth of this entry is different
-                std::cerr << "Error : the depth of " << line << " (in " << collection.string() << ") is different from the previous entries" << std::endl;
+            new_entry_depth = get_depth_relative(working_data_folder,new_entry);
+            if( (requested_depth!=ALL_DEPTH_FOLDERS) && (new_entry_depth != requested_depth) ) {//if the depth of this entry is invalid
+                std::cerr << "Error : the depth (" << new_entry_depth << ") of " << line << " (in " << collection.string() << ") is invalid." << std::endl;
+                std::cerr << "This application requires input folders of depth " << requested_depth << " relative to " << working_data_folder.string() << "." << std::endl;
                 return 1;
             }
+#ifdef DEBUG_EXPAND_COLLECTION
+            std::cout << "Found " << new_entry.string() << ", relative depth " << new_entry_depth << std::endl;
+#endif
             entries.emplace(new_entry);
         }
         else if(std::filesystem::is_regular_file(new_entry)) {
@@ -115,7 +108,7 @@ bool expand_collection(const std::filesystem::path& collection, const std::files
                     continue;//jump to next line
                 }
                 subcollections.emplace(collection);
-                if(expand_collection(new_entry,working_data_folder,entries,subcollections,depth)) {
+                if(expand_collection(new_entry,working_data_folder,requested_depth,entries,subcollections)) {
                     return 1;
                 }
                 //else the recursive call of expand_collection() didn't encountered any issue -> continue reading

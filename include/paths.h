@@ -10,6 +10,60 @@
 
 #include "parameters.h"
 
+// ~~~~~~~~~~ from https://stackoverflow.com/a/60532070 ~~~~~~~~~~~~~~~~~
+
+std::filesystem::path normalized_trimed(const std::filesystem::path& p)
+{
+    auto r = std::filesystem::weakly_canonical(p).lexically_normal();
+    if (r.has_filename()) return r;
+    return r.parent_path();
+}
+
+bool is_subpath_of(const std::filesystem::path& base, const std::filesystem::path& sub)
+{
+    auto b = normalized_trimed(base);
+    auto s = normalized_trimed(sub).parent_path();
+    auto m = std::mismatch(b.begin(), b.end(), 
+                           s.begin(), s.end());
+    bool result = (m.first == b.end());
+    return result;
+}
+
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+//count the number of folders +1 between a file/folder and the root
+int get_depth(std::filesystem::path p) {
+    p = normalized_trimed(p);
+    if(p == p.parent_path()) {
+        //we reached the root path
+        return 0;
+    }
+    else {
+        return get_depth(p.parent_path())+1;
+    }
+}
+
+//warning : base & sub must be normalized and trimed
+int get_depth_relative(std::filesystem::path base, std::filesystem::path sub) {
+    
+    if(sub == base) {
+        return 0;
+    }
+    else if(sub == sub.parent_path()) { //if sub is the root
+        return -1;//sub is not relative to base
+    }
+    else {
+        int sub_depth = get_depth_relative(base,sub.parent_path());//get relative depth of parent path
+        if(sub_depth == -1) {
+            return -1;//propagate -1 return code
+        }
+        else {
+            return sub_depth+1;//relative depth is one more than the one of the parent path
+        }
+    }
+}
+
 std::filesystem::path to_canonical_path(std::string path_as_str) {
     //case of a path relative to the home folder
     if(path_as_str.size()>=1 && path_as_str[0]=='~') {
@@ -21,7 +75,7 @@ std::filesystem::path to_canonical_path(std::string path_as_str) {
         path_as_str = "../" + path_as_str;//from the build folder, paths.json is one level higher
     }
     //else its an absolute path, no modification needed
-    return std::filesystem::weakly_canonical(path_as_str);//do not check if the path exist
+    return normalized_trimed(path_as_str);
 };
 
 //if 'entry_name' is an entry of 'json' and is not empty, add it to 'string2path'

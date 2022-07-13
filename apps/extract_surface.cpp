@@ -30,7 +30,7 @@ int main(int argc, char *argv[]) {
     path_list.require(GENOMESH);
 
     std::set<std::filesystem::path> input_folders, subcollections;
-    if(expand_collection(result["input"],path_list[WORKING_DATA_FOLDER],input_folders,subcollections)) {
+    if(expand_collection(normalized_trimed(result["input"]),path_list[WORKING_DATA_FOLDER],DEPTH_2_TETRA_MESH,input_folders,subcollections)) {
         //an error occured
         return 1;
     }
