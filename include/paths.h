@@ -6,6 +6,7 @@
 #include <fstream>
 #include <string>
 #include <map>
+#include <initializer_list>
 #include <nlohmann/json.hpp>
 
 #include "parameters.h"
@@ -142,3 +143,31 @@ private:
     nlohmann::json _j;
     std::map<std::string,std::filesystem::path> _string2path;
 };
+
+int existing_files_among(std::initializer_list<std::filesystem::path> file_list, const std::filesystem::path& working_data_folder, bool verbose=false) {
+    int existing_files_counter = 0;
+    for(auto* file = file_list.begin(); file != file_list.end(); ++file) {
+        if(std::filesystem::exists(*file)) {
+            existing_files_counter++;
+            if(verbose) {
+                if(existing_files_counter==1) { std::cout << "Warning" << std::endl; }//case 1st printing
+                std::cout << "\t" << std::filesystem::relative(*file,working_data_folder).string() << " already exists" << std::endl;
+            }
+        }
+    }
+    return existing_files_counter;
+}
+
+int missing_files_among(std::initializer_list<std::filesystem::path> file_list, const std::filesystem::path& working_data_folder, bool verbose=false) {
+    int missing_files_counter = 0;
+    for(auto* file = file_list.begin(); file != file_list.end(); ++file) {
+        if(!std::filesystem::exists(*file)) {
+            missing_files_counter++;
+            if(verbose) {
+                if(missing_files_counter==1) { std::cout << "Warning" << std::endl; }//case 1st printing
+                std::cout << "\t" << std::filesystem::relative(*file,working_data_folder).string() << " is missing" << std::endl;
+            }
+        }
+    }
+    return missing_files_counter;
+}

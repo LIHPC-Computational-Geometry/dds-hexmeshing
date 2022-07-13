@@ -8,6 +8,7 @@
 #include "parameters.h"
 #include "date_time.h"
 #include "cxxopts_ParseResult_custom.h"
+#include "user_confirmation.h"
 
 int main(int argc, char *argv[]) {
 
@@ -37,9 +38,39 @@ int main(int argc, char *argv[]) {
     std::cout << "Found " << input_folders.size() << " input folder(s)" << std::endl;
 
     std::string cmd;
+    int returncode = 0;
+    special_case_policy overwrite_policy = ask;
     for(auto& input_folder : input_folders) {
         std::cout << std::filesystem::relative(input_folder,path_list[WORKING_DATA_FOLDER]).string() << "..." << std::flush;
-        //TODO check if the output files already exist
+
+        //check if all the input files exist
+        if(missing_files_among({
+            input_folder / TETRA_MESH_FILE
+        },path_list[WORKING_DATA_FOLDER])) {
+            returncode = 1;//do not open Graphite in case of single input
+            std::cout << "Missing files" << std::endl;
+            continue;
+        }
+        
+        //check if the output files already exist. if so, ask for confirmation
+        bool additional_printing = (overwrite_policy==ask);
+        if(existing_files_among({
+            input_folder / SURFACE_OBJ_FILE,
+            input_folder / TRIANGLE_TO_TETRA_FILE
+        },path_list[WORKING_DATA_FOLDER],additional_printing)) {
+            bool user_wants_to_overwrite = ask_for_confirmation("\t-> Are you sure you want to overwrite these files ?",overwrite_policy);
+            if(additional_printing) std::cout << std::filesystem::relative(input_folder,path_list[WORKING_DATA_FOLDER]).string() << "..." << std::flush;//re-print the input name
+            if(user_wants_to_overwrite==false) {
+                returncode = 1;//do not open Graphite in case of single input
+                std::cout << "Canceled" << std::endl;
+                continue;
+            }
+            else {
+                //because tris_to_tets has not the same behaviour if SURFACE_OBJ_FILE exists,
+                //make sure it does not exists
+                std::filesystem::remove(input_folder / SURFACE_OBJ_FILE);
+            }
+        }
 
         std::ofstream txt_logs(input_folder / STD_PRINTINGS_FILE,std::ios_base::app);//append mode
         if(!txt_logs.is_open()) {
@@ -61,7 +92,8 @@ int main(int argc, char *argv[]) {
               (input_folder / SURFACE_OBJ_FILE).string() + " " +
               (input_folder / TRIANGLE_TO_TETRA_FILE).string() +
               " &>> " + (input_folder / STD_PRINTINGS_FILE).string();//redirect stdout and stderr to file (append to the logs of step2mesh)
-        std::cout << (system(cmd.c_str()) ? "Error" : "Done") << std::endl;
+        returncode = system(cmd.c_str());
+        std::cout << ( (returncode!=0) ? "Error" : "Done") << std::endl;
     }
 
     // TODO write a collections with failed cases
@@ -69,7 +101,7 @@ int main(int argc, char *argv[]) {
     //in case of a single input folder, open the surface mesh with Graphite
     //TODO modif (or replace) Trace to put the lua script in the output folder, not in build
 #ifdef OPEN_GRAPHITE_AT_THE_END
-    if(input_folders.size()==1) {
+    if(input_folders.size()==1 && returncode==0) { //TODO if returncode!=0, open the logs
         path_list.require(GRAPHITE,false);
         Trace::initialize(path_list[GRAPHITE]);
         UM::Triangles m;

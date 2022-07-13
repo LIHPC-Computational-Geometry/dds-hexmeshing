@@ -11,6 +11,7 @@
 #include "graphite_script.h"
 #include "mesh_stats.h"
 #include "info_file.h"
+#include "user_confirmation.h"
 
 int main(int argc, char *argv[]) {
 
@@ -64,9 +65,38 @@ int main(int argc, char *argv[]) {
 
     std::string cmd;
     int returncode = 0;
+    special_case_policy overwrite_policy = ask;
     for(auto& input_folder : input_folders) {
         std::cout << std::filesystem::relative(input_folder,path_list[WORKING_DATA_FOLDER]).string() << "..." << std::flush;
-        //TODO check if the output folder already exist. if so, ask for confirmation
+        
+        //check if all the input files exist
+        if(missing_files_among({
+            input_folder.parent_path() / TETRA_MESH_FILE,
+            input_folder / PER_TETRA_FACES_LABELING_FILE
+        },path_list[WORKING_DATA_FOLDER])) {
+            returncode = 1;//do not open Graphite in case of single input
+            std::cout << "Missing files" << std::endl;
+            output_collections.error_cases->new_comments("missing input files");
+            output_collections.error_cases->new_entry(input_folder / output_folder_name);
+            continue;
+        }
+        
+        //check if the output files already exist. if so, ask for confirmation
+        bool additional_printing = (overwrite_policy==ask);
+        if(existing_files_among({
+            input_folder / output_folder_name / HEX_MESH_FILE,
+            input_folder / output_folder_name / INFO_JSON_FILE,
+            input_folder / output_folder_name / HEX_MESH_WITH_SJ_GEOGRAM_FILE
+            //other files (logs.txt, lua script) are not important
+        },path_list[WORKING_DATA_FOLDER],additional_printing)) {
+            bool user_wants_to_overwrite = ask_for_confirmation("\t-> Are you sure you want to overwrite these files ?",overwrite_policy);
+            if(additional_printing) std::cout << std::filesystem::relative(input_folder,path_list[WORKING_DATA_FOLDER]).string() << "..." << std::flush;//re-print the input name
+            if(user_wants_to_overwrite==false) {
+                returncode = 1;//do not open Graphite in case of single input
+                std::cout << "Canceled" << std::endl;
+                continue;
+            }
+        }
 
         std::filesystem::create_directory(input_folder / output_folder_name);//create the output folder
 
