@@ -6,9 +6,6 @@ from os import listdir, mkdir
 from os.path import isfile, join, expandvars
 import sys
 
-max_size_coarse = 2.5
-max_size_fine = 0.75
-
 def print_help():
     print("Wrong usage, it should be:")
     print("\t python step2mesh_SALOME.py input.step output.mesh algorithm max_size")
@@ -16,7 +13,7 @@ def print_help():
     print("\t - input.step is the input geometry file (step format),")
     print("\t - output.mesh is the output generated tetrahedral mesh (Medit format),")
     print("\t - algorithm is 'NETGEN' or 'MeshGems' (MeshGems requires a licence),")
-    print("\t - max_size is 'coarse' (={}), 'fine' (={}) or a custom value".format(max_size_coarse,max_size_fine))
+    print("\t - max_size is the maximum mesh size")
 
 # check arguments
 
@@ -38,16 +35,13 @@ if(algorithm not in {"NETGEN","MeshGems"}):
     exit(1)
 
 max_size = sys.argv[4]
-if(max_size not in {"coarse","fine"}):
-    #try to convert to float
-    try:
-        max_size = float(max_size)
-    except ValueError:
-        print("Error : Invalid max_size '" + max_size + "'\n")
-        print_help()
-        exit(1)
-else:
-    max_size = max_size_coarse if (max_size=="coarse") else max_size_fine
+#try to convert to float
+try:
+    max_size = float(max_size)
+except ValueError:
+    print("Error : Invalid max_size '" + max_size + "'\n")
+    print_help()
+    exit(1)
 
 import salome
 

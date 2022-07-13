@@ -31,7 +31,7 @@ int main(int argc, char *argv[]) {
             ("h,help", "Print help")
             ("i,input", "Path to the input collection/folder", cxxopts::value<std::string>(),"PATH")
             ("n,no-output-collections", "The program will not write output collections for success/error cases")
-            ("o,output", "Name of the output folder(s) to create. \%a is replaced by 'algorithm', \%s by 'size' and \%d by the date and time", cxxopts::value<std::string>()->default_value("\%a_\%s"),"NAME")
+            ("o,output", "Name of the output folder(s) to create. \%s is replaced by 'size' and \%d by the date and time", cxxopts::value<std::string>()->default_value("GMSH_\%s"),"NAME")
             ("s,size", "Size factor in ]0,1]", cxxopts::value<std::string>(),"VALUE");
     options.parse_positional({"input", "size", "output"});
 

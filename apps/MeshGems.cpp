@@ -5,6 +5,7 @@
 #include <cstdlib>
 #include <ultimaille/all.h>
 #include <filesystem>
+#include <sstream>
 
 #include "paths.h"
 #include "collections.h"
@@ -32,7 +33,7 @@ int main(int argc, char *argv[]) {
             ("i,input", "Path to the input collection/folder", cxxopts::value<std::string>(),"PATH")
             ("n,no-output-collections", "The program will not write output collections for success/error cases")
             ("o,output", "Name of the output folder(s) to create. \%s is replaced by 'size' and \%d by the date and time", cxxopts::value<std::string>()->default_value("MeshGems_\%s"),"NAME")
-            ("s,size", "The max mesh size", cxxopts::value<std::string>(),"SIZE");
+            ("s,size", "The max mesh size", cxxopts::value<std::string>(),"SIZE");//TODO print possible keywords
     options.parse_positional({"input", "size", "output"});
 
     //parse results
@@ -42,6 +43,25 @@ int main(int argc, char *argv[]) {
     std::filesystem::path input_as_path = normalized_trimed(result["input"]);
     std::string output_folder_name = result["output"];
 
+    float size = 0.75f;
+    try {
+        //replace the keyword by its value
+        size = MAX_MESH_SIZE_KEYWORDS.at(result["size"]);
+    }
+    catch (std::out_of_range) { //if no keyword was used
+        try {
+            //convert to float
+            size = std::stof(result["size"]);
+        }
+        catch (std::invalid_argument) { //if the convertion failed
+            std::cerr << "Error : argument 'size' must be a floating-point number or one of those keywords :" << std::endl;
+            PRINT_MAX_MESH_SIZE_KEYWORDS(std::cerr)
+            return 1;
+        }
+    }
+    std::stringstream size_as_sstring;
+    size_as_sstring << size;//a way to avoid trailing zeros
+
     PathList path_list;//read paths.json
     path_list.require(SALOME);
     path_list.require(WORKING_DATA_FOLDER);
@@ -50,7 +70,7 @@ int main(int argc, char *argv[]) {
     DateTimeStr global_beginning;//get current time
 
     //format the output folder name
-    output_folder_name = std::regex_replace(output_folder_name, std::regex("\%s"), result["size"]);
+    output_folder_name = std::regex_replace(output_folder_name, std::regex("\%s"), size_as_sstring.str());
     output_folder_name = std::regex_replace(output_folder_name, std::regex("\%d"), global_beginning.filename_string());
 
     std::set<std::filesystem::path> input_folders, subcollections;
@@ -126,7 +146,7 @@ int main(int argc, char *argv[]) {
               (input_folder / STEP_FILE).string() + " " +
               (input_folder / output_folder_name / TETRA_MESH_FILE).string() +
               " MeshGems " +
-              result["size"] +
+              size_as_sstring.str() +
               " &>> " + (input_folder / output_folder_name / STD_PRINTINGS_FILE).string();//redirect stdout and stderr to file (append to the previous logs)
         returncode = system(cmd.c_str());
 

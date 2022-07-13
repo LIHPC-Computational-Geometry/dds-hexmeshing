@@ -2,6 +2,10 @@
 
 #pragma once
 
+#include <iostream>
+#include <map>
+#include <string>
+
 //expected entries in paths.json
 #define WORKING_DATA_FOLDER "working_data_folder"
 #define SALOME              "salome"
@@ -30,3 +34,14 @@
 #define HEX_MESH_FILE                       "hex.mesh"
 #define HEX_MESH_WITH_SJ_GEOGRAM_FILE       "hex_mesh_with_SJ.geogram"
 #define HEX_MESH_WITH_SJ_LUA_SCRIPT         "hex_mesh_with_SJ.lua"
+
+//keywords for NETGEN/MeshGems max mesh size
+const std::map<std::string,float> MAX_MESH_SIZE_KEYWORDS = {
+    {"coarse",  2.5f    },
+    {"fine",    0.75f   }
+};
+
+#define PRINT_MAX_MESH_SIZE_KEYWORDS(ostream) \
+    for(auto _map_iterator = MAX_MESH_SIZE_KEYWORDS.begin(); _map_iterator != MAX_MESH_SIZE_KEYWORDS.end(); _map_iterator++) { \
+        (ostream) << "\"" << _map_iterator->first << "\" -> " << _map_iterator->second << std::endl; }
+
