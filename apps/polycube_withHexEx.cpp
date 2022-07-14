@@ -130,15 +130,15 @@ int main(int argc, char *argv[]) {
         std::cout << "Done" << std::endl;
         output_collections.success_cases->new_entry(input_folder / output_folder_name);
 
+        //compute mesh stats
+        HexMeshStats mesh_stats(input_folder / output_folder_name / HEX_MESH_FILE);
+
         // write info.json
         HexMeshInfo info(input_folder / output_folder_name / INFO_JSON_FILE);
         info.generated_by("polycube_withHexEx");
         info.comments(result["comments"]);
         info.date(current_input_beginning.pretty_string());
-        HexMeshStats mesh_stats(input_folder / output_folder_name / HEX_MESH_FILE);
-        info.vertices(mesh_stats.get_nb_vertices());
-        info.hexahedra(mesh_stats.get_nb_hexahedra());
-        info.min_SJ(mesh_stats.get_min_SJ());
+        info.fill_from(mesh_stats);
         info.scale_of("polycube_withHexEx",std::stof(result["scale"]));
 
         //write .geogram containing hex mesh + per hex Scaled Jacobian

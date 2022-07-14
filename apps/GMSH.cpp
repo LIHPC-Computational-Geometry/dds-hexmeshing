@@ -149,17 +149,16 @@ int main(int argc, char *argv[]) {
             std::cout << "Done" << std::endl;
             output_collections.success_cases->new_entry(input_folder / output_folder_name);
 
+            //compute mesh stats
+            TetraMeshStats mesh_stats(input_folder / output_folder_name / TETRA_MESH_FILE,
+                                      input_folder / output_folder_name / SURFACE_OBJ_FILE);
+
             // write info.json
             TetraMeshInfo info(input_folder / output_folder_name / INFO_JSON_FILE);
             info.generated_by("GMSH");
             info.comments(result["comments"]);
             info.date(current_input_beginning.pretty_string());
-            TetraMeshStats mesh_stats(input_folder / output_folder_name / TETRA_MESH_FILE,
-                                      input_folder / output_folder_name / SURFACE_OBJ_FILE);
-            info.vertices(mesh_stats.get_nb_vertices());
-            info.tetrahedra(mesh_stats.get_nb_tetrahedra());
-            info.surface_vertices(mesh_stats.get_nb_surface_vertices());
-            info.surface_triangles(mesh_stats.get_nb_surface_triangles());
+            info.fill_from(mesh_stats);
             info.size_factor_of("GMSH",std::stof(result["size"]));//no need to check if an exception is raised, step2mesh_GMSH would fail before
 
             //then create a Lua script for Graphite

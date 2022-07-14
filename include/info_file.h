@@ -7,6 +7,7 @@
 #include <string>
 
 #include "paths.h"
+#include "mesh_stats.h"
 
 class InfoFile {
 
@@ -100,7 +101,12 @@ public:
         add_entry(algorithm,"size_factor",value);
     }
 
-    //TODO fill_from(TetraMeshStats)
+    void fill_from(const TetraMeshStats& mesh_stats) {
+        vertices(mesh_stats.get_nb_vertices());
+        tetrahedra(mesh_stats.get_nb_tetrahedra());
+        surface_vertices(mesh_stats.get_nb_surface_vertices());
+        surface_triangles(mesh_stats.get_nb_surface_triangles());
+    }
 
 };
 
@@ -237,6 +243,10 @@ public:
         add_entry(algorithm,"scale",value);
     }
 
-    //TODO fill_from(HexMeshStats)
+    void fill_from(const HexMeshStats& mesh_stats) {
+        vertices(mesh_stats.get_nb_vertices());
+        hexahedra(mesh_stats.get_nb_hexahedra());
+        min_SJ(mesh_stats.get_min_SJ());
+    }
 
 };
