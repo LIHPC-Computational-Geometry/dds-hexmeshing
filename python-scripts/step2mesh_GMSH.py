@@ -62,9 +62,15 @@ def check_param():
     #===========================================================================================
     mesh_size = 0.05
     if(len(sys.argv)==4):
-        mesh_size = float(sys.argv[3])
-        if(mesh_size<=0 or mesh_size>1):
-            print("ERROR: the mesh size must be in ]0,1]")
+        try:
+            mesh_size = float(sys.argv[3])
+            if(mesh_size<=0 or mesh_size>1):
+                print("ERROR: Invalid value '{}'".format(sys.argv[3]))
+                print("       The mesh size must be in ]0,1]")
+                exit(1)
+        except ValueError: #if sys.argv[3] is not a FP number
+            print("ERROR: Invalid value '{}'".format(sys.argv[3]))
+            print("       The mesh size must be in ]0,1]")
             exit(1)
             
     params = [step_file, mesh_file, mesh_size]

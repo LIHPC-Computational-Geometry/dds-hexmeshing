@@ -90,6 +90,16 @@ public:
         add_entry("surface_triangles",value);
     }
 
+    //parameter of NETGEN & MeshGems
+    void max_mesh_size_of(std::string algorithm, float value) {
+        add_entry(algorithm,"max_mesh_size",value);
+    }
+
+    //parameter of GMSH
+    void size_factor_of(std::string algorithm, float value) {
+        add_entry(algorithm,"size_factor",value);
+    }
+
     //TODO fill_from(TetraMeshStats)
 
 };
@@ -138,6 +148,16 @@ public:
 
     void relaxed_invalid_corners_score(int value) {
         add_entry("relaxed_invalid_corners_score",value);
+    }
+
+    //parameter of graph-cut
+    void compactness_of(std::string algorithm, int value) {
+        add_entry(algorithm,"compactness",value);
+    }
+
+    //parameter of graph-cut
+    void fidelity_of(std::string algorithm, int value) {
+        add_entry(algorithm,"fidelity",value);
     }
 
     //return 1 = error, return 0 = worked
@@ -210,6 +230,11 @@ public:
 
     void min_SJ(double value) {
         add_entry("min_SJ",value);
+    }
+
+    //parameter of polycube_withHexEx
+    void scale_of(std::string algorithm, float value) {
+        add_entry(algorithm,"scale",value);
     }
 
     //TODO fill_from(HexMeshStats)
