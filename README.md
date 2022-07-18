@@ -6,8 +6,13 @@ The goal of this project is to unify multiple polycube-based hex-mesh generation
 
 Example:
 ```bash
+# tetrahedralization of the B0 CAD model
 ./MeshGems ~/SharedData/B0 0.75 # max mesh size of 0.75
+
+# labeling optimization with a Graph-cut algorithm
 ./graphcut_labeling ~/SharedData/B0/MeshGems_0.75 # default is compactness=1, fidelity=3
+
+# hexahedral mesh extraction with libHexEx
 ./polycube_withHexEx ~/SharedData/B0/MeshGems_0.75/graphcut_1_3 3.0 # scale factor of 3
 ```
 
@@ -30,7 +35,7 @@ Example:
 - [Genomesh](https://github.com/LIHPC-Computational-Geometry/genomesh) (clone & build)
 - [Evocube tweaks](https://github.com/LIHPC-Computational-Geometry/evocube_tweaks) (clone & build)
 - for [`GMSH`](#gmsh), the [`gmsh`](https://gmsh.info/) and the [`meshio`](https://github.com/nschloe/meshio) python packages
-- for [NETGEN](#netgen) or [MeshGems](#meshgems), the [SALOME plateform](https://www.salome-platform.org/?page_id=145). Note that MeshGems requires a licence.
+- for [`NETGEN`](#netgen) or [`MeshGems`](#meshgems), the [SALOME plateform](https://www.salome-platform.org/?page_id=145). Note that MeshGems requires a licence from [Distene](https://www.spatial.com/products/3d-precise-mesh) (Dassault Systèmes)
 - [Graphite](https://github.com/BrunoLevy/GraphiteThree), for the visualization
 
 The [cxxopts](https://github.com/jarro2783/cxxopts), [json](https://github.com/nlohmann/json) and [ultimaille](https://github.com/ssloy/ultimaille) dependencies are included as submodules.
@@ -214,7 +219,7 @@ It also open expand nested collections, to list all the folders this collection 
 ./custom_command input_collection.txt command_to_execute [options]
 ```
 
-For exemple:
+For example:
 
 ```bash
 # for each folder in the collection NETGEN_errors.txt,
@@ -274,10 +279,12 @@ The same hexahedral mesh as `hex.mesh`, with the Scaled Jacobian as per-cell att
 
 A lua script for Graphite that loads `hex_mesh_with_SJ.geogram` with the right display settings.
 
+With the inverse parula colormap, a cell with a Scaled Jacobian of 1 is blue, and one with a Scaled Jacobian of 0 is yellow.
+
 ## `info.json`
 
 A JSON file with information about:
-- which algorithm generated this folder, its parameters and some comments (if comments where given)
+- which algorithm generated this folder, its parameters and some comments (if comments were given)
 - the date & time of execution
 - Statistics of the output data
   * Number of vertices/cells for a tetrahedral mesh
@@ -291,6 +298,17 @@ The same triangular mesh as `surface.obj`, with the `surface_labeling.txt` as pe
 ## `labeled_surface.lua`
 
 A lua script for Graphite that loads `labeled_surface.geogram` with the right display settings.
+
+With the french colormap, the labels colors are as folows:
+
+label|direction|color
+:---:|:-------:|:---:
+0 | +X | deep blue
+1 | -X | light blue
+2 | +Y | light grey
+3 | -Y | white
+4 | +Z | ligth red
+5 | -Z | red
 
 ## `labeling_stats.txt`
 
@@ -319,7 +337,7 @@ label|direction
 
 ## `surface_map.txt`
 
-A text file with 2 more lines than the number of faces in `surface.obj`, that maps the surface mesh to the volumetric `tetra.mesh`. The two first lines store the number of faces ($\#triangles$) and the number of tetrahedra ($\#tetrahedra$). The $\#triangles$ remaining lines associate each triangle to the corresponding cell's facet of tetrahedron. The ordering of the facets is the one of [Ultimaille](https://github.com/ssloy/ultimaille) : 
+A text file with 2 more lines than the number of faces in `surface.obj` ($ nb\_triangles + 2 $), that maps the surface mesh to the volumetric `tetra.mesh`. The two first lines store the number of faces ($ nb\_triangles $) and the number of tetrahedra ($ nb\_tetrahedra $). The $ nb\_triangles $ remaining lines associate each triangle to the corresponding cell's facet of tetrahedron. The ordering of the facets is the one of [Ultimaille](https://github.com/ssloy/ultimaille) : 
 
 facet number|tetrahedron vertices
 :----------:|:------------------:
@@ -328,7 +346,8 @@ facet number|tetrahedron vertices
 2 | {0,1,3}
 3 | {0,2,1}
 
-For exemple:
+For example:
+
 ```txt
 11486 triangles
 51212 tetrahedra
@@ -337,7 +356,8 @@ For exemple:
 35512
 ...
 ```
-has $ 11486 + 2 $ lines, and triangle 0 (= $ 3^{rd} $ line) is the $ 3^{rd} $ facet of the $ 32985^{th} $ tetrahedron, because $ 186621 = 3 \times \#tetrahedra + 32985 $.
+
+has $ 11486 + 2 $ lines, and triangle $ 0 $ (= $ 3^{rd} $ line) is the $ 3^{rd} $ facet of the $ 32985^{th} $ tetrahedron, because $ 186621 = 3 \times nb\_tetrahedra + 32985 $.
 
 ## `tetra.mesh`
 
@@ -349,7 +369,7 @@ A lua script for Graphite that loads `tetra.mesh` and `surface.obj` with the rig
 
 ## `tetra_labeling.txt`
 
-Same labeling as `surface_labeling.txt` but using per-tetrahedron-facet labels instead of per-surface-triangle labels. Therefore it contains $ \#tetrahedra \times 4 $ lines. See `surface_map.txt` for the facets ordering.
+Same labeling as `surface_labeling.txt` but using per-tetrahedron-facet labels instead of per-surface-triangle labels. Therefore it contains $ nb\_tetrahedra \times 4 $ lines. See `surface_map.txt` for the facets ordering.
 
 label|direction
 :---:|:-------:
