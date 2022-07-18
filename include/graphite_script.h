@@ -26,15 +26,15 @@ public:
         //create a bash script that open the Lua script with Graphite:
         //  
         //  #!/bin/bash
-        //  cd folder && graphite script.lua
+        //  cd $(dirname $0) && $GRAPHITE *.lua
         //  
-        path_list.require(GRAPHITE,false);
+        path_list.require(GRAPHITE,false);//TODO instead, write bash script only if GRAPHITE is provided
         std::filesystem::path bash_script_path = path.parent_path() / GRAPHITE_BASH_SCRIPT;
         std::ofstream _ofs_bash;
         _ofs_bash.open(bash_script_path,std::ios_base::out);//replace if existing
         if(_ofs_bash.is_open()) {
             _ofs_bash << "#!/bin/bash" << std::endl;
-            _ofs_bash << "cd " << _lua_script_path.parent_path().string() << " && " << path_list[GRAPHITE] << " " << _lua_script_path.filename().string() << std::endl;
+            _ofs_bash << "cd $(dirname $0) && $GRAPHITE *.lua" << std::endl;
             _ofs_bash.close();
             std::filesystem::permissions(bash_script_path,std::filesystem::perms::owner_exec,std::filesystem::perm_options::add);//add exec permission
         }
@@ -47,6 +47,10 @@ public:
 
     void add_comments(std::string comments) {
         _ofs_lua << "-- " << comments << std::endl;
+    }
+
+    void hide_text_editor() {
+        _ofs_lua << "text_editor_gui.visible=false" << std::endl;//hide 'Programs' window
     }
 
     void load_object(std::string object_path) {
