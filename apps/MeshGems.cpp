@@ -22,7 +22,7 @@ int main(int argc, char *argv[]) {
 
     //TODO add an option to skip the surface mesh extraction
 
-    cxxopts::Options options(argv[0], "Tetrahedral meshing of a .step geometry file with MeshGems algorithms (MG-CADSurf & MG-Tetra");
+    cxxopts::Options options(argv[0], "Tetrahedral meshing of a .step geometry file with MeshGems algorithms (MG-CADSurf & MG-Tetra)");
     options
         .set_width(80)
         .positional_help("<input> <size> [output]")
