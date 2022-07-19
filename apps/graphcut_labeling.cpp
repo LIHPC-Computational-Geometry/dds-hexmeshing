@@ -17,7 +17,7 @@ int main(int argc, char *argv[]) {
     cxxopts::Options options(argv[0], "Compute a labeling with a graph-cut optimization algorithm");
     options
         .set_width(80)
-        .positional_help("<input> [output] [compactness] [fidelity]")
+        .positional_help("<input> [compactness] [fidelity] [output]")
         .show_positional_help()
         .add_options()
             ("c,comments", "Comments about the aim of this execution", cxxopts::value<std::string>()->default_value(""),"TEXT")
@@ -28,7 +28,7 @@ int main(int argc, char *argv[]) {
             ("n,no-output-collections", "The program will not write output collections for success/error cases")
             ("o,output", "Name of the output folder(s) to create. \%c is replaced by the compactness, \%f by the fidelity and \%d by the date and time", cxxopts::value<std::string>()->default_value("graphcut_\%c_\%f"),"NAME")
             ("v,version", "Print the version (date of last modification) of the underlying executables");
-    options.parse_positional({"input","output","compactness","fidelity"});
+    options.parse_positional({"input","compactness","fidelity","output"});
 
     PathList path_list;//read paths.json
     path_list.require(WORKING_DATA_FOLDER);
