@@ -26,20 +26,21 @@ int main(int argc, char *argv[]) {
             ("h,help", "Print help")
             ("i,input", "Path to the input collection", cxxopts::value<std::string>(),"PATH")
             ("n,no-output-collections", "The program will not write output collections for success/error cases")
-            ("o,output", "Name of the output folder(s) to create. \%c is replaced by the compactness, \%f by the fidelity and \%d by the date and time", cxxopts::value<std::string>()->default_value("graphcut_\%c_\%f"),"NAME");
+            ("o,output", "Name of the output folder(s) to create. \%c is replaced by the compactness, \%f by the fidelity and \%d by the date and time", cxxopts::value<std::string>()->default_value("graphcut_\%c_\%f"),"NAME")
+            ("v,version", "Print the version (date of last modification) of the underlying executables");
     options.parse_positional({"input","output","compactness","fidelity"});
 
+    PathList path_list;//read paths.json
+    path_list.require(WORKING_DATA_FOLDER);
+    path_list.require(GENOMESH);
+
     //parse results
-    cxxopts::ParseResult_custom result(options,argc, argv);
+    cxxopts::ParseResult_custom result(options,argc, argv, { path_list[GENOMESH] / "graphcut_labeling", path_list[GENOMESH] / "labeling_stats" });
     result.require({"input"});
     result.require_not_empty({"output","compactness","fidelity"});
     std::filesystem::path input_as_path = normalized_trimed(result["input"]);
     std::string output_folder_name = result["output"];
     bool write_output_collections = !result.is_specified("no-output-collections");
-
-    PathList path_list;//read paths.json
-    path_list.require(WORKING_DATA_FOLDER);
-    path_list.require(GENOMESH);
 
     std::set<std::filesystem::path> input_folders, subcollections;
     if(expand_collection(input_as_path,path_list[WORKING_DATA_FOLDER],DEPTH_2_TETRA_MESH,input_folders,subcollections)) {

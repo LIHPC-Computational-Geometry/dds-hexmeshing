@@ -19,16 +19,17 @@ int main(int argc, char *argv[]) {
         .show_positional_help()
         .add_options()
             ("h,help", "Print help")
-            ("i,input", "Path to the input collection", cxxopts::value<std::string>(),"PATH");
+            ("i,input", "Path to the input collection", cxxopts::value<std::string>(),"PATH")
+            ("v,version", "Print the version (date of last modification) of the underlying executable");
     options.parse_positional({"input"});
-
-    //parse results
-    cxxopts::ParseResult_custom result(options,argc, argv);
-    result.require({"input"});
 
     PathList path_list;//read paths.json
     path_list.require(WORKING_DATA_FOLDER);
     path_list.require(GENOMESH);
+
+    //parse results
+    cxxopts::ParseResult_custom result(options,argc, argv, {path_list[GENOMESH] / "tris_to_tets"});
+    result.require({"input"});
 
     std::set<std::filesystem::path> input_folders, subcollections;
     if(expand_collection(normalized_trimed(result["input"]),path_list[WORKING_DATA_FOLDER],DEPTH_2_TETRA_MESH,input_folders,subcollections)) {
@@ -101,9 +102,9 @@ int main(int argc, char *argv[]) {
     //in case of a single input folder, open the surface mesh with Graphite
     //TODO modif (or replace) Trace to put the lua script in the output folder, not in build
 #ifdef OPEN_GRAPHITE_AT_THE_END
-    if(input_folders.size()==1 && returncode==0) { //TODO if returncode!=0, open the logs
-        path_list.require(GRAPHITE,false);
-        Trace::initialize(path_list[GRAPHITE]);
+    std::string graphite_path = getenv("GRAPHITE");
+    if(input_folders.size()==1 && returncode==0 && !graphite_path.empty()) { //TODO if returncode!=0, open the logs
+        Trace::initialize(graphite_path);
         UM::Triangles m;
         UM::read_by_extension((*input_folders.begin() / SURFACE_OBJ_FILE).string(),m);
         Trace::drop_surface(m, "surface", {});

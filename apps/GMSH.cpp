@@ -32,19 +32,20 @@ int main(int argc, char *argv[]) {
             ("i,input", "Path to the input collection/folder", cxxopts::value<std::string>(),"PATH")
             ("n,no-output-collections", "The program will not write output collections for success/error cases")
             ("o,output", "Name of the output folder(s) to create. \%s is replaced by 'size' and \%d by the date and time", cxxopts::value<std::string>()->default_value("GMSH_\%s"),"NAME")
-            ("s,size", "Size factor in ]0,1]", cxxopts::value<std::string>(),"VALUE");
+            ("s,size", "Size factor in ]0,1]", cxxopts::value<std::string>(),"VALUE")
+            ("v,version", "Print the version (date of last modification) of the underlying executables");
     options.parse_positional({"input", "size", "output"});
-
-    //parse results
-    cxxopts::ParseResult_custom result(options,argc, argv);
-    result.require({"input", "size"});
-    result.require_not_empty({"output"});
-    std::filesystem::path input_as_path = normalized_trimed(result["input"]);
-    std::string output_folder_name = result["output"];
 
     PathList path_list;//read paths.json
     path_list.require(WORKING_DATA_FOLDER);
     path_list.require(GENOMESH);//to extract the surface after
+
+    //parse results
+    cxxopts::ParseResult_custom result(options,argc, argv, { "../python-scripts/step2mesh_GMSH.py", path_list[GENOMESH] / "tris_to_tets" });
+    result.require({"input", "size"});
+    result.require_not_empty({"output"});
+    std::filesystem::path input_as_path = normalized_trimed(result["input"]);
+    std::string output_folder_name = result["output"];
 
     DateTimeStr global_beginning;//get current time
 

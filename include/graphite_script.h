@@ -28,7 +28,7 @@ public:
         //  #!/bin/bash
         //  cd $(dirname $0) && $GRAPHITE *.lua
         //  
-        path_list.require(GRAPHITE,false);//TODO instead, write bash script only if GRAPHITE is provided
+        //TODO write bash script only if GRAPHITE env variable is defined
         std::filesystem::path bash_script_path = path.parent_path() / GRAPHITE_BASH_SCRIPT;
         std::ofstream _ofs_bash;
         _ofs_bash.open(bash_script_path,std::ios_base::out);//replace if existing

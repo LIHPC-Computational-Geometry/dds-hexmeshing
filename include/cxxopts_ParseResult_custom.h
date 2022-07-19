@@ -4,19 +4,37 @@
 #include <cxxopts.hpp>
 #include <initializer_list>
 #include <string>
+#include <filesystem>
+
+#include "date_time.h"
 
 namespace cxxopts {
 
 class ParseResult_custom {
 
 public:
-    ParseResult_custom(cxxopts::Options& options, int argc, char *argv[]) : _options(options) {
+    ParseResult_custom(cxxopts::Options& options, int argc, char *argv[], std::initializer_list<std::filesystem::path> executables = {}) : _options(options) {
         _result = options.parse(argc, argv);
 
         //manage help printing
         if(_result.count("help")) {
             std::cout << _options.help();
             exit(0);
+        }
+
+        //manage executables "version" printing
+        if(_result.count("version")) {
+            try {
+                for(auto* exec = executables.begin(); exec != executables.end(); ++exec) {
+                    std::cout << DateTimeStr(*exec).pretty_string() << " " << exec->filename().string() << std::endl;
+                    std::cout << "\t(in " << exec->parent_path().string() << ")" << std::endl;
+                }
+                exit(0);
+            }
+            catch (std::runtime_error e) {
+                std::cerr << e.what() << std::endl;
+                exit(1);
+            }
         }
     }
 

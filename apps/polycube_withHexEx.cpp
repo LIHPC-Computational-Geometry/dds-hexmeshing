@@ -26,22 +26,23 @@ int main(int argc, char *argv[]) {
             ("i,input", "Path to the input collection", cxxopts::value<std::string>(),"PATH")
             ("n,no-output-collections", "The program will not write output collections for success/error cases")
             ("o,output", "Name of the output folder(s) to create. \%s is replaced by the scale and \%d by the date and time", cxxopts::value<std::string>()->default_value("HexEx_\%s"),"NAME")
-            ("s,scale", "Scaling factor applied before libHexEx", cxxopts::value<std::string>()->default_value("1.0"),"VALUE");
+            ("s,scale", "Scaling factor applied before libHexEx", cxxopts::value<std::string>()->default_value("1.0"),"VALUE")
+            ("v,version", "Print the version (date of last modification) of the underlying executable");
     options.parse_positional({"input","output","scale"});
 
+    PathList path_list;//read paths.json
+    path_list.require(WORKING_DATA_FOLDER);
+    // 'polycube_withHexEx' is also in Genomesh, but the one in evocube has a more flexible CLI
+    // the code comes from https://github.com/fprotais/polycube_withHexEx
+    path_list.require(EVOCUBE_TWEAKS);
+
     //parse results
-    cxxopts::ParseResult_custom result(options,argc, argv);
+    cxxopts::ParseResult_custom result(options,argc, argv, { path_list[EVOCUBE_TWEAKS] / "polycube_withHexEx" });
     result.require({"input"});
     result.require_not_empty({"output","scale"});
     std::filesystem::path input_as_path = normalized_trimed(result["input"]);
     std::string output_folder_name = result["output"];
     bool write_output_collections = !result.is_specified("no-output-collections");
-
-    PathList path_list;//read paths.json
-    path_list.require(WORKING_DATA_FOLDER);
-    // 'polycube_withHexEx' is also in Genomesh, but the one in evocube has a more flexible API
-    // the code comes from https://github.com/fprotais/polycube_withHexEx
-    path_list.require(EVOCUBE_TWEAKS);
 
     std::set<std::filesystem::path> input_folders, subcollections;
     if(expand_collection(input_as_path,path_list[WORKING_DATA_FOLDER],DEPTH_3_LABELING,input_folders,subcollections)) {

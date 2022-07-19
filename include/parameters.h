@@ -9,7 +9,6 @@
 //expected entries in paths.json
 #define WORKING_DATA_FOLDER "working_data_folder"
 #define SALOME              "salome"
-#define GRAPHITE            "graphite"
 #define GENOMESH            "genomesh"
 #define EVOCUBE_TWEAKS      "evocube_tweaks"
 

@@ -99,7 +99,6 @@ public:
             i >> _j;
             try_to_insert(_j,_string2path,WORKING_DATA_FOLDER);
             try_to_insert(_j,_string2path,SALOME);
-            try_to_insert(_j,_string2path,GRAPHITE);
             try_to_insert(_j,_string2path,GENOMESH);
             try_to_insert(_j,_string2path,EVOCUBE_TWEAKS);
         }
