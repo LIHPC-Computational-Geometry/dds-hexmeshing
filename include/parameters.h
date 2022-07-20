@@ -25,7 +25,7 @@
 #define GRAPHITE_BASH_SCRIPT                "graphite.sh"
 #define TETRA_MESH_LUA_SCRIPT               "tetra_and_surface_mesh.lua"
 #define PER_SURFACE_TRIANGLE_LABELING_FILE  "surface_labeling.txt"
-#define PER_TETRA_FACES_LABELING_FILE       "tetra_labeling.txt"
+#define PER_TETRA_FACETS_LABELING_FILE       "tetra_labeling.txt"
 #define LABELED_SURFACE_GEOGRAM_FILE        "labeled_surface.geogram"
 #define LABELED_SURFACE_LUA_SCRIPT          "labeled_surface.lua"
 #define LABELING_STATS_FILE                 "labeling_stats.txt"

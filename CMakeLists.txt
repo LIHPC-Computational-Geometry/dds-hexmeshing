@@ -46,3 +46,6 @@ target_link_libraries(graphcut_labeling ${LIBS})
 
 add_executable(polycube_withHexEx apps/polycube_withHexEx.cpp ${SRCFILES})
 target_link_libraries(polycube_withHexEx ${LIBS})
+
+add_executable(evolabel apps/evolabel.cpp ${SRCFILES})
+target_link_libraries(evolabel ${LIBS})

@@ -73,7 +73,7 @@ int main(int argc, char *argv[]) {
         //check if all the input files exist
         if(missing_files_among({
             input_folder.parent_path() / TETRA_MESH_FILE,
-            input_folder / PER_TETRA_FACES_LABELING_FILE
+            input_folder / PER_TETRA_FACETS_LABELING_FILE
         },path_list[WORKING_DATA_FOLDER])) {
             returncode = 1;//do not open Graphite in case of single input
             std::cout << "Missing files" << std::endl;
@@ -116,7 +116,7 @@ int main(int argc, char *argv[]) {
 
         cmd = (path_list[EVOCUBE_TWEAKS] / "polycube_withHexEx").string() + " " +
               (input_folder.parent_path() / TETRA_MESH_FILE).string() + " " +
-              (input_folder / PER_TETRA_FACES_LABELING_FILE).string() + " " +
+              (input_folder / PER_TETRA_FACETS_LABELING_FILE).string() + " " +
               (input_folder / output_folder_name / HEX_MESH_FILE).string() + " " +
               result["scale"] +
               " &>> " + (input_folder / output_folder_name / STD_PRINTINGS_FILE).string();//redirect stdout and stderr to file

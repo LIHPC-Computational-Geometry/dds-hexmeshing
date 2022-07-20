@@ -81,7 +81,7 @@ int main(int argc, char *argv[]) {
         bool additional_printing = (overwrite_policy==ask);
         if(existing_files_among({
             input_folder / output_folder_name / PER_SURFACE_TRIANGLE_LABELING_FILE,
-            input_folder / output_folder_name / PER_TETRA_FACES_LABELING_FILE,
+            input_folder / output_folder_name / PER_TETRA_FACETS_LABELING_FILE,
             input_folder / output_folder_name / LABELING_STATS_FILE,
             input_folder / output_folder_name / TURNING_POINTS_OBJ_FILE,
             input_folder / output_folder_name / INFO_JSON_FILE,
@@ -116,7 +116,7 @@ int main(int argc, char *argv[]) {
               (input_folder / TRIANGLE_TO_TETRA_FILE).string() + " " +
               (input_folder / SURFACE_OBJ_FILE).string() + " " +
               (input_folder / output_folder_name / PER_SURFACE_TRIANGLE_LABELING_FILE).string() + " " +
-              (input_folder / output_folder_name / PER_TETRA_FACES_LABELING_FILE).string() +
+              (input_folder / output_folder_name / PER_TETRA_FACETS_LABELING_FILE).string() +
               " &>> " + (input_folder / output_folder_name / STD_PRINTINGS_FILE).string();//redirect stdout and stderr to file
         returncode = system(cmd.c_str());
         
