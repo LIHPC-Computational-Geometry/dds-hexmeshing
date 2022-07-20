@@ -48,4 +48,8 @@ add_executable(polycube_withHexEx apps/polycube_withHexEx.cpp ${SRCFILES})
 target_link_libraries(polycube_withHexEx ${LIBS})
 
 add_executable(evolabel apps/evolabel.cpp ${SRCFILES})
+target_compile_definitions(evolabel PUBLIC UNMODIFIED_EVOLABEL=1)
 target_link_libraries(evolabel ${LIBS})
+
+add_executable(evolabel_tweaked apps/evolabel.cpp ${SRCFILES})
+target_link_libraries(evolabel_tweaked ${LIBS})

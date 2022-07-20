@@ -212,7 +212,11 @@ Usage:
                                the underlying executables
 ```
 
-It opens `surface.obj` and `surface_map.txt` and write `surface_labeling.txt` as well as `tetra_labeling`, keeping also other output files like `logs.json` and `fast_polycube_surf.obj`.
+It opens `surface.obj` and `surface_map.txt` and write `surface_labeling.txt` as well as `tetra_labeling`, keeping also other output files like `logs.json` and `fast_polycube_surf.obj` (see [evocube](https://github.com/CorentinDumery/evocube)).
+
+## `evolabel_tweaked`
+
+Same as [`evolabel`](#evolabel), with small modifications aiming to reduce the number of invalid labelings produced (see [evocube_tweaks](https://github.com/LIHPC-Computational-Geometry/evocube_tweaks), under construction).
 
 ## `polycube_withHexEx`
 
@@ -378,7 +382,7 @@ label|direction
 
 ## `surface_map.txt`
 
-A text file with 2 more lines than the number of faces in `surface.obj` ($ nb_{triangles} + 2 $), that maps the surface mesh to the volumetric `tetra.mesh`. The two first lines store the number of faces ($ nb_{triangles} $) and the number of tetrahedra ($ nb_{tetrahedra} $). The $ nb_{triangles} $ remaining lines associate each triangle to the corresponding cell's facet of tetrahedron. The ordering of the facets is the one of [Ultimaille](https://github.com/ssloy/ultimaille) : 
+A text file with 2 more lines than the number of faces in `surface.obj` ( $nb_{triangles} + 2$ ), that maps the surface mesh to the volumetric `tetra.mesh`. The two first lines store the number of faces ( $nb_{triangles}$ ) and the number of tetrahedra ( $nb_{tetrahedra}$ ). The $nb_{triangles}$ remaining lines associate each triangle to the corresponding cell's facet of tetrahedron. The ordering of the facets is the one of [Ultimaille](https://github.com/ssloy/ultimaille) : 
 
 facet number|tetrahedron vertices
 :----------:|:------------------:
@@ -398,7 +402,7 @@ For example:
 ...
 ```
 
-has $ 11486 + 2 $ lines, and triangle $ 0 $ (= $ 3^{rd} $ line) is the $ 3^{rd} $ facet of the $ 32985^{th} $ tetrahedron, because $ 186621 = 3 \times nb_{tetrahedra} + 32985 $.
+has $11486 + 2$ lines, and triangle $0$ (= $3^{rd}$ line) is the $3^{rd}$ facet of the $32985^{th}$ tetrahedron, because $186621 = 3 \times nb_{tetrahedra} + 32985$.
 
 ## `tetra.mesh`
 
@@ -410,7 +414,7 @@ A lua script for Graphite that loads `tetra.mesh` and `surface.obj` with the rig
 
 ## `tetra_labeling.txt`
 
-Same labeling as `surface_labeling.txt` but using per-tetrahedron-facet labels instead of per-surface-triangle labels. Therefore it contains $ nb_{tetrahedra} \times 4 $ lines. See `surface_map.txt` for the facets ordering.
+Same labeling as `surface_labeling.txt` but using per-tetrahedron-facet labels instead of per-surface-triangle labels. Therefore it contains $nb_{tetrahedra} \times 4$ lines. See `surface_map.txt` for the facets ordering.
 
 label|direction
 :---:|:-------:
