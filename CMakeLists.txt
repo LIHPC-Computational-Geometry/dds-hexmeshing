@@ -53,3 +53,6 @@ target_link_libraries(evolabel ${LIBS})
 
 add_executable(evolabel_tweaked apps/evolabel.cpp ${SRCFILES})
 target_link_libraries(evolabel_tweaked ${LIBS})
+
+add_executable(population apps/population.cpp ${SRCFILES})
+target_link_libraries(population ${LIBS})

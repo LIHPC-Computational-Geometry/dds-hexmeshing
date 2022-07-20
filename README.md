@@ -32,7 +32,7 @@ Example:
 
 - a C++ 17 compiler
 - [CMake](https://cmake.org/download/)
-- [Genomesh](https://github.com/LIHPC-Computational-Geometry/genomesh) (clone & build)
+- [Genomesh](https://github.com/LIHPC-Computational-Geometry/genomesh) (clone & build `population`, `tris_to_tets`, `naive_labeling`, `graphcut_labeling` and `labeling_stats`. other apps may be unmaintained)
 - [Evocube tweaks](https://github.com/LIHPC-Computational-Geometry/evocube_tweaks) (clone & build)
 - for [`GMSH`](#gmsh), the [`gmsh`](https://gmsh.info/) and the [`meshio`](https://github.com/nschloe/meshio) python packages
 - for [`NETGEN`](#netgen) or [`MeshGems`](#meshgems), the [SALOME plateform](https://www.salome-platform.org/?page_id=145). Note that MeshGems requires a licence from [Distene](https://www.spatial.com/products/3d-precise-mesh) (Dassault Systèmes)
@@ -163,7 +163,7 @@ Usage:
                                the underlying executables
 ```
 
-It opens `surface.obj` and `surface_map.txt` and write `surface_labeling.txt` as well as `tetra_labeling`. Then `labeling_stats` of Genomesh is used to compute the number of charts, the number of invalidities, the turning-points, etc.
+It opens `surface.obj` and `surface_map.txt` and write `surface_labeling.txt` as well as `tetra_labeling.txt`. Then `labeling_stats` of Genomesh is used to compute the number of charts, the number of invalidities, the turning-points, etc.
 
 ## `graphcut_labeling`
 
@@ -190,7 +190,7 @@ Usage:
                                the underlying executables
 ```
 
-It opens `surface.obj` and `surface_map.txt` and write `surface_labeling.txt` as well as `tetra_labeling`. Then `labeling_stats` of Genomesh is used to compute the number of charts, the number of invalidities, the turning-points, etc.
+It opens `surface.obj` and `surface_map.txt` and write `surface_labeling.txt` as well as `tetra_labeling.txt`. Then `labeling_stats` of Genomesh is used to compute the number of charts, the number of invalidities, the turning-points, etc.
 
 ## `evolabel`
 
@@ -212,11 +212,33 @@ Usage:
                                the underlying executables
 ```
 
-It opens `surface.obj` and `surface_map.txt` and write `surface_labeling.txt` as well as `tetra_labeling`, keeping also other output files like `logs.json` and `fast_polycube_surf.obj` (see [evocube](https://github.com/CorentinDumery/evocube)).
+It opens `surface.obj` and `surface_map.txt` and write `surface_labeling.txt` as well as `tetra_labeling.txt`, keeping also other output files like `logs.json` and `fast_polycube_surf.obj` (see [evocube](https://github.com/CorentinDumery/evocube)).
 
 ## `evolabel_tweaked`
 
 Same as [`evolabel`](#evolabel), with small modifications aiming to reduce the number of invalid labelings produced (see [evocube_tweaks](https://github.com/LIHPC-Computational-Geometry/evocube_tweaks), under construction).
+
+## `population`
+
+```txt
+Compute a labeling with the 2021 Evocube algorithm (hexercise)
+Usage:
+  ./population [OPTION...] <input> [output]
+
+  -c, --comments TEXT          Comments about the aim of this execution 
+                               (default: "")
+  -h, --help                   Print help
+  -i, --input PATH             Path to the input collection
+  -n, --no-output-collections  The program will not write output collections 
+                               for success/error cases
+  -o, --output NAME            Name of the output folder(s) to create. %d is 
+                               replaced by the date and time (default: 
+                               population)
+  -v, --version                Print the version (date of last modification) of 
+                               the underlying executables
+```
+
+It opens `surface.obj` and `surface_map.txt` and write `surface_labeling.txt` as well as `tetra_labeling.txt`. Then `labeling_stats` of Genomesh is used to compute the number of charts, the number of invalidities, the turning-points, etc.
 
 ## `polycube_withHexEx`
 
