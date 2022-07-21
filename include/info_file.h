@@ -261,7 +261,7 @@ public:
         add_entry("min_SJ",value);
     }
 
-    //parameter of polycube_withHexEx
+    //parameter of polycube_withHexEx & robustPolycube (rb_generate_quantization)
     void scale_of(std::string algorithm, float value) {
         add_entry(algorithm,"scale",value);
     }

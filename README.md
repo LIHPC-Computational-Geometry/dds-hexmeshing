@@ -30,13 +30,16 @@ Example:
 
 # Requirements
 
+This project is not expected to compile on other platforms than Linux. Tested on Fedora 34.
+
 - a C++ 17 compiler
 - [CMake](https://cmake.org/download/)
 - [Genomesh](https://github.com/LIHPC-Computational-Geometry/genomesh) (clone & build `population`, `tris_to_tets`, `naive_labeling`, `graphcut_labeling` and `labeling_stats`. other apps may be unmaintained)
 - [Evocube tweaks](https://github.com/LIHPC-Computational-Geometry/evocube_tweaks) (clone & build)
 - for [`GMSH`](#gmsh), the [`gmsh`](https://gmsh.info/) and the [`meshio`](https://github.com/nschloe/meshio) python packages
 - for [`NETGEN`](#netgen) or [`MeshGems`](#meshgems), the [SALOME plateform](https://www.salome-platform.org/?page_id=145). Note that MeshGems requires a licence from [Distene](https://www.spatial.com/products/3d-precise-mesh) (Dassault Systèmes)
-- [Graphite](https://github.com/BrunoLevy/GraphiteThree), for the visualization
+- for [`robustPolycube`](#robustpolycube), [robustPolycube](https://github.com/fprotais/robustPolycube) (clone & build)
+- for the visualization, [Graphite](https://github.com/BrunoLevy/GraphiteThree) (clone & build)
 
 The [cxxopts](https://github.com/jarro2783/cxxopts), [json](https://github.com/nlohmann/json) and [ultimaille](https://github.com/ssloy/ultimaille) dependencies are included as submodules.
 
@@ -51,14 +54,15 @@ cmake ..
 make
 ```
 
-Update `paths.json` with the location of SALOME, Genomesh and Evocube tweaks :
+Update `paths.json` with the location of SALOME, Genomesh, Evocube tweaks and robustPolycube :
 
 ```json
 {
     "working_data_folder": "path/to/your/shared/data/folder/",
     "salome": "path/to/SALOME/folder/",
     "genomesh": "path/to/Genomesh/build/folder/",
-    "evocube_tweaks": "path/to/evocube_tweaks/build/folder/"
+    "evocube_tweaks": "path/to/evocube_tweaks/build/folder/",
+    "robustPolycube": "path/to/robustPolycube/build/folder/"
 }
 ```
 
@@ -263,6 +267,32 @@ Usage:
 ```
 
 It opens `tetra.mesh` with `tetra_labeling.txt` and write `hex.mesh`.
+
+## `robustPolycube`
+
+```txt
+Extract an hexahedral mesh from a labeled tetra mesh with the implementation of "Robust Quantization for Polycube-Maps", F. Protais et al. 2022
+Usage:
+  ./robustPolycube [OPTION...] <input> [output] [scaling]
+
+  -c, --comments TEXT          Comments about the aim of this execution 
+                               (default: "")
+  -h, --help                   Print help
+  -i, --input PATH             Path to the input collection
+  -n, --no-output-collections  The program will not write output collections 
+                               for success/error cases
+  -o, --output NAME            Name of the output folder(s) to create. %s is 
+                               replaced by the scaling and %d by the date and 
+                               time (default: robustPolycube_%s)
+  -s, --scaling VALUE          Scaling applied before quantization (default: 
+                               1.0)
+  -v, --version                Print the version (date of last modification) of 
+                               the underlying executables
+```
+
+Call `rb_generate_deformation` then `rb_generate_quantization` of [robustPolycube](https://github.com/fprotais/robustPolycube). It mainly opens `tetra.mesh` with `tetra_labeling.txt` and write `hex.mesh`. Other output files are `tetra_remesh.mesh` (same as `tetra.mesh`), `tetra_remesh_labeling.txt` (same as `tetra_labeling.txt`) and `polycuboid.mesh` (deformed `tetra_remesh.mesh`).
+
+May open Graphite after each step, depending if you provided the Graphite path when compiling the underlying binaries.
 
 # Other programs
 

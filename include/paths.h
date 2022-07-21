@@ -101,6 +101,7 @@ public:
             try_to_insert(_j,_string2path,SALOME);
             try_to_insert(_j,_string2path,GENOMESH);
             try_to_insert(_j,_string2path,EVOCUBE_TWEAKS);
+            try_to_insert(_j,_string2path,ROBUST_POLYCUBE);
         }
         else
             std::cerr << "Error : paths.json doesn't exist" << std::endl;

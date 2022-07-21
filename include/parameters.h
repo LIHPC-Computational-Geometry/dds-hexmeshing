@@ -11,6 +11,7 @@
 #define SALOME              "salome"
 #define GENOMESH            "genomesh"
 #define EVOCUBE_TWEAKS      "evocube_tweaks"
+#define ROBUST_POLYCUBE     "robustPolycube"
 
 //in case of a single input folder, should Graphite be opened to view the result ?
 #define OPEN_GRAPHITE_AT_THE_END
