@@ -59,3 +59,6 @@ target_link_libraries(population ${LIBS})
 
 add_executable(robustPolycube apps/robustPolycube.cpp ${SRCFILES})
 target_link_libraries(robustPolycube ${LIBS})
+
+add_executable(postprocess apps/postprocess.cpp ${SRCFILES})
+target_link_libraries(postprocess ${LIBS})

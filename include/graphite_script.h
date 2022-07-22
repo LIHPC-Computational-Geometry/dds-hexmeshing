@@ -12,33 +12,36 @@
 class GraphiteScript {
 
 public:
-    GraphiteScript(std::filesystem::path path, const PathList& path_list) : _lua_script_path(path) {
+    GraphiteScript(std::filesystem::path path, const PathList& path_list, bool append = false) : _lua_script_path(path) {
 
-        _ofs_lua.open(_lua_script_path,std::ios_base::out);//replace if existing
+        _ofs_lua.open(_lua_script_path,append ? std::ios_base::app : std::ios_base::out);//replace if existing
         if(!_ofs_lua.is_open()) {
             std::cerr << "Error : Failed to open " << _lua_script_path.string() << std::endl;
             exit(1);
             // TODO instead of exit(1), raise an exception to manage is_open()==false cases in the main()
             //-> write in the logs that the program was unable to create the scripts, but do not stop the program
         }
-        _ofs_lua << "-- Lua" << std::endl;
 
-        //create a bash script that open the Lua script with Graphite:
-        //  
-        //  #!/bin/bash
-        //  cd $(dirname $0) && $GRAPHITE *.lua
-        //  
-        //TODO write bash script only if GRAPHITE env variable is defined
-        std::filesystem::path bash_script_path = path.parent_path() / GRAPHITE_BASH_SCRIPT;
-        std::ofstream _ofs_bash;
-        _ofs_bash.open(bash_script_path,std::ios_base::out);//replace if existing
-        if(_ofs_bash.is_open()) {
-            _ofs_bash << "#!/bin/bash" << std::endl;
-            _ofs_bash << "cd $(dirname $0) && $GRAPHITE *.lua" << std::endl;
-            _ofs_bash.close();
-            std::filesystem::permissions(bash_script_path,std::filesystem::perms::owner_exec,std::filesystem::perm_options::add);//add exec permission
+        if(append==false) {
+            _ofs_lua << "-- Lua" << std::endl;
+            //create a bash script that open the Lua script with Graphite:
+            //  
+            //  #!/bin/bash
+            //  cd $(dirname $0) && $GRAPHITE *.lua
+            //  
+            //TODO write bash script only if GRAPHITE env variable is defined
+            std::filesystem::path bash_script_path = path.parent_path() / GRAPHITE_BASH_SCRIPT;
+            std::ofstream _ofs_bash;
+            _ofs_bash.open(bash_script_path,std::ios_base::out);//replace if existing
+            if(_ofs_bash.is_open()) {
+                _ofs_bash << "#!/bin/bash" << std::endl;
+                _ofs_bash << "cd $(dirname $0) && $GRAPHITE *.lua" << std::endl;
+                _ofs_bash.close();
+                std::filesystem::permissions(bash_script_path,std::filesystem::perms::owner_exec,std::filesystem::perm_options::add);//add exec permission
+            }
+            //no exit() if unable to open
         }
-        //no exit() if unable to open
+        
     }
 
     ~GraphiteScript() {
