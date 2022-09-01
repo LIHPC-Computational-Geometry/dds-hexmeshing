@@ -26,7 +26,7 @@ int main(int argc, char *argv[]) {
             ("i,input", "Path to the input collection", cxxopts::value<std::string>(),"PATH")
             ("n,no-output-collections", "The program will not write output collections for success/error cases")
             ("o,output", "Name of the output folder(s) to create. \%s is replaced by the scaling and \%d by the date and time", cxxopts::value<std::string>()->default_value("robustPolycube_\%s"),"NAME")
-            ("s,scaling", "Scaling applied before quantization", cxxopts::value<std::string>()->default_value("1.0"),"VALUE")
+            ("s,scaling", "Scaling applied before quantization. Lower is more hexahedra.", cxxopts::value<std::string>()->default_value("1.0"),"VALUE")
             ("v,version", "Print the version (date of last modification) of the underlying executables");
     options.parse_positional({"input","output","scaling"});
 

@@ -3,6 +3,7 @@
 #include <iostream>
 #include <filesystem>
 #include <fstream>
+#include <ultimaille/all.h>
 
 #include "paths.h"
 #include "parameters.h"
@@ -93,3 +94,20 @@ private:
     const std::filesystem::path _lua_script_path;
     std::ofstream _ofs_lua;
 };
+
+//return true if the labeling was successfully opened, else false
+bool fill_labeling(const std::filesystem::path& surface_labeling, UM::FacetAttribute<int>& output_face_attribute) {
+    std::ifstream ifs(surface_labeling);
+    if(ifs.is_open()) {
+        int label, face_number = 0;
+        while (ifs >> label) {
+            output_face_attribute[face_number] = label;//assume output_face_attribute was initialized with a mesh having the right number of faces
+            face_number++;
+        }
+        ifs.close();
+        return true;
+    }
+    else {
+        return false;
+    }
+}

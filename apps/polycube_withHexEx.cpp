@@ -26,7 +26,7 @@ int main(int argc, char *argv[]) {
             ("i,input", "Path to the input collection", cxxopts::value<std::string>(),"PATH")
             ("n,no-output-collections", "The program will not write output collections for success/error cases")
             ("o,output", "Name of the output folder(s) to create. \%s is replaced by the scale and \%d by the date and time", cxxopts::value<std::string>()->default_value("HexEx_\%s"),"NAME")
-            ("s,scale", "Scaling factor applied before libHexEx", cxxopts::value<std::string>()->default_value("1.0"),"VALUE")
+            ("s,scale", "Scaling factor applied before libHexEx. Higher is more hexahedra.", cxxopts::value<std::string>()->default_value("1.0"),"VALUE")
             ("v,version", "Print the version (date of last modification) of the underlying executable");
     options.parse_positional({"input","output","scale"});
 

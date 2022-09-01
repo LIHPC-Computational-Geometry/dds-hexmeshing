@@ -12,6 +12,7 @@
 #define GENOMESH            "genomesh"
 #define EVOCUBE_TWEAKS      "evocube_tweaks"
 #define ROBUST_POLYCUBE     "robustPolycube"
+#define FASTBNDPOLYCUBE     "fastbndpolycube"
 
 //in case of a single input folder, should Graphite be opened to view the result ?
 #define OPEN_GRAPHITE_AT_THE_END
@@ -31,6 +32,8 @@
 #define LABELED_SURFACE_LUA_SCRIPT                  "labeled_surface.lua"
 #define LABELING_STATS_FILE                         "labeling_stats.txt"
 #define TURNING_POINTS_OBJ_FILE                     "turning_points.obj"
+#define FAST_SURFACE_POLYCUBE_OBJ_FILE              "fast_surface_polycube.obj"
+#define LABELED_FAST_SURFACE_POLYCUBE_GEOGRAM_FILE  "labeled_fast_surface_polycube.geogram"
 #define HEX_MESH_FILE                               "hex.mesh"
 #define HEX_MESH_WITH_SJ_GEOGRAM_FILE               "hex_mesh_with_SJ.geogram"
 #define POSTPROCESSED_HEX_MESH_FILE                 "hex_postprocessed.mesh"
