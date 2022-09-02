@@ -36,6 +36,7 @@ This project is not expected to compile on other platforms than Linux. Tested on
 - [CMake](https://cmake.org/download/)
 - [Genomesh](https://github.com/LIHPC-Computational-Geometry/genomesh) (clone & build `population`, `tris_to_tets`, `naive_labeling`, `graphcut_labeling` and `labeling_stats`. other apps may be unmaintained)
 - [Evocube tweaks](https://github.com/LIHPC-Computational-Geometry/evocube_tweaks) (clone & build)
+- [fastbndpolycube](https://github.com/fprotais/fastbndpolycube) (clone & build)
 - for [`GMSH`](#gmsh), the [`gmsh`](https://gmsh.info/) and the [`meshio`](https://github.com/nschloe/meshio) python packages
 - for [`NETGEN`](#netgen) or [`MeshGems`](#meshgems), the [SALOME plateform](https://www.salome-platform.org/?page_id=145). Note that MeshGems requires a licence from [Distene](https://www.spatial.com/products/3d-precise-mesh) (Dassault Systèmes)
 - for [`robustPolycube`](#robustpolycube), [robustPolycube](https://github.com/fprotais/robustPolycube) (clone & build)
@@ -54,7 +55,7 @@ cmake ..
 make
 ```
 
-Update `paths.json` with the location of SALOME, Genomesh, Evocube tweaks and robustPolycube :
+Update `paths.json` with the location of SALOME, Genomesh, Evocube tweaks, robustPolycube and fastbndpolycube :
 
 ```json
 {
@@ -62,7 +63,8 @@ Update `paths.json` with the location of SALOME, Genomesh, Evocube tweaks and ro
     "salome": "path/to/SALOME/folder/",
     "genomesh": "path/to/Genomesh/build/folder/",
     "evocube_tweaks": "path/to/evocube_tweaks/build/folder/",
-    "robustPolycube": "path/to/robustPolycube/build/folder/"
+    "robustPolycube": "path/to/robustPolycube/build/folder/",
+    "fastbndpolycube": "path/to/fastbndpolycube/build/folder/"
 }
 ```
 

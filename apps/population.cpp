@@ -31,9 +31,10 @@ int main(int argc, char *argv[]) {
     PathList path_list;//read paths.json
     path_list.require(WORKING_DATA_FOLDER);
     path_list.require(GENOMESH);
+    path_list.require(FASTBNDPOLYCUBE);
 
     //parse results
-    cxxopts::ParseResult_custom result(options,argc, argv, { path_list[GENOMESH] / "population", path_list[GENOMESH] / "labeling_stats" });
+    cxxopts::ParseResult_custom result(options,argc, argv, { path_list[GENOMESH] / "population", path_list[GENOMESH] / "labeling_stats", path_list[FASTBNDPOLYCUBE] / "fastpolycube" });
     result.require({"input"});
     result.require_not_empty({"output"});
     std::filesystem::path input_as_path = normalized_trimed(result["input"]);
@@ -85,7 +86,9 @@ int main(int argc, char *argv[]) {
             input_folder / output_folder_name / LABELING_STATS_FILE,
             input_folder / output_folder_name / TURNING_POINTS_OBJ_FILE,
             input_folder / output_folder_name / INFO_JSON_FILE,
-            input_folder / output_folder_name / LABELED_SURFACE_GEOGRAM_FILE
+            input_folder / output_folder_name / LABELED_SURFACE_GEOGRAM_FILE,
+            input_folder / output_folder_name / FAST_SURFACE_POLYCUBE_OBJ_FILE,
+            input_folder / output_folder_name / LABELED_FAST_SURFACE_POLYCUBE_GEOGRAM_FILE
             //other files (logs.txt, lua script) are not important
         },path_list[WORKING_DATA_FOLDER],additional_printing)) {
             bool user_wants_to_overwrite = ask_for_confirmation("\t-> Are you sure you want to overwrite these files ?",overwrite_policy);
@@ -140,6 +143,22 @@ int main(int argc, char *argv[]) {
         if(returncode!=0) {
             std::cout << "Error" << std::endl;
             output_collections.error_cases->new_comments("error during labeling_stats call");
+            output_collections.error_cases->new_entry(input_folder / output_folder_name);
+            continue;
+        }
+
+        //generate a surface polycube from the labeling
+
+        cmd = (path_list[FASTBNDPOLYCUBE] / "fastpolycube").string() + " " +
+              (input_folder / SURFACE_OBJ_FILE).string() + " " +
+              (input_folder / output_folder_name / PER_SURFACE_TRIANGLE_LABELING_FILE).string() + " " +
+              (input_folder / output_folder_name / FAST_SURFACE_POLYCUBE_OBJ_FILE).string() +
+              " &>> " + (input_folder / output_folder_name / STD_PRINTINGS_FILE).string();//redirect stdout and stderr to file
+        returncode = system(cmd.c_str());
+
+        if(returncode!=0) {
+            std::cout << "Error" << std::endl;
+            output_collections.error_cases->new_comments("error during fastpolycube call");
             output_collections.error_cases->new_entry(input_folder / output_folder_name);
             continue;
         }

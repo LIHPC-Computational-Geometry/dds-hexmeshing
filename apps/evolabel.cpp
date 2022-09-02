@@ -40,12 +40,13 @@ int main(int argc, char *argv[]) {
     PathList path_list;//read paths.json
     path_list.require(WORKING_DATA_FOLDER);
     path_list.require(EVOCUBE_TWEAKS);
+    path_list.require(FASTBNDPOLYCUBE);
 
     //parse results
 #ifdef UNMODIFIED_EVOLABEL
-    cxxopts::ParseResult_custom result(options,argc, argv, { path_list[EVOCUBE_TWEAKS] / "evolabel" });
+    cxxopts::ParseResult_custom result(options,argc, argv, { path_list[EVOCUBE_TWEAKS] / "evolabel", path_list[FASTBNDPOLYCUBE] / "fastpolycube" });
 #else
-    cxxopts::ParseResult_custom result(options,argc, argv, { path_list[EVOCUBE_TWEAKS] / "evolabel_tweaked" });
+    cxxopts::ParseResult_custom result(options,argc, argv, { path_list[EVOCUBE_TWEAKS] / "evolabel_tweaked", path_list[FASTBNDPOLYCUBE] / "fastpolycube" });
 #endif
     result.require({"input"});
     result.require_not_empty({"output"});
@@ -106,13 +107,15 @@ int main(int argc, char *argv[]) {
             input_folder / output_folder_name / "labeling_init.txt",
             input_folder / output_folder_name / "labeling_on_tets.txt",
             input_folder / output_folder_name / "logs.json",
-            input_folder / output_folder_name / "fast_polycube_surf.obj",
+            input_folder / output_folder_name / "fast_polycube_surf.obj",//not computed like FAST_SURFACE_POLYCUBE_OBJ_FILE, so ignored for consistency
             input_folder / output_folder_name / TURNING_POINTS_OBJ_FILE,
             //renamed output files
             input_folder / output_folder_name / PER_SURFACE_TRIANGLE_LABELING_FILE,
             input_folder / output_folder_name / PER_TETRA_FACETS_LABELING_FILE,
             input_folder / output_folder_name / INFO_JSON_FILE,
-            input_folder / output_folder_name / LABELED_SURFACE_GEOGRAM_FILE
+            input_folder / output_folder_name / LABELED_SURFACE_GEOGRAM_FILE,
+            input_folder / output_folder_name / FAST_SURFACE_POLYCUBE_OBJ_FILE,
+            input_folder / output_folder_name / LABELED_FAST_SURFACE_POLYCUBE_GEOGRAM_FILE
             //other files (logs.txt, lua script) are not important
         },path_list[WORKING_DATA_FOLDER],additional_printing)) {
             bool user_wants_to_overwrite = ask_for_confirmation("\t-> Are you sure you want to overwrite these files ?",overwrite_policy);
@@ -164,9 +167,6 @@ int main(int argc, char *argv[]) {
             continue;
         }
 
-        std::cout << "Done" << std::endl;
-        output_collections.success_cases->new_entry(input_folder / output_folder_name);
-
         //rename output files
         std::filesystem::rename(
             input_folder / output_folder_name / "labeling.txt",
@@ -174,6 +174,25 @@ int main(int argc, char *argv[]) {
         std::filesystem::rename(
             input_folder / output_folder_name / "labeling_on_tets.txt",
             input_folder / output_folder_name / PER_TETRA_FACETS_LABELING_FILE );
+
+        //generate a surface polycube from the labeling
+
+        cmd = (path_list[FASTBNDPOLYCUBE] / "fastpolycube").string() + " " +
+              (input_folder / SURFACE_OBJ_FILE).string() + " " +
+              (input_folder / output_folder_name / PER_SURFACE_TRIANGLE_LABELING_FILE).string() + " " +
+              (input_folder / output_folder_name / FAST_SURFACE_POLYCUBE_OBJ_FILE).string() +
+              " &>> " + (input_folder / output_folder_name / STD_PRINTINGS_FILE).string();//redirect stdout and stderr to file
+        returncode = system(cmd.c_str());
+
+        if(returncode!=0) {
+            std::cout << "Error" << std::endl;
+            output_collections.error_cases->new_comments("error during fastpolycube call");
+            output_collections.error_cases->new_entry(input_folder / output_folder_name);
+            continue;
+        }
+
+        std::cout << "Done" << std::endl;
+        output_collections.success_cases->new_entry(input_folder / output_folder_name);
 
         //copy labeling stats (nb charts, fidelity, turning-points...) from logs.json to info.json
 
@@ -193,9 +212,9 @@ int main(int argc, char *argv[]) {
         
         //then (re)generate the Lua script for Graphite
 #ifdef UNMODIFIED_EVOLABEL
-        regenerate_Graphite_visu(path_list[WORKING_DATA_FOLDER],input_folder,current_input_beginning,"the evolabel wrapper");
+        regenerate_Graphite_visu(path_list[WORKING_DATA_FOLDER],input_folder / output_folder_name,current_input_beginning,"the evolabel wrapper");
 #else
-        regenerate_Graphite_visu(path_list[WORKING_DATA_FOLDER],input_folder,current_input_beginning,"the evolabel_tweaked wrapper");
+        regenerate_Graphite_visu(path_list[WORKING_DATA_FOLDER],input_folder / output_folder_name,current_input_beginning,"the evolabel_tweaked wrapper");
 #endif
     }
 
