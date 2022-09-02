@@ -9,6 +9,7 @@
 #include "date_time.h"
 #include "cxxopts_ParseResult_custom.h"
 #include "user_confirmation.h"
+#include "graphite_script.h"
 
 int main(int argc, char *argv[]) {
 
@@ -94,21 +95,26 @@ int main(int argc, char *argv[]) {
               (input_folder / TRIANGLE_TO_TETRA_FILE).string() +
               " &>> " + (input_folder / STD_PRINTINGS_FILE).string();//redirect stdout and stderr to file (append to the logs of step2mesh)
         returncode = system(cmd.c_str());
-        std::cout << ( (returncode!=0) ? "Error" : "Done") << std::endl;
+        
+        if(returncode!=0) {
+            std::cout << "Error" << std::endl;
+            continue;
+        }
+
+        std::cout << "Done" << std::endl;
+
+        //then (re)generate the Lua script for Graphite
+        regenerate_Graphite_visu(path_list[WORKING_DATA_FOLDER],input_folder,current_input_beginning,"extract_surface");
     }
 
     // TODO write a collections with failed cases
 
     //in case of a single input folder, open the surface mesh with Graphite
-    //TODO modif (or replace) Trace to put the lua script in the output folder, not in build
 #ifdef OPEN_GRAPHITE_AT_THE_END
-    std::string graphite_path = getenv("GRAPHITE");
-    if(input_folders.size()==1 && returncode==0 && !graphite_path.empty()) { //TODO if returncode!=0, open the logs
-        Trace::initialize(graphite_path);
-        UM::Triangles m;
-        UM::read_by_extension((*input_folders.begin() / SURFACE_OBJ_FILE).string(),m);
-        Trace::drop_surface(m, "surface", {});
-        Trace::conclude();
+    if(input_folders.size()==1 && returncode==0) { //TODO if returncode!=0, open the logs
+        // TODO check if TETRA_MESH_LUA_SCRIPT and GRAPHITE_BASH_SCRIPT were successfully created
+        cmd = "cd " + (*input_folders.begin()).string() + " && ./" + GRAPHITE_BASH_SCRIPT + " > /dev/null";//silent output
+        system(cmd.c_str());
     }
 #endif
 
