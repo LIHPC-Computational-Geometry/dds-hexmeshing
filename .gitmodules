@@ -1,9 +1,0 @@
-[submodule "json"]
-	path = json
-	url = git@github.com:nlohmann/json.git
-[submodule "cxxopts"]
-	path = cxxopts
-	url = git@github.com:jarro2783/cxxopts.git
-[submodule "ultimaille"]
-	path = ultimaille
-	url = git@github.com:ssloy/ultimaille.git

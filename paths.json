@@ -1,8 +1,0 @@
-{
-    "working_data_folder": "~/SharedData/",
-    "salome": "~/.local/salome/SALOME-9.9.0-native-FD34-SRC/",
-    "genomesh": "../genomesh/build_Release/",
-    "evocube_tweaks": "../evocube_tweaks/build_Release/",
-    "robustPolycube": "../robustPolycube/build/",
-    "fastbndpolycube": "../fastbndpolycube/build/"
-}
