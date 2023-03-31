@@ -4,6 +4,7 @@ from pathlib import Path
 import subprocess
 from shutil import copyfile, rmtree
 from os import mkdir, path
+from json import load
 
 getLogger().setLevel(INFO)
 
@@ -38,7 +39,11 @@ class HexMeshWorkshopDatabase:
     """
     Specific interface to a MamboDB database to manipulate HexMeshWorkshop documents
     """
-    def __init__(self,host,port):
+    def __init__(self):
+
+        settings = load(open('../settings.json'))
+        host = settings["MongoDB"]["host"]
+        port = settings["MongoDB"]["port"]
 
         self.client = MongoClient(host,port)
         self.dbpath = get_MongoDB_dbpath()
