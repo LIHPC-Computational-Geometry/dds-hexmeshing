@@ -1,2 +1,4 @@
 build/
 .vscode/
+notes/
+__pycache__/

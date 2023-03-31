@@ -1,0 +1,24 @@
+#!/usr/bin/python
+
+from sys import path
+path.append('../') # required for relative import without package
+
+from argparse import ArgumentParser
+from HexMeshWorkshop import *
+
+db = HexMeshWorkshopDatabase("localhost", 27017)
+
+parser = ArgumentParser(
+    prog='import_MAMBO',
+    description='Import MAMBO dataset in the database')
+
+parser.add_argument(
+    '-i', '--input',
+    dest='input',
+    metavar='PATH',
+    help='path to the MAMBO folder',
+    required=False)
+
+args = parser.parse_args()
+
+db.import_MAMBO(args.input)
