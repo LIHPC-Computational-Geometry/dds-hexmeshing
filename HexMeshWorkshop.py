@@ -2,8 +2,12 @@ from pymongo import MongoClient
 from logging import *
 from pathlib import Path
 import subprocess
+from shutil import copyfile, rmtree
+from os import mkdir, path
 
 getLogger().setLevel(INFO)
+
+FORBIDDEN_TOP_LEVEL_FOLDER_NAMES = ['diagnostic.data', 'journal'] # folder names already used by MongoDB
 
 def get_MongoDB_dbpath():
     """
@@ -44,13 +48,23 @@ class HexMeshWorkshopDatabase:
         
         self.db = self.client.HexMeshWorkshop
 
+    def clear_database_and_datafiles(self):
+        if self.dbpath != Path(path.expanduser('~/testdata')): # ensure this method is not called on important data
+            fatal('clear_database_and_datafiles() is restricted to the ~/testdata folder')
+            exit(1)
+        for subfolder in [x for x in self.dbpath.iterdir() if x.is_dir()]:
+            if subfolder.name not in FORBIDDEN_TOP_LEVEL_FOLDER_NAMES:
+                rmtree(subfolder)
+        self.client.drop_database(self.db)
+        self.db = self.client.HexMeshWorkshop # new empty database
+
     def import_MAMBO(self,input=None):
         if input==None:
             warning('No input given, the MAMBO dataset will be downloaded')
             # TODO download from https://gitlab.com/franck.ledoux/mambo/-/archive/master/mambo-master.zip
             # extract in a tmp/ folder
             # modify `input`
-            fatal('Not implemeted')
+            fatal('Not implemented')
             exit(1)
         else:
             info('MAMBO will be imported from folder ' + input)
@@ -66,7 +80,10 @@ class HexMeshWorkshopDatabase:
             if subfolder.name == 'Scripts':
                 continue # ignore this subfolder
             for file in [x for x in subfolder.iterdir() if x.suffix == '.step']:
-                print('found ' + file.name)
+                # TODO check duplication
+                mkdir(self.dbpath / file.stem) # create a directory with the name of the step file
+                copyfile(file,self.dbpath / file.stem / 'CAD.step') # copy and rename the step file
+                info(file.name + ' imported')
 
         if input==None:
             pass

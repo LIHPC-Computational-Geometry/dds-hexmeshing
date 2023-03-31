@@ -1,0 +1,9 @@
+#!/usr/bin/python
+
+from sys import path
+path.append('../') # required for relative import without package
+
+from HexMeshWorkshop import *
+
+db = HexMeshWorkshopDatabase("localhost", 27017)
+db.clear_database_and_datafiles()
