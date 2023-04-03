@@ -35,6 +35,47 @@ def get_MongoDB_dbpath():
         return Path('/data/db/') # mongod was called without '--dbpath ', so it uses the default data path
     return Path(line)
 
+
+class UserInput():
+    """
+    Interface to user input frequently needed (ex: "Do you want to overwrite ?")
+    allowing to memorize the answer, skipping next user inputs
+    """
+    def __init__(self):
+        self.memorized_answer = None
+
+    def ask_and_memorize(self,question):
+        """
+        Ask a confirmation to the user and allow to memorize the answer:
+
+        'always' = yes for all
+
+        'never' = no for all
+        """
+        if self.memorized_answer!=None:
+            return self.memorized_answer
+        user_choice = ''
+        while user_choice not in ['y','yes','n','no','always','never']:
+            user_choice = input(question + ' [yes/no/always/never] ').lower()
+        if user_choice == 'always':
+            self.memorized_answer = True
+        elif user_choice == 'never':
+            self.memorized_answer = False
+        return ((user_choice == "y") | (user_choice == "yes") | (user_choice == "always"))
+
+    def forget_memorized_answer(self):
+        self.memorized_answer = None
+
+    # @classmethod 
+    def ask(question):
+        """
+        Ask a confirmation to the user without allowing to memorize the answer
+        """
+        user_choice = ''
+        while user_choice not in ['y','yes','n','no']:
+            user_choice = input(question + ' [yes/no] ').lower()
+        return ((user_choice[0] == "y"))
+
 class HexMeshWorkshopDatabase:
     """
     Specific interface to a MamboDB database to manipulate HexMeshWorkshop documents
@@ -65,7 +106,9 @@ class HexMeshWorkshopDatabase:
 
     def import_MAMBO(self,input=None):
         if input==None:
-            warning('No input given, the MAMBO dataset will be downloaded')
+            if not UserInput.ask("No input was given, so the MAMBO dataset will be downloaded, are you shure you want to continue ?"):
+                info("Operation cancelled")
+                exit(0)
             # TODO download from https://gitlab.com/franck.ledoux/mambo/-/archive/master/mambo-master.zip
             # extract in a tmp/ folder
             # modify `input`
@@ -80,12 +123,18 @@ class HexMeshWorkshopDatabase:
             if not input.is_dir():
                 fatal(str(input) + ' is not a folder')
                 exit(1)
-        
+        overwrite_management = UserInput()
         for subfolder in [x for x in input.iterdir() if x.is_dir()]:
             if subfolder.name == 'Scripts':
                 continue # ignore this subfolder
             for file in [x for x in subfolder.iterdir() if x.suffix == '.step']:
-                # TODO check duplication
+                if (self.dbpath / file.stem).exists():
+                    # TODO show all the content of the folder to be removed
+                    if overwrite_management.ask_and_memorize('Folder ' + file.stem + ' already exist in the data folder, do you want to overwrite it ?'):
+                        rmtree(self.dbpath / file.stem)
+                        # TODO also delete associated documentd in database
+                    else:
+                        continue # skip this folder, the user does not want to overwrite it
                 mkdir(self.dbpath / file.stem) # create a directory with the name of the step file
                 copyfile(file,self.dbpath / file.stem / 'CAD.step') # copy and rename the step file
                 info(file.name + ' imported')
