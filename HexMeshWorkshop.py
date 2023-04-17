@@ -2,11 +2,13 @@ from pymongo import MongoClient
 from logging import *
 from pathlib import Path
 import subprocess
-from shutil import copyfile, rmtree
+from shutil import copyfile, rmtree, unpack_archive
 from os import mkdir, path
 from json import load
 from abc import ABC, abstractmethod
 from collections import Counter
+from tempfile import mkdtemp
+from urllib import request
 
 getLogger().setLevel(INFO)
 
@@ -208,16 +210,21 @@ class HexMeshWorkshopDatabase:
         return result.inserted_id # return the ID of the inserted document
     
     def import_MAMBO(self,input=None):
+        tmp_dir_used = True
         if input==None:
-            if not UserInput.ask("No input was given, so the MAMBO dataset will be downloaded, are you shure you want to continue ?"):
+            if not UserInput.ask("No input was given, so the MAMBO dataset will be downloaded, are you sure you want to continue ?"):
                 info("Operation cancelled")
                 exit(0)
-            # TODO download from https://gitlab.com/franck.ledoux/mambo/-/archive/master/mambo-master.zip
-            # extract in a tmp/ folder
-            # modify `input`
-            fatal('Not implemented')
-            exit(1)
+            url = 'https://gitlab.com/franck.ledoux/mambo/-/archive/master/mambo-master.zip'
+            tmp_folder = Path(mkdtemp()) # request an os-specific tmp folder
+            zip_file = tmp_folder / 'mambo-master.zip'
+            input = tmp_folder / 'mambo-master'
+            info('Downloading MAMBO')
+            request.urlretrieve(url=url,filename=str(zip_file))
+            info('Extracting archive')
+            unpack_archive(zip_file,extract_dir=tmp_folder)
         else:
+            tmp_dir_used = False
             info('MAMBO will be imported from folder ' + input)
             input = Path(input).absolute()
             if not input.exists():
@@ -239,6 +246,7 @@ class HexMeshWorkshopDatabase:
                     info(file.name + ' imported')
                 # TODO create 'MAMBO_'+subfolder.name and 'MAMBO' sets
 
-        if input==None:
-            pass
-            # TODO delete the tmp/ folder
+        if tmp_dir_used:
+            # delete the temporary directory
+            debug('Deleting folder \'' + str(tmp_folder) + '\'')
+            rmtree(tmp_folder)
