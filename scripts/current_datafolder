@@ -2,8 +2,6 @@
 
 from sys import path
 path.append('../') # required for relative import without package
-
 from HexMeshWorkshop import *
 
-db = HexMeshWorkshopDatabase()
-db.clear_database_and_datafiles()
+print(str(get_datafolder()))

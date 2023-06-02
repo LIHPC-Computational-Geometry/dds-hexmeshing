@@ -1,0 +1,9 @@
+#!/usr/bin/python
+
+from sys import path
+path.append('../') # required for relative import without package
+from HexMeshWorkshop import *
+
+collections_manager = CollectionsManager(get_datafolder())
+for collection in collections_manager.collections():
+    print(collection)

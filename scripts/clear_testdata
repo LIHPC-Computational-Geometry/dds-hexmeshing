@@ -1,0 +1,16 @@
+#!/usr/bin/python
+
+from pathlib import Path
+from shutil import rmtree
+from os import remove
+
+from sys import path
+path.append('../') # required for relative import without package
+from HexMeshWorkshop import *
+
+testdata_folder = Path.expanduser(Path('~/testdata'))
+for file in testdata_folder.iterdir():
+    if file.is_dir():
+        rmtree(file)
+    else:
+        remove(file)

@@ -1,6 +1,3 @@
 {
-    "MongoDB": {
-        "host": "localhost",
-        "port": 27017
-    }
+    "data_folder": "~/testdata"
 }

@@ -1,44 +1,15 @@
-from pymongo import MongoClient
 from logging import *
 from pathlib import Path
-import subprocess
-from shutil import copyfile, rmtree, unpack_archive
-from os import mkdir, path
-from json import load
+from shutil import copyfile
+from os import mkdir
+from json import load, dump
 from abc import ABC, abstractmethod
-from collections import Counter
-from tempfile import mkdtemp
-from urllib import request
 
 getLogger().setLevel(INFO)
 
-FORBIDDEN_TOP_LEVEL_FOLDER_NAMES = ['diagnostic.data', 'journal'] # folder names already used by MongoDB
-
-def get_MongoDB_dbpath():
-    """
-    Get the path to the data location used by MongoDB
-
-    Return the custom path if `mongod` was called with `--dbpath`,
-    else retuns the default path `/data/db/`
-    """
-    # it seems there is no easy way to get this value
-    # https://stackoverflow.com/questions/7247474/how-can-i-tell-where-mongodb-is-storing-data-its-not-in-the-default-data-db
-    # This function will not work
-    # - if there are several mongod processes
-    # - if the OS is not linux
-    # - if the default data location was modified in the MongoDB configuration
-    process = subprocess.run('ps -xa | grep mongod', shell=True, capture_output=True).stdout.decode().splitlines()[0] # only consider the first line
-    index = process.find('--dbpath ')
-    if index==-1:
-        fatal('mongod is not running')
-        fatal('Cannot retrieve dbpath value')
-        exit(1)
-    line = process[index+9:] # get what is after '--dbpath '
-    line = line.split(' ')[0] # get what is between '--dbpath ' and the next space
-    if len(line)==0:
-        return Path('/data/db/') # mongod was called without '--dbpath ', so it uses the default data path
-    return Path(line)
-
+def get_datafolder() -> Path:
+    # TODO expect the data folder to exist
+    return Path.expanduser(Path(load(open('../settings.json'))['data_folder'])) # path relative to the scripts/ folder
 
 class UserInput():
     """
@@ -80,173 +51,78 @@ class UserInput():
             user_choice = input(question + ' [yes/no] ').lower()
         return ((user_choice[0] == "y"))
     
-class AbstractDocument(ABC):
+class CollectionsManager():
+    """
+    Manage entries collections, stored in collections.json
+    """
+    def __init__(self,datafolder: Path):
+        collections_filename = datafolder / 'collections.json'
+        if not collections_filename.exists():
+            with open(collections_filename,'w') as file:
+                dump(dict(), file)# write empty JSON
+        self.json = load(open(collections_filename))
+        self.datafolder = datafolder
 
-    @abstractmethod #prevent user from instanciating an AbstractDocument
-    def __init__(self):
-        self.parent = None
-        self.children = dict()
+    def collections(self) -> list:
+        return self.json.keys()
+
+    def append_to_collection(self,collection_name,element: str):
+        # element is either an existing collection, of a path (relative to self.datafolder) to a folder
+        if (element not in self.json.keys()) & ((self.datafolder / element).exists()==False):
+            error(element + ' is neither an existing collection nor an existing subfolder')
+            print('existing collections : {}', self.json.keys())
+            exit(1)
+        if collection_name not in self.json.keys():
+            self.json[collection_name] = [] # empty list
+        self.json[collection_name].append(element)
+
+    def save(self):
+        with open(self.datafolder / 'collections.json','w') as file:
+            dump(self.json, file, sort_keys=True, indent=4)
+    
+class AbstractEntry(ABC):
+
+    @abstractmethod #prevent user from instanciating an AbstractEntry
+    def __init__(self, path: Path):
+        if not path.exists():
+            error(str(path) + ' does not exist')
+            exit(1)
+        self.path = path
 
     def type(self) -> str:
         return self.__class__.__name__
     
-    @abstractmethod
-    def print_parent(self):
-        pass
+    def __str__(self) -> str:
+        return '{{type={}, path={}}}'.format(self.type(),str(self.path))
 
-    @abstractmethod
-    def print_children(self):
-        pass
-
-class step(AbstractDocument):
+class step(AbstractEntry):
     """
     Interface to a step folder
     """
 
-    # Necessary files
+    # Mandatory files
     # - CAD.step
     # Optionnal files
     # - thumbnail.png
 
-    # TODO only 2 ways to init
-    # - from a path : check if a document has this path in the step collection, and fetch its data
-    # - from an ObjectID : check if this ObjectID is a document in the step colleciton, and fetch its data
-    def __init__(self,path: Path):
-        AbstractDocument.__init__(self)
-
-class HexMeshWorkshopDatabase:
-    """
-    Specific interface to a MamboDB database to manipulate HexMeshWorkshop documents
-    """
-    def __init__(self):
-
-        settings = load(open('../settings.json'))
-        host = settings["MongoDB"]["host"]
-        port = settings["MongoDB"]["port"]
-
-        self.client = MongoClient(host,port)
-        self.dbpath = get_MongoDB_dbpath()
-
-        if 'HexMeshWorkshop' not in self.client.list_database_names():
-            warning('The MongoDB instance at host=' + host + ' port=' + str(port) + ' has no database named \'HexMeshWorkshop\', it will be created')
-        
-        self.db = self.client.HexMeshWorkshop
-
-    def clear_database_and_datafiles(self):
-        if self.dbpath != Path(path.expanduser('~/testdata')): # ensure this method is not called on important data
-            fatal('clear_database_and_datafiles() is restricted to the ~/testdata folder')
+    def __init__(self,path: Path, step_file: Path):
+        path = Path(path)
+        if(step_file!=None):
+            if path.exists():
+                error(str(path) + ' already exists. Overwriting not allowed')
+                exit(1)
+            mkdir(path)
+            copyfile(step_file, path / 'CAD.step')
+        AbstractEntry.__init__(self,path)
+        if not (path / 'CAD.step').exists():
+            error('At the end of step.__init__(), ' + str(path) + ' does not exist')
             exit(1)
-        for subfolder in [x for x in self.dbpath.iterdir() if x.is_dir()]:
-            if subfolder.name not in FORBIDDEN_TOP_LEVEL_FOLDER_NAMES:
-                rmtree(subfolder)
-        self.client.drop_database(self.db)
-        self.db = self.client.HexMeshWorkshop # new empty database
 
-    def count_in_all_collections(self,filter):
-        count = 0
-        for collection in self.db.list_collection_names():
-            cursor = self.db[collection].find(filter)
-            count += len(list(cursor))
-        return count
+    def step_file(self) -> Path:
+        return self.path / 'CAD.step'
 
-    def insert(self,type: type,**kwargs):
-        """
-        Insertion of a document inside the HexMeshWorkshop database.
-
-        This function is ensuring:
-        - there is no other document, in all collecitions, with the same path
-        - target files do not already exist in the data folder
-
-        Returns the object ID if the document was successfully added, else None
-        """
-
-        if not issubclass(type,AbstractDocument):
-            error('class \'' + type.__name__ + '\' is not a subclass of \'AbstractDocument\'')
-            error('so an instance of this class cannot be inserted in an HexMeshWorkshopDatabase')
-            return None
-
-        document_to_insert = None
-        if type == step:
-            if Counter(kwargs.keys()) != Counter(['name','source_step_file']): # unordered list comparison
-                error('Invalid argument names for a step insertion')
-                return None
-            
-            new_path = self.dbpath / kwargs['name']
-            new_path_relative = new_path.relative_to(self.dbpath)
-
-            if new_path.exists() & new_path.is_dir() :
-                # TODO allow overwriting
-                error('There already is a folder \'' + kwargs['name'] + '\' in the database files')
-                return None
-
-            # if self.db[type.__name__].find_one({"path": str(new_path_relative)}):
-            #     error('There already is a document with path \'' + str(new_path_relative) + '\' in the step collection')
-            #     return None
-
-            if self.count_in_all_collections({"path": str(new_path_relative)}) != 0:
-                # TODO allow overwriting
-                error('There already is a document with \'' + str(new_path_relative) + '\' as path in the database')
-                return None
-
-            # create the folder and move the file(s)
-            mkdir(new_path) # create a directory with the name of the step file
-            copyfile(kwargs['source_step_file'], new_path / 'CAD.step') # copy and rename the step file
-
-            # assemble the document to insert
-            document_to_insert = {
-                'path': str(new_path_relative)
-            }
-        else:
-            error('Unknown AbstractDocument subclass \'' + str(type) + '\' in HexMeshWorkshopDatabase.insert()')
-            error('You must complete HexMeshWorkshopDatabase.insert() with the specific pre-insertion tests')
-            return None
-        
-        if(document_to_insert == None): # document_to_insert must have been modified since declaration
-            error('Attempt to insert \'None\' in HexMeshWorkshopDatabase.insert()')
-            return None
-
-        # effective insertion
-        result = self.db[type.__name__].insert_one(document_to_insert) # access the collection of this type and insert the document
-        return result.inserted_id # return the ID of the inserted document
-    
-    def import_MAMBO(self,input=None):
-        tmp_dir_used = True
-        if input==None:
-            if not UserInput.ask("No input was given, so the MAMBO dataset will be downloaded, are you sure you want to continue ?"):
-                info("Operation cancelled")
-                exit(0)
-            url = 'https://gitlab.com/franck.ledoux/mambo/-/archive/master/mambo-master.zip'
-            tmp_folder = Path(mkdtemp()) # request an os-specific tmp folder
-            zip_file = tmp_folder / 'mambo-master.zip'
-            input = tmp_folder / 'mambo-master'
-            info('Downloading MAMBO')
-            request.urlretrieve(url=url,filename=str(zip_file))
-            info('Extracting archive')
-            unpack_archive(zip_file,extract_dir=tmp_folder)
-        else:
-            tmp_dir_used = False
-            info('MAMBO will be imported from folder ' + input)
-            input = Path(input).absolute()
-            if not input.exists():
-                fatal(str(input) + ' does not exist')
-                exit(1)
-            if not input.is_dir():
-                fatal(str(input) + ' is not a folder')
-                exit(1)
-        for subfolder in [x for x in input.iterdir() if x.is_dir()]:
-            if subfolder.name == 'Scripts':
-                continue # ignore this subfolder
-            for file in [x for x in subfolder.iterdir() if x.suffix == '.step']:
-                inserted_id = self.insert(
-                    step,
-                    name=file.stem,
-                    source_step_file=file
-                )
-                if (inserted_id != None):
-                    info(file.name + ' imported')
-                # TODO create 'MAMBO_'+subfolder.name and 'MAMBO' sets
-
-        if tmp_dir_used:
-            # delete the temporary directory
-            debug('Deleting folder \'' + str(tmp_folder) + '\'')
-            rmtree(tmp_folder)
+def instantiate(path: Path):
+    if((path / 'CAD.step').exists()): # TODO the step class should manage the check
+        return globals['step'](path)
+    error('No known class recognize the folder ' + str(path.absolute()))
+    exit(1)

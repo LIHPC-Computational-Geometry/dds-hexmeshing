@@ -1,0 +1,68 @@
+#!/usr/bin/python
+
+from logging import *
+from pathlib import Path
+from shutil import rmtree, unpack_archive
+from tempfile import mkdtemp
+from urllib import request
+from argparse import ArgumentParser
+
+from sys import path
+path.append('../') # required for relative import without package
+from HexMeshWorkshop import *
+
+parser = ArgumentParser(
+    prog='import_MAMBO',
+    description='Import MAMBO dataset in the data folder')
+
+parser.add_argument(
+    '-i', '--input',
+    dest='input',
+    metavar='PATH',
+    help='path to the MAMBO folder',
+    required=False)
+
+args = parser.parse_args()
+
+# TODO move into a function in HexMeshWorkshop ?
+
+data_folder = get_datafolder()
+collections_manager = CollectionsManager(data_folder)
+
+tmp_dir_used = True
+if args.input==None:
+    if not UserInput.ask("No input was given, so the MAMBO dataset will be downloaded, are you sure you want to continue ?"):
+        info("Operation cancelled")
+        exit(0)
+    url = 'https://gitlab.com/franck.ledoux/mambo/-/archive/master/mambo-master.zip'
+    tmp_folder = Path(mkdtemp()) # request an os-specific tmp folder
+    zip_file = tmp_folder / 'mambo-master.zip'
+    input = tmp_folder / 'mambo-master'
+    info('Downloading MAMBO')
+    request.urlretrieve(url=url,filename=str(zip_file))
+    info('Extracting archive')
+    unpack_archive(zip_file,extract_dir=tmp_folder)
+else:
+    tmp_dir_used = False
+    input = Path(args.input).absolute()
+    info('MAMBO will be imported from folder ' + str(input))
+    if not input.exists():
+        fatal(str(input) + ' does not exist')
+        exit(1)
+    if not input.is_dir():
+        fatal(str(input) + ' is not a folder')
+        exit(1)
+for subfolder in [x for x in input.iterdir() if x.is_dir()]:
+    if subfolder.name in ['Scripts', '.git'] :
+        continue # ignore this subfolder
+    for file in [x for x in subfolder.iterdir() if x.suffix == '.step']:
+        step_object = step(data_folder / file.stem,file)
+        print(file.stem + ' imported')
+        collections_manager.append_to_collection('MAMBO_'+subfolder.name,str(file.stem)) # 'MAMBO_Basic', 'MAMBO_Simple' & 'MAMBO_Medium' collections
+    collections_manager.append_to_collection('MAMBO','MAMBO_'+subfolder.name) # 'MAMBO' collection, will contain 'MAMBO_Basic', 'MAMBO_Simple' & 'MAMBO_Medium'
+collections_manager.save()
+
+if tmp_dir_used:
+    # delete the temporary directory
+    debug('Deleting folder \'' + str(tmp_folder) + '\'')
+    rmtree(tmp_folder)
