@@ -236,6 +236,20 @@ class tetra_mesh(AbstractEntry):
         bin.is_required()
         bin.execute(surface_mesh=self.surface_mesh_file())
 
+    def view(self):
+        """
+        View files (for now only surface mesh) with Graphite
+        https://github.com/BrunoLevy/GraphiteThree
+        """
+        cmd = WrappedExecutable(
+            Path.expanduser(Path(load(open('../settings.json'))['paths']['Graphite'])), # path relative to the scripts/ folder
+            '{surface_mesh}', # arguments template
+            None, # no stout file
+            None # no stderr file
+        )
+        cmd.is_required()
+        cmd.execute(surface_mesh=self.surface_mesh_file())
+
 def instantiate(path: Path):
     if((path / 'CAD.step').exists()): # TODO the step class should manage the check
         assert('step' in globals().keys())
