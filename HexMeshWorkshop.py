@@ -161,6 +161,10 @@ class AbstractEntry(ABC):
     
     def __str__(self) -> str:
         return '{{type={}, path={}}}'.format(self.type(),str(self.path))
+    
+    @abstractmethod
+    def view(self):
+        print(self)
 
 class step(AbstractEntry):
     """
@@ -187,6 +191,22 @@ class step(AbstractEntry):
 
     def step_file(self) -> Path:
         return self.path / 'CAD.step'
+    
+    def view(self):
+        """
+        View STEP file with Mayo
+        https://github.com/fougue/mayo
+        """
+        cmd = WrappedExecutable(
+            Path.expanduser(Path(load(open('../settings.json'))['paths']['Mayo'])), # path relative to the scripts/ folder
+            '{step} --no-progress', # arguments template
+            None, # no stout file
+            None # no stderr file
+        )
+        cmd.is_required()
+        assert(self.step_file().exists())
+        cmd.execute(step=self.step_file())
+
     
 class tetra_mesh(AbstractEntry):
     """
@@ -219,7 +239,7 @@ class tetra_mesh(AbstractEntry):
 def instantiate(path: Path):
     if((path / 'CAD.step').exists()): # TODO the step class should manage the check
         assert('step' in globals().keys())
-        return globals()['step'](path)
+        return globals()['step'](path,None)
     elif((path / 'surface.obj').exists()): # TODO the tetra_mesh class should manage the check &.obj should not be mandatory
         assert('tetra_mesh' in globals().keys())
         return globals()['tetra_mesh'](path)

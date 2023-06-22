@@ -1,6 +1,7 @@
 {
     "data_folder": "~/testdata",
     "paths": {
-        "automatic_polycube": "~/code/automatic_polycube/build/Linux64-gcc-dynamic-Debug/bin"
+        "automatic_polycube": "~/code/automatic_polycube/build/Linux64-gcc-dynamic-Debug/bin",
+        "Mayo": "~/.local/bin/mayo"
     }
 }
