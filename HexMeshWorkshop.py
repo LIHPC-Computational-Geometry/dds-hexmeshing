@@ -4,6 +4,8 @@ from shutil import copyfile
 from os import mkdir
 from json import load, dump
 from abc import ABC, abstractmethod
+import time
+import subprocess
 
 getLogger().setLevel(INFO)
 
@@ -50,6 +52,71 @@ class UserInput():
         while user_choice not in ['y','yes','n','no']:
             user_choice = input(question + ' [yes/no] ').lower()
         return ((user_choice[0] == "y"))
+    
+class WrappedExecutable:
+
+    def __init__(self,path,arguments_template,stdout_file,stderr_file):
+        self.path = path
+        self.arguments_template = arguments_template # will be formatted in execute()
+        self.arguments = list()
+        self.completed_process = None
+        self.stdout_file = stdout_file
+        self.stderr_file = stderr_file
+        self.start_localtime = None
+        self.start = None
+        self.stop = None
+
+        #extract the arguments from arguments_template
+        # /!\ expect the curly brackets to be balanced
+        arguments_template = arguments_template.split("{")
+        for i in range(1,len(arguments_template)):#ommit the fist element, which doesn't start with '{'
+            self.arguments.append(arguments_template[i].split("}")[0])# cut at '}' and keep the first part
+
+    def exists(self):
+        return self.path.exists()
+
+    def is_required(self):
+        if not self.exists():
+            print("Error: '" + str(self.path) + "' is required, but does not exist")
+            exit(1)
+    
+    def execute(self,**kwargs):
+        #check arguments
+        for arg in kwargs:
+            if arg not in self.arguments:
+                print("Error: argument named '" + arg + "' was given to execute()")
+                print("but is not in the arguments template given at the initialization of WrappedExecutable:")
+                print("'" + self.arguments_template + "'")
+                exit(1)
+        for arg in self.arguments:
+            if arg not in kwargs:
+                print("Error: argument named '" + arg + "' is missing in execute()")
+                exit(1)
+
+        full_command = (str(self.path) + " " + self.arguments_template).format(**kwargs)# assemble the executable path and its arguments, according to the argument template
+        self.start_localtime = time.localtime()
+        self.start = time.monotonic()
+        self.completed_process = subprocess.run(full_command, shell=True, capture_output=True)
+        self.stop = time.monotonic()
+        
+        #write stdout and stderr
+        if (self.stdout_file != None) & (self.completed_process.stdout != b''): # if the user asked for a stdout file & the subprocess wrote something
+            f = open(self.stdout_file,"xb")# x = create new file, b = binary mode
+            f.write(self.completed_process.stdout)
+            f.close()
+        if (self.stderr_file != None) & (self.completed_process.stderr != b''): # if the user asked for a stderr file & the subprocess wrote something
+            f = open(self.stderr_file,"xb")
+            f.write(self.completed_process.stderr)
+            f.close()
+        
+        self.completed_process.check_returncode()# will raise a CalledProcessError if non-zero
+        return 0
+
+    def start_time(self):
+        return self.start_localtime # to be formatted with strftime
+
+    def duration(self):
+        return self.stop - self.start
     
 class CollectionsManager():
     """
@@ -120,9 +187,41 @@ class step(AbstractEntry):
 
     def step_file(self) -> Path:
         return self.path / 'CAD.step'
+    
+class tetra_mesh(AbstractEntry):
+    """
+    Interface to a tetra mesh folder
+    """
+
+    def __init__(self,path: Path):
+        path = Path(path)
+        AbstractEntry.__init__(self,path)
+    
+    def tetra_mesh_file(self):
+        return self.path / 'tetra.mesh'
+
+    def surface_mesh_file(self):
+        return self.path / 'surface.obj'
+    
+    def surface_map_file(self):
+        return self.path / 'surface_map.txt'
+    
+    def automatic_polycube(self):
+        bin = WrappedExecutable(
+            Path.expanduser(Path(load(open('../settings.json'))['paths']['automatic_polycube'])) / 'automatic_polycube', # path relative to the scripts/ folder
+            '{surface_mesh}', # arguments template
+            None, # no stout file
+            None # no stderr file
+        )
+        bin.is_required()
+        bin.execute(surface_mesh=self.surface_mesh_file())
 
 def instantiate(path: Path):
     if((path / 'CAD.step').exists()): # TODO the step class should manage the check
-        return globals['step'](path)
+        assert('step' in globals().keys())
+        return globals()['step'](path)
+    elif((path / 'surface.obj').exists()): # TODO the tetra_mesh class should manage the check &.obj should not be mandatory
+        assert('tetra_mesh' in globals().keys())
+        return globals()['tetra_mesh'](path)
     error('No known class recognize the folder ' + str(path.absolute()))
     exit(1)

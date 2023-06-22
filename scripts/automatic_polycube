@@ -1,0 +1,24 @@
+#!/usr/bin/python
+
+from pathlib import Path
+from argparse import ArgumentParser
+
+from sys import path
+path.append('../') # required for relative import without package
+from HexMeshWorkshop import *
+
+parser = ArgumentParser(
+    prog='automatic_polycube',
+    description='Generate a polycube labeling')
+
+parser.add_argument(
+    '-i', '--input',
+    dest='input',
+    metavar='PATH',
+    help='path to the input folder',
+    required=True)
+
+args = parser.parse_args()
+
+input = instantiate(Path(args.input))
+input.automatic_polycube()

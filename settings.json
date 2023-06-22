@@ -1,3 +1,6 @@
 {
-    "data_folder": "~/testdata"
+    "data_folder": "~/testdata",
+    "paths": {
+        "automatic_polycube": "~/code/automatic_polycube/build/Linux64-gcc-dynamic-Debug/bin"
+    }
 }
