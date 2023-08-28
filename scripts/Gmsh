@@ -1,0 +1,40 @@
+#!/usr/bin/python
+
+from pathlib import Path
+from argparse import ArgumentParser
+
+from sys import path
+path.append('../') # required for relative import without package
+from HexMeshWorkshop import *
+
+parser = ArgumentParser(
+    prog='Gmsh',
+    description='Tetrahedrization with Gmsh')
+
+parser.add_argument(
+    '-i', '--input',
+    dest='input',
+    metavar='PATH',
+    help='path to the input folder',
+    required=True)
+
+parser.add_argument(
+    '--mesh-size',
+    dest='mesh_size',
+    metavar='REAL',
+    help='element size factor in ]0,1] (default is 0.05)',
+    required=False,
+    default=0.05)
+
+args = parser.parse_args()
+
+cm = CollectionsManager(Path.expanduser(Path(load(open('../settings.json'))['data_folder'])))
+
+if args.input in cm.collections():
+    print('input is a colleciton -> batch mode')
+    exit(0)
+
+input = instantiate(Path(args.input))
+input.Gmsh(float(args.mesh_size))
+
+# TODO 	systematically extract the surface

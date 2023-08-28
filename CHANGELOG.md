@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **`Gmsh` script** : generate a tetrahedral mesh from a step folder with [Gmsh](https://gmsh.info/)
 - **`automatic_polycube` script** : call the main executable of [LIHPC-Computational-Geometry/automatic_polycube](https://github.com/LIHPC-Computational-Geometry/automatic_polycube)
 
 ## 0.1.0
