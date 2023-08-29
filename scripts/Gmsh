@@ -35,6 +35,7 @@ if args.input in cm.collections():
     exit(0)
 
 input = instantiate(Path(args.input))
-input.Gmsh(float(args.mesh_size))
+subfolder = input.Gmsh(float(args.mesh_size))
 
-# TODO 	systematically extract the surface
+mesh_folder = instantiate(subfolder)
+mesh_folder.extract_surface()

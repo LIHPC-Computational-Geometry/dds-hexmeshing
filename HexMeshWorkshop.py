@@ -1,4 +1,4 @@
-from logging import *
+import logging
 from pathlib import Path
 from shutil import copyfile
 from os import mkdir
@@ -7,7 +7,7 @@ from abc import ABC, abstractmethod
 import time
 import subprocess
 
-getLogger().setLevel(INFO)
+logging.getLogger().setLevel(logging.INFO)
 
 def get_datafolder() -> Path:
     # TODO expect the data folder to exist
@@ -131,7 +131,7 @@ class ParametricString:
     def get_parameters(self) -> list:
         return self.parameters
     
-    def assemble(self,check_unused: bool,**kwargs):
+    def assemble(self,check_unused: bool,**kwargs) -> str:
         # check arguments
         for parameter in self.parameters:
             if parameter not in kwargs:
@@ -206,13 +206,11 @@ def GenerativeAlgorithm(name: str, input_folder, executable: Path, executable_ar
     for k,v in kwargs.items():
         if k in inside_subfolder:
             kwargs[k] = str((input_folder / subfolder_name / v).absolute())
-            print(v + ' changed to ' + kwargs[k])
     # Assemble command string
     # TODO check if the executable exists
     command = str(executable.absolute()) + " " + executable_arugments.assemble(False,**kwargs)
     # Write parameters value in a dict (will be dumped as JSON)
-    start_datetime_struct = time.localtime()
-    start_datetime_iso = time.strftime('%Y-%m-%dT%H:%M:%SZ', start_datetime_struct)
+    start_datetime_iso = time.strftime('%Y-%m-%dT%H:%M:%SZ', time.localtime())
     info_file = dict()
     info_file[start_datetime_iso] = {
         'GenerativeAlgorithm': name,
@@ -248,12 +246,75 @@ def GenerativeAlgorithm(name: str, input_folder, executable: Path, executable_ar
     #self.completed_process.check_returncode()# will raise a CalledProcessError if non-zero
     return input_folder / subfolder_name
 
+def InteractiveGenerativeAlgorithm(name: str, input_folder, executable: Path, executable_arugments: str, store_output: bool, **kwargs):
+    if store_output:
+        raise Exception('Not implemented')
+    executable_arugments = ParametricString(executable_arugments)
+    # Assemble command string
+    # TODO check if the executable exists
+    command = str(executable.absolute()) + " " + executable_arugments.assemble(True,**kwargs)
+    subprocess.run(command, shell=True, capture_output=False)
+    
+def TransformativeAlgorithm(name: str, input_folder, executable: Path, executable_arugments: str, **kwargs):
+    executable_arugments = ParametricString(executable_arugments)
+    # Assemble command string
+    # TODO check if the executable exists
+    command = str(executable.absolute()) + " " + executable_arugments.assemble(False,**kwargs)
+    # Read JSON file
+    info_file = dict()
+    if not (input_folder / 'info.json').exists():
+        print('Warn')
+        logging.warning('Cannot find info.json in ' + str(input_folder))
+    else:
+        info_file = load(open(input_folder / 'info.json'))
+        assert (len(info_file) != 0)
+    # Write parameters in the dict (will be dumped as JSON)
+    start_datetime_iso = ''
+    while 1:
+        start_datetime_iso = time.strftime('%Y-%m-%dT%H:%M:%SZ', time.localtime())
+        if start_datetime_iso not in info_file.keys():
+            break
+        # else : already a key with this datetime (can append with very fast algorithms)
+        time.sleep(1.0)
+    info_file[start_datetime_iso] = {
+        'TransformativeAlgorithm': name,
+        'command': command,
+        'parameters': dict()
+    }
+    for k,v in kwargs.items():
+        info_file[start_datetime_iso]['parameters'][k] = v
+    # Start chrono, call executable and store stdout/stderr
+    chrono_start = time.monotonic()
+    completed_process = subprocess.run(command, shell=True, capture_output=True)
+    chrono_stop = time.monotonic()
+    # write stdout and stderr
+    if completed_process.stdout != b'': # if the subprocess wrote something in standard output
+        filename = name + '.stdout.txt'
+        f = open(input_folder / filename,'xb')# x = create new file, b = binary mode
+        f.write(completed_process.stdout)
+        f.close()
+        info_file[start_datetime_iso]['stdout'] = filename
+    if completed_process.stderr != b'': # if the subprocess wrote something in standard error
+        filename =  name + '.stderr.txt'
+        f = open(input_folder / filename,'xb')
+        f.write(completed_process.stderr)
+        f.close()
+        info_file[start_datetime_iso]['stderr'] = filename
+    # store return code and duration
+    info_file[start_datetime_iso]["return_code"] = completed_process.returncode
+    duration = chrono_stop - chrono_start
+    info_file[start_datetime_iso]["duration"] = [duration, simple_human_readable_duration(duration)]
+    # write JSON file
+    with open(input_folder / 'info.json','w') as file:
+        dump(info_file, file, sort_keys=True, indent=4)
+    #self.completed_process.check_returncode()# will raise a CalledProcessError if non-zero
+
 class AbstractEntry(ABC):
 
     @abstractmethod #prevent user from instanciating an AbstractEntry
     def __init__(self, path: Path):
         if not path.exists():
-            error(str(path) + ' does not exist')
+            logging.error(str(path) + ' does not exist')
             exit(1)
         self.path = path
 
@@ -278,16 +339,16 @@ class step(AbstractEntry):
     # - thumbnail.png
 
     def __init__(self,path: Path, step_file: Path):
-        self.path = Path(path)
+        path = Path(path)
         if(step_file!=None):
             if path.exists():
-                error(str(path) + ' already exists. Overwriting not allowed')
+                logging.error(str(path) + ' already exists. Overwriting not allowed')
                 exit(1)
             mkdir(path)
             copyfile(step_file, path / 'CAD.step')
         AbstractEntry.__init__(self,path)
         if not (path / 'CAD.step').exists():
-            error('At the end of step.__init__(), ' + str(path) + ' does not exist')
+            logging.error('At the end of step.__init__(), ' + str(path) + ' does not exist')
             exit(1)
 
     def step_file(self) -> Path:
@@ -338,17 +399,15 @@ class tetra_mesh(AbstractEntry):
     
     def surface_map_file(self):
         return self.path / 'surface_map.txt'
-    
-    def automatic_polycube(self):
-        bin = WrappedExecutable(
-            Path.expanduser(Path(load(open('../settings.json'))['paths']['automatic_polycube'])) / 'automatic_polycube', # path relative to the scripts/ folder
-            '{surface_mesh}', # arguments template
-            None, # no stout file
-            None # no stderr file
-        )
-        bin.is_required()
-        bin.execute(surface_mesh=self.surface_mesh_file())
 
+    def automatic_polycube(self):
+        InteractiveGenerativeAlgorithm(
+            'automatic_polycube',
+            self.path,
+            Path.expanduser(Path(load(open('../settings.json'))['paths']['automatic_polycube'])) / 'automatic_polycube',
+            '{surface_mesh}',
+            False,
+            surface_mesh=self.surface_mesh_file())
     def view(self):
         """
         View files (for now only surface mesh) with Graphite
@@ -362,6 +421,29 @@ class tetra_mesh(AbstractEntry):
         )
         cmd.is_required()
         cmd.execute(surface_mesh=self.surface_mesh_file())
+
+    def extract_surface(self):
+        # cmd = WrappedExecutable(
+        #     Path.expanduser(Path(load(open('../settings.json'))['paths']['Genomesh'])) / 'tris_to_tets', # path relative to the scripts/ folder
+        #     '{tetra_mesh} {surface_mesh} {triangles_to_tetra_map}', # arguments template
+        #     str(self.path.absolute() / 'extract_surface.stdout.txt'),
+        #     str(self.path.absolute() / 'extract_surface.stderr.txt')
+        # )
+        # cmd.is_required()
+        # cmd.execute(
+        #     tetra_mesh = self.tetra_mesh_file(),
+        #     surface_mesh = self.surface_mesh_file(),
+        #     triangles_to_tetra_map = self.surface_map_file()
+        # )
+        TransformativeAlgorithm(
+            'extract_surface',
+            self.path,
+            Path.expanduser(Path(load(open('../settings.json'))['paths']['automatic_polycube'])) / 'extract_surface',
+            '{tetra_mesh} {surface_mesh} {surface_map}',
+            tetra_mesh = str(self.tetra_mesh_file().absolute()),
+            surface_mesh = str(self.surface_mesh_file().absolute()),
+            surface_map = str(self.surface_map_file().absolute())
+        )
 
 def instantiate(path: Path):
     if((path / 'CAD.step').exists()): # TODO the step class should manage the check
