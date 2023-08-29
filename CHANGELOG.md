@@ -5,11 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **`naive_labeling` script** : generate the naive labeling from a tetra mesh folder (executable from [LIHPC-Computational-Geometry/automatic_polycube](https://github.com/LIHPC-Computational-Geometry/automatic_polycube))
+
 ## 0.2.0
 
 ### Added
 
-- **`Gmsh` script** : generate a tetrahedral mesh from a step folder with [Gmsh](https://gmsh.info/)
+- **`Gmsh` script** : generate a tetrahedral mesh from a step folder with [Gmsh](https://gmsh.info/), and extract the surface
 - **`extract_surface` script** : Compute the surface (triangle) mesh in a tetra mesh folder (executable from [LIHPC-Computational-Geometry/automatic_polycube](https://github.com/LIHPC-Computational-Geometry/automatic_polycube))
 - **`automatic_polycube` script** : call the main executable of [LIHPC-Computational-Geometry/automatic_polycube](https://github.com/LIHPC-Computational-Geometry/automatic_polycube)
 

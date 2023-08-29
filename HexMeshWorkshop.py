@@ -394,6 +394,19 @@ class tetra_mesh(AbstractEntry):
             surface_map = str(self.surface_map_file().absolute())
         )
 
+    def naive_labeling(self):
+        assert(self.surface_mesh_file().exists()) # TODO auto extract the surface if missing
+        return GenerativeAlgorithm(
+            'naive_labeling',
+            self.path,
+            Path.expanduser(Path(load(open('../settings.json'))['paths']['automatic_polycube'])) / 'naive_labeling', # path relative to the scripts/ folder
+            '{surface_mesh} {labeling}',
+            'naive_labeling',
+            ['labeling'],
+            surface_mesh = str(self.surface_mesh_file().absolute()),
+            labeling = 'surface_labeling.txt'
+        )
+
 def instantiate(path: Path):
     """
     Instanciate an AbstractEntry subclass by infering the type of the given data folder
