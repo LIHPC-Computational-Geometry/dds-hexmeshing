@@ -10,6 +10,9 @@ import subprocess
 logging.getLogger().setLevel(logging.INFO)
 
 def get_datafolder() -> Path:
+    """
+    Read in settings.json the path to the data folder
+    """
     # TODO expect the data folder to exist
     return Path.expanduser(Path(load(open('../settings.json'))['data_folder'])) # path relative to the scripts/ folder
 
@@ -54,6 +57,13 @@ class UserInput():
         return ((user_choice[0] == "y"))
 
 class ParametricString:
+    """
+    A string with named parameters, filled later. Example:
+
+    command_line = ParametricString('executable -r -v {input} --set-option {option_name}')
+
+    command_line.assemble(input='in.txt',option_name='legacy')
+    """
     def __init__(self,string_template):
         self.string_template = string_template # will be formatted in assemble()
         self.parameters = list()
@@ -108,6 +118,10 @@ class CollectionsManager():
             dump(self.json, file, sort_keys=True, indent=4)
 
 def simple_human_readable_duration(duration_seconds) -> str:
+    """
+    Return a human-readable text (str) for a given duration in seconds:
+    hours, minutes & seconds elapsed
+    """
     hours   = duration_seconds // 3600
     minutes = duration_seconds % 3600 // 60
     seconds = round(duration_seconds % 60,3)
@@ -120,6 +134,10 @@ def simple_human_readable_duration(duration_seconds) -> str:
     return formatted_duration
 
 def GenerativeAlgorithm(name: str, input_folder, executable: Path, executable_arugments: str, name_template: str, inside_subfolder: list, **kwargs):
+    """
+    Define and execute a generative algorithm, that is an algorithm on a data folder which creates a subfolder.
+    Wrap an executable and manage command line assembly from parameters, chrono, stdout/stderr files and write a JSON file will all the info.
+    """
     executable_arugments = ParametricString(executable_arugments)
     name_template = ParametricString(name_template)
     for parameter in name_template.get_parameters():
@@ -182,6 +200,10 @@ def GenerativeAlgorithm(name: str, input_folder, executable: Path, executable_ar
     return input_folder / subfolder_name
 
 def InteractiveGenerativeAlgorithm(name: str, input_folder, executable: Path, executable_arugments: str, store_output: bool, **kwargs):
+    """
+    Define and execute an interactive generative algorithm, that is an interactive algorithm on a data folder which creates a subfolder (optional).
+    Wrap an executable and manage command line assembly from parameters.
+    """
     if store_output:
         raise Exception('Not implemented')
     executable_arugments = ParametricString(executable_arugments)
@@ -189,8 +211,12 @@ def InteractiveGenerativeAlgorithm(name: str, input_folder, executable: Path, ex
     # TODO check if the executable exists
     command = str(executable.absolute()) + " " + executable_arugments.assemble(True,**kwargs)
     subprocess.run(command, shell=True, capture_output=False)
-    
+
 def TransformativeAlgorithm(name: str, input_folder, executable: Path, executable_arugments: str, **kwargs):
+    """
+    Define and execute a transformative algorithm, that is an algorithm modifying a data folder without creating a subfolder.
+    Wrap an executable and manage command line assembly from parameters, chrono, stdout/stderr files and write a JSON file will all the info.
+    """
     executable_arugments = ParametricString(executable_arugments)
     # Assemble command string
     # TODO check if the executable exists
@@ -245,7 +271,9 @@ def TransformativeAlgorithm(name: str, input_folder, executable: Path, executabl
     #self.completed_process.check_returncode()# will raise a CalledProcessError if non-zero
 
 class AbstractEntry(ABC):
-
+    """
+    Represents an entry of the data folder
+    """
     @abstractmethod #prevent user from instanciating an AbstractEntry
     def __init__(self, path: Path):
         if not path.exists():
@@ -368,6 +396,9 @@ class tetra_mesh(AbstractEntry):
         )
 
 def instantiate(path: Path):
+    """
+    Instanciate an AbstractEntry subclass by infering the type of the given data folder
+    """
     if((path / 'CAD.step').exists()): # TODO the step class should manage the check
         assert('step' in globals().keys())
         return globals()['step'](path,None)
