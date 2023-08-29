@@ -224,7 +224,6 @@ def TransformativeAlgorithm(name: str, input_folder, executable: Path, executabl
     # Read JSON file
     info_file = dict()
     if not (input_folder / 'info.json').exists():
-        print('Warn')
         logging.warning('Cannot find info.json in ' + str(input_folder))
     else:
         info_file = load(open(input_folder / 'info.json'))

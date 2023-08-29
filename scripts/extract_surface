@@ -1,0 +1,30 @@
+#!/usr/bin/python
+
+from pathlib import Path
+from argparse import ArgumentParser
+
+from sys import path
+path.append('../') # required for relative import without package
+from HexMeshWorkshop import *
+
+parser = ArgumentParser(
+    prog='extract_surface',
+    description='Extract the triangle surface mesh of a tetrahedral mesh')
+
+parser.add_argument(
+    '-i', '--input',
+    dest='input',
+    metavar='PATH',
+    help='path to the input folder (type tetra_mesh)',
+    required=True)
+
+args = parser.parse_args()
+
+cm = CollectionsManager(Path.expanduser(Path(load(open('../settings.json'))['data_folder'])))
+
+if args.input in cm.collections():
+    print('input is a colleciton -> batch mode')
+    exit(0)
+
+input = instantiate(Path(args.input))
+input.extract_surface()
