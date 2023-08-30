@@ -436,9 +436,28 @@ def instantiate(path: Path):
     """
     Instanciate an AbstractEntry subclass by infering the type of the given data folder
     """
-    # TODO look inside info.json for a 'type' entry
+    # Look inside info.json for a TYPE_KEY_NAME entry
     # else, type inference from files inside the folder
+    # Note : Loading the JSON should be slower than infering the type each time...
+    #        So disabled for now
+
+    # -- FEATURE DISABLED -------------
+    # TYPE_KEY_NAME = 'type'
+    # info_file = dict()
+    # if (path / 'info.json').exists():
+    #     info_file = load(open(path / 'info.json'))
+    #     if TYPE_KEY_NAME in info_file.keys():
+    #         return globals()[info_file[TYPE_KEY_NAME]](path)
+    # logging.info('The type of ' + str(path) + ' is not explicitly stored in info.json -> type inference from files inside')
+    # ---------------------------------
 
     # call type_inference() to have the class, then instantiate it
     type = type_inference(path)
+
+    # -- FEATURE DISABLED -------------
+    # info_file[TYPE_KEY_NAME] = type.__name__ # add 'type' entry
+    # with open(path / 'info.json','w') as file:
+    #     dump(info_file, file, sort_keys=True, indent=4)
+    # ---------------------------------
+
     return type(path)
