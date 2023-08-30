@@ -420,6 +420,35 @@ class tetra_mesh(AbstractEntry):
             labeling = 'surface_labeling.txt'
         )
 
+class labeling(AbstractEntry):
+    """
+    Interface to a labeling folder
+    """
+
+    def __init__(self,path: Path):
+        path = Path(path)
+        AbstractEntry.__init__(self,path)
+
+    @staticmethod
+    def is_instance(path: Path) -> bool:
+        return (path / 'surface_labeling.txt').exists() # path is an instance of labeling if it has a surface_labeling.txt file
+    
+    def view(self):
+        """
+        View labeling with labeling_viewer app from automatic_polycube repo
+        """
+        parent = instantiate(self.path.parent) # we need the parent folder to get the surface mesh
+        assert(parent.type() == 'tetra_mesh') # the parent folder should be of tetra mesh type
+        InteractiveGenerativeAlgorithm(
+            'view',
+            self.path,
+            Path.expanduser(Path(load(open('../settings.json'))['paths']['automatic_polycube'])) / 'labeling_viewer', # path relative to the scripts/ folder
+            '{surface_mesh} {surface_labeling}', # arguments template
+            False,
+            surface_mesh = str(parent.surface_mesh_file().absolute()),
+            surface_labeling = str((self.path / 'surface_labeling.txt').absolute())
+        )
+
 def type_inference(path: Path):
     infered_types = list() # will store all AbstractEntry subclasses recognizing path as an instance
     for subclass in AbstractEntry.__subclasses__():
