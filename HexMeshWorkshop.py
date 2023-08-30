@@ -290,6 +290,11 @@ class AbstractEntry(ABC):
     def view(self):
         print(self)
 
+    @staticmethod
+    @abstractmethod
+    def is_instance(path: Path) -> bool:
+        raise Exception('Not all AbstractEntry subclasses have specialized is_instance()')
+
 class step(AbstractEntry):
     """
     Interface to a step folder
@@ -300,7 +305,7 @@ class step(AbstractEntry):
     # Optionnal files
     # - thumbnail.png
 
-    def __init__(self,path: Path, step_file: Path):
+    def __init__(self,path: Path, step_file: Path = None):
         path = Path(path)
         if(step_file!=None):
             if path.exists():
@@ -329,6 +334,10 @@ class step(AbstractEntry):
             False,
             step = self.step_file()
         )
+    
+    @staticmethod
+    def is_instance(path: Path) -> bool:
+        return (path / 'CAD.step').exists() # path is an instance of step if it has a CAD.step file
 
     def Gmsh(self,mesh_size) -> Path:
         return GenerativeAlgorithm(
@@ -351,6 +360,10 @@ class tetra_mesh(AbstractEntry):
     def __init__(self,path: Path):
         path = Path(path)
         AbstractEntry.__init__(self,path)
+
+    @staticmethod
+    def is_instance(path: Path) -> bool:
+        return (path / 'tetra.mesh').exists() # path is an instance of tetra_mesh if it has a tetra.mesh file
     
     def tetra_mesh_file(self):
         return self.path / 'tetra.mesh'
@@ -407,14 +420,25 @@ class tetra_mesh(AbstractEntry):
             labeling = 'surface_labeling.txt'
         )
 
+def type_inference(path: Path):
+    infered_types = list() # will store all AbstractEntry subclasses recognizing path as an instance
+    for subclass in AbstractEntry.__subclasses__():
+        if subclass.is_instance(path):
+            infered_types.append(subclass) # current subclass recognize path
+    if len(infered_types) == 0:
+        raise Exception('No known class recognize the folder ' + str(path.absolute()))
+    elif len(infered_types) > 1: # if multiple AbstractEntry subclasses recognize path
+        raise Exception('Multiple classes recognize the folder ' + str(path.absolute()) + ' : ' + str([x.__name__ for x in infered_types]))
+    else:
+        return infered_types[0]
+
 def instantiate(path: Path):
     """
     Instanciate an AbstractEntry subclass by infering the type of the given data folder
     """
-    if((path / 'CAD.step').exists()): # TODO the step class should manage the check
-        assert('step' in globals().keys())
-        return globals()['step'](path,None)
-    elif((path / 'surface.obj').exists() | (path / 'tetra.mesh').exists()): # TODO the tetra_mesh class should manage the check &.obj should not be mandatory
-        assert('tetra_mesh' in globals().keys())
-        return globals()['tetra_mesh'](path)
-    raise Exception('No known class recognize the folder ' + str(path.absolute()))
+    # TODO look inside info.json for a 'type' entry
+    # else, type inference from files inside the folder
+
+    # call type_inference() to have the class, then instantiate it
+    type = type_inference(path)
+    return type(path)
