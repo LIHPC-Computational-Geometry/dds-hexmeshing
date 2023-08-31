@@ -300,10 +300,9 @@ class step(AbstractEntry):
     Interface to a step folder
     """
 
-    # Mandatory files
-    # - CAD.step
-    # Optionnal files
-    # - thumbnail.png
+    FILENAME = {
+        'STEP': 'CAD.step' # CAD model in the STEP formet
+    }
 
     DEFAULT_VIEW = 'step'
 
@@ -314,14 +313,11 @@ class step(AbstractEntry):
                 logging.error(str(path) + ' already exists. Overwriting not allowed')
                 exit(1)
             mkdir(path)
-            copyfile(step_file, path / 'CAD.step')
+            copyfile(step_file, path / self.FILENAME['STEP'])
         AbstractEntry.__init__(self,path)
-        if not (path / 'CAD.step').exists():
+        if not (path / self.FILENAME['STEP']).exists():
             logging.error('At the end of step.__init__(), ' + str(path) + ' does not exist')
             exit(1)
-
-    def step_file(self) -> Path:
-        return self.path / 'CAD.step'
     
     def view(self, what = None):
         """
@@ -338,14 +334,14 @@ class step(AbstractEntry):
                 Path.expanduser(Path(load(open('../settings.json'))['paths']['Mayo'])), # path relative to the scripts/ folder
                 '{step} --no-progress', # arguments template
                 False,
-                step = self.step_file()
+                step = str((self.path / self.FILENAME['STEP']).absolute())
             )
         else:
             raise Exception(f'step.view() does not recognize \'what\' value: \'{what}\'')
     
     @staticmethod
     def is_instance(path: Path) -> bool:
-        return (path / 'CAD.step').exists() # path is an instance of step if it has a CAD.step file
+        return (path / step.FILENAME['STEP']).exists()
 
     def Gmsh(self,mesh_size) -> Path:
         return GenerativeAlgorithm(
@@ -355,7 +351,7 @@ class step(AbstractEntry):
             '{step} -3 -format mesh -o {output_file} -setnumber Mesh.CharacteristicLengthFactor {characteristic_length_factor} -nt {nb_threads}',
             'Gmsh_{characteristic_length_factor}',
             ['output_file'],
-            step=str((self.path / 'CAD.step').absolute()),
+            step=str((self.path / self.FILENAME['STEP']).absolute()),
             output_file='tetra.mesh',
             characteristic_length_factor=mesh_size,
             nb_threads = 8)
@@ -365,6 +361,12 @@ class tetra_mesh(AbstractEntry):
     Interface to a tetra mesh folder
     """
 
+    FILENAME = {
+        'tet_mesh': 'tetra.mesh',           # tetrahedral mesh in the GMF/MEDIT ASCII format
+        'surface_mesh': 'surface.obj',      # (triangle) surface of the tet-mesh, in the Wavefront format
+        'surface_map': 'surface_map.txt'    # association between surface triangles and tet facets (see https://github.com/LIHPC-Computational-Geometry/automatic_polycube/blob/main/app/extract_surface.cpp for the format)
+    }
+
     DEFAULT_VIEW = 'surface_mesh'
 
     def __init__(self,path: Path):
@@ -373,16 +375,7 @@ class tetra_mesh(AbstractEntry):
 
     @staticmethod
     def is_instance(path: Path) -> bool:
-        return (path / 'tetra.mesh').exists() # path is an instance of tetra_mesh if it has a tetra.mesh file
-    
-    def tetra_mesh_file(self):
-        return self.path / 'tetra.mesh'
-
-    def surface_mesh_file(self):
-        return self.path / 'surface.obj'
-    
-    def surface_map_file(self):
-        return self.path / 'surface_map.txt'
+        return (path / tetra_mesh.FILENAME['tet_mesh']).exists()
 
     def automatic_polycube(self):
         InteractiveGenerativeAlgorithm(
@@ -391,7 +384,8 @@ class tetra_mesh(AbstractEntry):
             Path.expanduser(Path(load(open('../settings.json'))['paths']['automatic_polycube'])) / 'automatic_polycube',
             '{surface_mesh}',
             False,
-            surface_mesh=self.surface_mesh_file())
+            surface_mesh = str((self.path / self.FILENAME['surface_mesh']).absolute()))
+    
     def view(self, what = None):
         """
         View files (for now only surface mesh) with Graphite
@@ -400,13 +394,14 @@ class tetra_mesh(AbstractEntry):
         if what == None:
             what = self.DEFAULT_VIEW
         if what == 'surface_mesh':
+            assert((self.path / self.FILENAME['surface_mesh']).exists())
             InteractiveGenerativeAlgorithm(
                 'view',
                 self.path,
                 Path.expanduser(Path(load(open('../settings.json'))['paths']['Graphite'])), # path relative to the scripts/ folder
                 '{surface_mesh}', # arguments template
                 False,
-                surface_mesh = self.surface_mesh_file()
+                surface_mesh = str((self.path / self.FILENAME['surface_mesh']).absolute())
             )
         else:
             raise Exception(f'tetra_mesh.view() does not recognize \'what\' value: \'{what}\'')
@@ -417,13 +412,13 @@ class tetra_mesh(AbstractEntry):
             self.path,
             Path.expanduser(Path(load(open('../settings.json'))['paths']['automatic_polycube'])) / 'extract_surface',
             '{tetra_mesh} {surface_mesh} {surface_map}',
-            tetra_mesh = str(self.tetra_mesh_file().absolute()),
-            surface_mesh = str(self.surface_mesh_file().absolute()),
-            surface_map = str(self.surface_map_file().absolute())
+            tetra_mesh = str((self.path / self.FILENAME['tet_mesh']).absolute()),
+            surface_mesh = str((self.path / self.FILENAME['surface_mesh']).absolute()),
+            surface_map = str((self.path / self.FILENAME['surface_map']).absolute())
         )
 
     def naive_labeling(self):
-        assert(self.surface_mesh_file().exists()) # TODO auto extract the surface if missing
+        assert((self.path / self.FILENAME['surface_mesh']).exists()) # TODO auto extract the surface if missing
         return GenerativeAlgorithm(
             'naive_labeling',
             self.path,
@@ -431,25 +426,33 @@ class tetra_mesh(AbstractEntry):
             '{surface_mesh} {labeling}',
             'naive_labeling',
             ['labeling'],
-            surface_mesh = str(self.surface_mesh_file().absolute()),
+            surface_mesh = str((self.path / self.FILENAME['surface_mesh']).absolute()),
             labeling = 'surface_labeling.txt'
         )
     
     def HexBox(self):
-        assert(self.surface_mesh_file().exists()) # TODO auto extract the surface if missing
+        assert((self.path / self.FILENAME['surface_mesh']).exists()) # TODO auto extract the surface if missing
         InteractiveGenerativeAlgorithm(
             'HexBox',
             self.path,
             Path.expanduser(Path(load(open('../settings.json'))['paths']['HexBox'])), # path relative to the scripts/ folder
             '{mesh}', # arguments template
             False,
-            mesh = str(self.surface_mesh_file().absolute())
+            mesh = str((self.path / self.FILENAME['surface_mesh']).absolute())
         )
 
 class labeling(AbstractEntry):
     """
     Interface to a labeling folder
     """
+
+    FILENAME = {
+        'surface_labeling': 'surface_labeling.txt',                         # per-surface-triangle labels, values from 0 to 5 -> {+X,-X,+Y,-Y,+Z,-Z}
+        'volume_labeling': 'tetra_labeling.txt',                            # per-tet-facets labels, same values + "-1" for "no label"
+        'polycube_surface_mesh': 'fastbndpolycube.obj',                     # polycube deformation of the surface mesh, in the Wavefront format
+        'preprocessed_tet_mesh': 'preprocessed.tetra.mesh',                 # tet-mesh with additional cells to avoid impossible configuration regarding the labeling. GMF/MEDIT ASCII format
+        'flagging_from_fastbndpolycube': 'fastbndpolycube.flagging.geogram' # intermediate file outputted by fastbndpolycube, in the Geogram format
+    }
 
     DEFAULT_VIEW = 'labeled_surface'
 
@@ -459,7 +462,7 @@ class labeling(AbstractEntry):
 
     @staticmethod
     def is_instance(path: Path) -> bool:
-        return (path / 'surface_labeling.txt').exists() # path is an instance of labeling if it has a surface_labeling.txt file
+        return (path / labeling.FILENAME['surface_labeling']).exists() # path is an instance of labeling if it has a surface_labeling.txt file
     
     def view(self,what = 'labeled_surface'):
         """
@@ -476,19 +479,19 @@ class labeling(AbstractEntry):
                 Path.expanduser(Path(load(open('../settings.json'))['paths']['automatic_polycube'])) / 'labeling_viewer', # path relative to the scripts/ folder
                 '{surface_mesh} {surface_labeling}', # arguments template
                 False,
-                surface_mesh = str(parent.surface_mesh_file().absolute()),
-                surface_labeling = str((self.path / 'surface_labeling.txt').absolute())
+                surface_mesh = str((parent.path / parent.FILENAME['surface_mesh']).absolute()),
+                surface_labeling = str((self.path / self.FILENAME['surface_labeling']).absolute())
             )
         elif what == 'fastbndpolycube':
-            assert( (self.path / 'fastbndpolycube.obj').exists() ) # TODO autocompute if missing
+            assert( (self.path / self.FILENAME['polycube_surface_mesh']).exists() ) # TODO autocompute if missing
             InteractiveGenerativeAlgorithm(
                 'view',
                 self.path,
                 Path.expanduser(Path(load(open('../settings.json'))['paths']['automatic_polycube'])) / 'labeling_viewer', # path relative to the scripts/ folder
                 '{surface_mesh} {surface_labeling}', # arguments template
                 False,
-                surface_mesh = str((self.path / 'fastbndpolycube.obj').absolute()), # surface polycube mesh instead of original surface mesh
-                surface_labeling = str((self.path / 'surface_labeling.txt').absolute())
+                surface_mesh = str((self.path / self.FILENAME['polycube_surface_mesh']).absolute()), # surface polycube mesh instead of original surface mesh
+                surface_labeling = str((self.path / self.FILENAME['surface_labeling']).absolute())
             )
         else:
             raise Exception(f'labeling.view() does not recognize \'what\' value: \'{what}\'')
@@ -501,9 +504,9 @@ class labeling(AbstractEntry):
             self.path,
             Path.expanduser(Path(load(open('../settings.json'))['paths']['automatic_polycube'])) / 'volume_labeling', # path relative to the scripts/ folder
             '{surface_labeling} {surface_map} {tetra_labeling}',
-            surface_labeling = str((self.path / 'surface_labeling.txt').absolute()),
-            surface_map = str(parent.surface_map_file().absolute()),
-            tetra_labeling = str((self.path / 'tetra_labeling.txt').absolute())
+            surface_labeling = str((self.path / self.FILENAME['surface_labeling']).absolute()),
+            surface_map = str((parent.path / parent.FILENAME['surface_map']).absolute()),
+            tetra_labeling = str((self.path / self.FILENAME['volume_labeling']).absolute())
         )
 
     def fastbndpolycube(self):
@@ -514,13 +517,13 @@ class labeling(AbstractEntry):
             self.path,
             Path.expanduser(Path(load(open('../settings.json'))['paths']['fastbndpolycube'])),
             '{surface_mesh} {surface_labeling} {polycube_mesh}',
-            surface_mesh = str(parent.surface_mesh_file().absolute()),
-            surface_labeling = str((self.path / 'surface_labeling.txt').absolute()),
-            polycube_mesh = str((self.path / 'fastbndpolycube.obj').absolute())
+            surface_mesh = str((parent.path / parent.FILENAME['surface_mesh']).absolute()),
+            surface_labeling = str((self.path / self.FILENAME['surface_labeling']).absolute()),
+            polycube_mesh = str((self.path / self.FILENAME['polycube_surface_mesh']).absolute())
         )
         # the fastbndpolycube executable also writes a 'flagging.geogram' file, in the current folder
         if Path('flagging.geogram').exists():
-            move('flagging.geogram', self.path / 'fastbndpolycube.flagging.geogram')
+            move('flagging.geogram', self.path / self.FILENAME['flagging_from_fastbndpolycube'])
 
     def preprocess_polycube(self):
         parent = instantiate(self.path.parent) # we need the parent folder to get the tetra mesh
@@ -530,9 +533,9 @@ class labeling(AbstractEntry):
             self.path,
             Path.expanduser(Path(load(open('../settings.json'))['paths']['preprocess_polycube'])),
             '{init_tetra_mesh}  {preprocessed_tetra_mesh} {volume_labeling}',
-            init_tetra_mesh = str(parent.tetra_mesh_file().absolute()),
-            preprocessed_tetra_mesh = str((self.path / 'preprocessed.tetra.mesh').absolute()),
-            volume_labeling = str((self.path / 'tetra_labeling.txt').absolute())
+            init_tetra_mesh = str(parent.path / parent.FILENAME['tet_mesh'].absolute()),
+            preprocessed_tetra_mesh = str((self.path / self.FILENAME['preprocessed_tet_mesh']).absolute()),
+            volume_labeling = str((self.path / self.FILENAME['volume_labeling']).absolute())
         )
 
 def type_inference(path: Path):
