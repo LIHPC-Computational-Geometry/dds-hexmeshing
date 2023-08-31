@@ -11,6 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **`naive_labeling` script** : generate the naive labeling from a tetra mesh folder (executable from [LIHPC-Computational-Geometry/automatic_polycube](https://github.com/LIHPC-Computational-Geometry/automatic_polycube))
 - **`typeof` script** : print the type of a given data folder
+- **`fastbndpolycube` script** : generate a surface polycube from a labeling data folder (executable from [fprotais/fastbndpolycube](https://github.com/fprotais/fastbndpolycube))
+
+### Changed
+
+- **`view` script** : now has an optional "what" argument to specify the kind of visualization. On labeling data folders, you can add `--what fastbndpolycube` to display the output of `fastbndpolycube`.
 
 ## 0.2.0
 
@@ -19,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`Gmsh` script** : generate a tetrahedral mesh from a step folder with [Gmsh](https://gmsh.info/), and extract the surface
 - **`extract_surface` script** : Compute the surface (triangle) mesh in a tetra mesh folder (executable from [LIHPC-Computational-Geometry/automatic_polycube](https://github.com/LIHPC-Computational-Geometry/automatic_polycube))
 - **`automatic_polycube` script** : call the main executable of [LIHPC-Computational-Geometry/automatic_polycube](https://github.com/LIHPC-Computational-Geometry/automatic_polycube)
+- **`view` script** : visualize the content of the input data folder (visualization software depends on the data folder type)
 
 ## 0.1.0
 

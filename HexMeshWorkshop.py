@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from shutil import copyfile
+from shutil import copyfile, move
 from os import mkdir
 from json import load, dump
 from abc import ABC, abstractmethod
@@ -287,7 +287,7 @@ class AbstractEntry(ABC):
         return '{{type={}, path={}}}'.format(self.type(),str(self.path))
     
     @abstractmethod
-    def view(self):
+    def view(self, what = None):
         print(self)
 
     @staticmethod
@@ -305,6 +305,8 @@ class step(AbstractEntry):
     # Optionnal files
     # - thumbnail.png
 
+    DEFAULT_VIEW = 'step'
+
     def __init__(self,path: Path, step_file: Path = None):
         path = Path(path)
         if(step_file!=None):
@@ -321,19 +323,25 @@ class step(AbstractEntry):
     def step_file(self) -> Path:
         return self.path / 'CAD.step'
     
-    def view(self):
+    def view(self, what = None):
         """
         View STEP file with Mayo
         https://github.com/fougue/mayo
         """
-        InteractiveGenerativeAlgorithm(
-            'view',
-            self.path,
-            Path.expanduser(Path(load(open('../settings.json'))['paths']['Mayo'])), # path relative to the scripts/ folder
-            '{step} --no-progress', # arguments template
-            False,
-            step = self.step_file()
-        )
+        if what == None:
+            what = self.DEFAULT_VIEW
+        if what == 'step':
+            logging.warning('Infinite loading with NVIDIA drivers. Check __NV_PRIME_RENDER_OFFLOAD and __GLX_VENDOR_LIBRARY_NAME shell variables value.')
+            InteractiveGenerativeAlgorithm(
+                'view',
+                self.path,
+                Path.expanduser(Path(load(open('../settings.json'))['paths']['Mayo'])), # path relative to the scripts/ folder
+                '{step} --no-progress', # arguments template
+                False,
+                step = self.step_file()
+            )
+        else:
+            raise Exception(f'step.view() does not recognize \'what\' value: \'{what}\'')
     
     @staticmethod
     def is_instance(path: Path) -> bool:
@@ -356,6 +364,8 @@ class tetra_mesh(AbstractEntry):
     """
     Interface to a tetra mesh folder
     """
+
+    DEFAULT_VIEW = 'surface_mesh'
 
     def __init__(self,path: Path):
         path = Path(path)
@@ -382,19 +392,24 @@ class tetra_mesh(AbstractEntry):
             '{surface_mesh}',
             False,
             surface_mesh=self.surface_mesh_file())
-    def view(self):
+    def view(self, what = None):
         """
         View files (for now only surface mesh) with Graphite
         https://github.com/BrunoLevy/GraphiteThree
         """
-        InteractiveGenerativeAlgorithm(
-            'view',
-            self.path,
-            Path.expanduser(Path(load(open('../settings.json'))['paths']['Graphite'])), # path relative to the scripts/ folder
-            '{surface_mesh}', # arguments template
-            False,
-            surface_mesh = self.surface_mesh_file()
-        )
+        if what == None:
+            what = self.DEFAULT_VIEW
+        if what == 'surface_mesh':
+            InteractiveGenerativeAlgorithm(
+                'view',
+                self.path,
+                Path.expanduser(Path(load(open('../settings.json'))['paths']['Graphite'])), # path relative to the scripts/ folder
+                '{surface_mesh}', # arguments template
+                False,
+                surface_mesh = self.surface_mesh_file()
+            )
+        else:
+            raise Exception(f'tetra_mesh.view() does not recognize \'what\' value: \'{what}\'')
 
     def extract_surface(self):
         TransformativeAlgorithm(
@@ -425,6 +440,8 @@ class labeling(AbstractEntry):
     Interface to a labeling folder
     """
 
+    DEFAULT_VIEW = 'labeled_surface'
+
     def __init__(self,path: Path):
         path = Path(path)
         AbstractEntry.__init__(self,path)
@@ -433,21 +450,53 @@ class labeling(AbstractEntry):
     def is_instance(path: Path) -> bool:
         return (path / 'surface_labeling.txt').exists() # path is an instance of labeling if it has a surface_labeling.txt file
     
-    def view(self):
+    def view(self,what = 'labeled_surface'):
         """
         View labeling with labeling_viewer app from automatic_polycube repo
         """
         parent = instantiate(self.path.parent) # we need the parent folder to get the surface mesh
         assert(parent.type() == 'tetra_mesh') # the parent folder should be of tetra mesh type
-        InteractiveGenerativeAlgorithm(
-            'view',
+        if what == None:
+            what = self.DEFAULT_VIEW
+        if what == 'labeled_surface':
+            InteractiveGenerativeAlgorithm(
+                'view',
+                self.path,
+                Path.expanduser(Path(load(open('../settings.json'))['paths']['automatic_polycube'])) / 'labeling_viewer', # path relative to the scripts/ folder
+                '{surface_mesh} {surface_labeling}', # arguments template
+                False,
+                surface_mesh = str(parent.surface_mesh_file().absolute()),
+                surface_labeling = str((self.path / 'surface_labeling.txt').absolute())
+            )
+        elif what == 'fastbndpolycube':
+            assert( (self.path / 'fastbndpolycube.obj').exists() ) # TODO autocompute if missing
+            InteractiveGenerativeAlgorithm(
+                'view',
+                self.path,
+                Path.expanduser(Path(load(open('../settings.json'))['paths']['automatic_polycube'])) / 'labeling_viewer', # path relative to the scripts/ folder
+                '{surface_mesh} {surface_labeling}', # arguments template
+                False,
+                surface_mesh = str((self.path / 'fastbndpolycube.obj').absolute()), # surface polycube mesh instead of original surface mesh
+                surface_labeling = str((self.path / 'surface_labeling.txt').absolute())
+            )
+        else:
+            raise Exception(f'labeling.view() does not recognize \'what\' value: \'{what}\'')
+
+    def fastbndpolycube(self):
+        parent = instantiate(self.path.parent) # we need the parent folder to get the surface mesh
+        assert(parent.type() == 'tetra_mesh') # the parent folder should be of tetra mesh type
+        TransformativeAlgorithm(
+            'fastbndpolycube',
             self.path,
-            Path.expanduser(Path(load(open('../settings.json'))['paths']['automatic_polycube'])) / 'labeling_viewer', # path relative to the scripts/ folder
-            '{surface_mesh} {surface_labeling}', # arguments template
-            False,
+            Path.expanduser(Path(load(open('../settings.json'))['paths']['fastbndpolycube'])),
+            '{surface_mesh} {surface_labeling} {polycube_mesh}',
             surface_mesh = str(parent.surface_mesh_file().absolute()),
-            surface_labeling = str((self.path / 'surface_labeling.txt').absolute())
+            surface_labeling = str((self.path / 'surface_labeling.txt').absolute()),
+            polycube_mesh = str((self.path / 'fastbndpolycube.obj').absolute())
         )
+        # the fastbndpolycube executable also writes a 'flagging.geogram' file, in the current folder
+        if Path('flagging.geogram').exists():
+            move('flagging.geogram', self.path / 'fastbndpolycube.flagging.geogram')
 
 def type_inference(path: Path):
     infered_types = list() # will store all AbstractEntry subclasses recognizing path as an instance

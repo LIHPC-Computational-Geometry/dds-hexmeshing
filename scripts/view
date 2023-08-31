@@ -18,7 +18,14 @@ parser.add_argument(
     help='path to the input folder',
     required=True)
 
+parser.add_argument(
+    '--what',
+    dest='what',
+    metavar='STRING',
+    help='specify a kind of visualization (depends on the folder type)',
+    required=False)
+
 args = parser.parse_args()
 
 input = instantiate(Path(args.input))
-input.view()
+input.view(what=args.what)

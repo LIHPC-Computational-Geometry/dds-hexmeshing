@@ -4,6 +4,7 @@
         "automatic_polycube": "~/code/automatic_polycube/build/Linux64-gcc-dynamic-Debug/bin",
         "Mayo": "~/.local/bin/mayo",
         "Graphite": "~/.local/bin/graphite",
-        "Gmsh": "~/.local/Gmsh/gmsh-4.11.1-Linux64/bin/gmsh"
+        "Gmsh": "~/.local/Gmsh/gmsh-4.11.1-Linux64/bin/gmsh",
+        "fastbndpolycube": "~/.local/fastbndpolycube/build_Release/fastpolycube"
     }
 }
