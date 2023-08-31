@@ -273,6 +273,12 @@ class AbstractEntry(ABC):
     """
     Represents an entry of the data folder
     """
+
+    @staticmethod
+    @abstractmethod
+    def is_instance(path: Path) -> bool:
+        raise Exception('Not all AbstractEntry subclasses have specialized is_instance()')
+    
     @abstractmethod #prevent user from instanciating an AbstractEntry
     def __init__(self, path: Path):
         if not path.exists():
@@ -289,11 +295,13 @@ class AbstractEntry(ABC):
     @abstractmethod
     def view(self, what = None):
         print(self)
-
-    @staticmethod
-    @abstractmethod
-    def is_instance(path: Path) -> bool:
-        raise Exception('Not all AbstractEntry subclasses have specialized is_instance()')
+    
+# Checklist for creating a subclass = a new kind of data folder
+# - for almost all cases, __init__(self,path) just need to call AbstractEntry.__init__(self,path)
+# - specialize the is_instance(path) static method and write the rule saying if a given folder is an instance of your new type
+# - specialize the view() method to visualize the content of theses data folders the way you want
+# - name your default visualization and create a class variable named DEFAULT_VIEW. overwrite 'what' argument of view() if it's None
+# - create specific methods to add files in your datafolder or to create subfolders
 
 class step(AbstractEntry):
     """
@@ -306,7 +314,14 @@ class step(AbstractEntry):
 
     DEFAULT_VIEW = 'step'
 
+    @staticmethod
+    def is_instance(path: Path) -> bool:
+        return (path / step.FILENAME['STEP']).exists()
+
     def __init__(self,path: Path, step_file: Path = None):
+        # 2 modes
+        # - if step_file is None -> create a 'step' class instance interfacing an existing data folder
+        # - if step_file is something else -> create the folder, move inside the given STEP file, then instanciate the 'step' class
         path = Path(path)
         if(step_file!=None):
             if path.exists():
@@ -338,10 +353,8 @@ class step(AbstractEntry):
             )
         else:
             raise Exception(f'step.view() does not recognize \'what\' value: \'{what}\'')
-    
-    @staticmethod
-    def is_instance(path: Path) -> bool:
-        return (path / step.FILENAME['STEP']).exists()
+        
+    # ----- Generative algorithms (create subfolders) --------------------
 
     def Gmsh(self,mesh_size) -> Path:
         return GenerativeAlgorithm(
@@ -369,22 +382,12 @@ class tetra_mesh(AbstractEntry):
 
     DEFAULT_VIEW = 'surface_mesh'
 
-    def __init__(self,path: Path):
-        path = Path(path)
-        AbstractEntry.__init__(self,path)
-
     @staticmethod
     def is_instance(path: Path) -> bool:
         return (path / tetra_mesh.FILENAME['tet_mesh']).exists()
 
-    def automatic_polycube(self):
-        InteractiveGenerativeAlgorithm(
-            'automatic_polycube',
-            self.path,
-            Path.expanduser(Path(load(open('../settings.json'))['paths']['automatic_polycube'])) / 'automatic_polycube',
-            '{surface_mesh}',
-            False,
-            surface_mesh = str((self.path / self.FILENAME['surface_mesh']).absolute()))
+    def __init__(self,path: Path):
+        AbstractEntry.__init__(self,Path(path))
     
     def view(self, what = None):
         """
@@ -405,6 +408,8 @@ class tetra_mesh(AbstractEntry):
             )
         else:
             raise Exception(f'tetra_mesh.view() does not recognize \'what\' value: \'{what}\'')
+    
+    # ----- Transformative algorithms (modify current folder) --------------------
 
     def extract_surface(self):
         TransformativeAlgorithm(
@@ -416,6 +421,8 @@ class tetra_mesh(AbstractEntry):
             surface_mesh = str((self.path / self.FILENAME['surface_mesh']).absolute()),
             surface_map = str((self.path / self.FILENAME['surface_map']).absolute())
         )
+    
+    # ----- Generative algorithms (create subfolders) --------------------
 
     def naive_labeling(self):
         assert((self.path / self.FILENAME['surface_mesh']).exists()) # TODO auto extract the surface if missing
@@ -429,6 +436,15 @@ class tetra_mesh(AbstractEntry):
             surface_mesh = str((self.path / self.FILENAME['surface_mesh']).absolute()),
             labeling = 'surface_labeling.txt'
         )
+
+    def automatic_polycube(self):
+        InteractiveGenerativeAlgorithm(
+            'automatic_polycube',
+            self.path,
+            Path.expanduser(Path(load(open('../settings.json'))['paths']['automatic_polycube'])) / 'automatic_polycube',
+            '{surface_mesh}',
+            False,
+            surface_mesh = str((self.path / self.FILENAME['surface_mesh']).absolute()))
     
     def HexBox(self):
         assert((self.path / self.FILENAME['surface_mesh']).exists()) # TODO auto extract the surface if missing
@@ -456,13 +472,12 @@ class labeling(AbstractEntry):
 
     DEFAULT_VIEW = 'labeled_surface'
 
-    def __init__(self,path: Path):
-        path = Path(path)
-        AbstractEntry.__init__(self,path)
-
     @staticmethod
     def is_instance(path: Path) -> bool:
         return (path / labeling.FILENAME['surface_labeling']).exists() # path is an instance of labeling if it has a surface_labeling.txt file
+
+    def __init__(self,path: Path):
+        AbstractEntry.__init__(self,Path(path))
     
     def view(self,what = 'labeled_surface'):
         """
@@ -495,6 +510,8 @@ class labeling(AbstractEntry):
             )
         else:
             raise Exception(f'labeling.view() does not recognize \'what\' value: \'{what}\'')
+        
+    # ----- Transformative algorithms (modify current folder) --------------------
         
     def volume_labeling(self):
         parent = instantiate(self.path.parent) # we need the parent folder to get the surface map
