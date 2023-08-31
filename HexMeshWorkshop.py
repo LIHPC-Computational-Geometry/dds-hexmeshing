@@ -434,6 +434,17 @@ class tetra_mesh(AbstractEntry):
             surface_mesh = str(self.surface_mesh_file().absolute()),
             labeling = 'surface_labeling.txt'
         )
+    
+    def HexBox(self):
+        assert(self.surface_mesh_file().exists()) # TODO auto extract the surface if missing
+        InteractiveGenerativeAlgorithm(
+            'HexBox',
+            self.path,
+            Path.expanduser(Path(load(open('../settings.json'))['paths']['HexBox'])), # path relative to the scripts/ folder
+            '{mesh}', # arguments template
+            False,
+            mesh = str(self.surface_mesh_file().absolute())
+        )
 
 class labeling(AbstractEntry):
     """

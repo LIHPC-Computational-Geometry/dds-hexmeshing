@@ -6,6 +6,7 @@
         "Graphite": "~/.local/bin/graphite",
         "Gmsh": "~/.local/Gmsh/gmsh-4.11.1-Linux64/bin/gmsh",
         "fastbndpolycube": "~/.local/fastbndpolycube/build_Release/fastpolycube",
-        "preprocess_polycube": "~/.local/preprocess_polycube/build_Release/preprocess"
+        "preprocess_polycube": "~/.local/preprocess_polycube/build_Release/preprocess",
+        "HexBox": "~/.local/HexBox/build/gui/gui"
     }
 }
