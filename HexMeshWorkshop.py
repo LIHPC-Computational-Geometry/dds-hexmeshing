@@ -481,6 +481,19 @@ class labeling(AbstractEntry):
             )
         else:
             raise Exception(f'labeling.view() does not recognize \'what\' value: \'{what}\'')
+        
+    def volume_labeling(self):
+        parent = instantiate(self.path.parent) # we need the parent folder to get the surface map
+        assert(parent.type() == 'tetra_mesh') # the parent folder should be of tetra mesh type
+        TransformativeAlgorithm(
+            'volume_labeling',
+            self.path,
+            Path.expanduser(Path(load(open('../settings.json'))['paths']['automatic_polycube'])) / 'volume_labeling', # path relative to the scripts/ folder
+            '{surface_labeling} {surface_map} {tetra_labeling}',
+            surface_labeling = str((self.path / 'surface_labeling.txt').absolute()),
+            surface_map = str(parent.surface_map_file().absolute()),
+            tetra_labeling = str((self.path / 'tetra_labeling.txt').absolute())
+        )
 
     def fastbndpolycube(self):
         parent = instantiate(self.path.parent) # we need the parent folder to get the surface mesh

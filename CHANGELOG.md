@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`naive_labeling` script** : generate the naive labeling from a tetra mesh folder (executable from [LIHPC-Computational-Geometry/automatic_polycube](https://github.com/LIHPC-Computational-Geometry/automatic_polycube))
 - **`typeof` script** : print the type of a given data folder
 - **`fastbndpolycube` script** : generate a surface polycube from a labeling data folder (executable from [fprotais/fastbndpolycube](https://github.com/fprotais/fastbndpolycube))
+- **`volume_labeling` script** : compute the volume labeling (per cell facet) from the surface labeling (per surface triangle) (executable from [LIHPC-Computational-Geometry/automatic_polycube](https://github.com/LIHPC-Computational-Geometry/automatic_polycube))
 
 ### Changed
 
