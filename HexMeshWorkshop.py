@@ -511,6 +511,19 @@ class labeling(AbstractEntry):
         if Path('flagging.geogram').exists():
             move('flagging.geogram', self.path / 'fastbndpolycube.flagging.geogram')
 
+    def preprocess_polycube(self):
+        parent = instantiate(self.path.parent) # we need the parent folder to get the tetra mesh
+        assert(parent.type() == 'tetra_mesh') # the parent folder should be of tetra mesh type
+        TransformativeAlgorithm(
+            'preprocess_polycube',
+            self.path,
+            Path.expanduser(Path(load(open('../settings.json'))['paths']['preprocess_polycube'])),
+            '{init_tetra_mesh}  {preprocessed_tetra_mesh} {volume_labeling}',
+            init_tetra_mesh = str(parent.tetra_mesh_file().absolute()),
+            preprocessed_tetra_mesh = str((self.path / 'preprocessed.tetra.mesh').absolute()),
+            volume_labeling = str((self.path / 'tetra_labeling.txt').absolute())
+        )
+
 def type_inference(path: Path):
     infered_types = list() # will store all AbstractEntry subclasses recognizing path as an instance
     for subclass in AbstractEntry.__subclasses__():

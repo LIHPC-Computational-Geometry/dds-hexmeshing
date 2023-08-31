@@ -8,8 +8,8 @@ path.append('../') # required for relative import without package
 from HexMeshWorkshop import *
 
 parser = ArgumentParser(
-    prog='volume_labeling',
-    description='Compute the volume labeling (per cell facet) from the surface labeling (per surface triangle)')
+    prog='preprocess_polycube',
+    description='Pre-process a tetra mesh so that the interior may not have impossible configuration for a given labeling')
 
 parser.add_argument(
     '-i', '--input',
@@ -27,4 +27,4 @@ if args.input in cm.collections():
     exit(0)
 
 input = instantiate(Path(args.input))
-input.volume_labeling()
+input.preprocess_polycube()
