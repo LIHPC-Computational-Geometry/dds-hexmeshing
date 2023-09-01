@@ -291,6 +291,8 @@ class AbstractDataFolder(ABC):
     Represents an entry of the data folder
     """
 
+    FILENAME = dict()
+
     @staticmethod
     @abstractmethod
     def is_instance(path: Path) -> bool:
@@ -312,6 +314,9 @@ class AbstractDataFolder(ABC):
     @abstractmethod
     def view(self, what = None):
         print(self)
+
+    def get_file(self,which_file : str, must_exist : bool = False) -> Path:
+        return (self.path / self.FILENAME[which_file]).absolute()
 
     # ----- Specific functions of the abstract class --------------------
 
@@ -344,6 +349,8 @@ class AbstractDataFolder(ABC):
 # - specialize the is_instance(path) static method and write the rule saying if a given folder is an instance of your new type
 # - specialize the view() method to visualize the content of theses data folders the way you want
 # - name your default visualization and create a class variable named DEFAULT_VIEW. overwrite 'what' argument of view() if it's None
+# - enumerate hard coded filename in class variable FILENAME
+# - specialize the get_file() method to detect missing files and potentially auto-compute them
 # - create specific methods to add files in your datafolder or to create subfolders
 
 class step(AbstractDataFolder):
@@ -392,10 +399,16 @@ class step(AbstractDataFolder):
                 Settings.path('Mayo'),
                 '{step} --no-progress', # arguments template
                 False,
-                step = str((self.path / self.FILENAME['STEP']).absolute())
+                step = str(self.get_file('STEP',True))
             )
         else:
             raise Exception(f'step.view() does not recognize \'what\' value: \'{what}\'')
+    
+    def get_file(self,which_file : str, must_exist : bool = False) -> Path:
+        path = super().get_file(which_file)
+        if (not must_exist) or (must_exist and path.exists()):
+            return path
+        raise Exception(f'Missing file {str(path)}')
         
     # ----- Generative algorithms (create subfolders) --------------------
 
@@ -407,10 +420,10 @@ class step(AbstractDataFolder):
             '{step} -3 -format mesh -o {output_file} -setnumber Mesh.CharacteristicLengthFactor {characteristic_length_factor} -nt {nb_threads}',
             'Gmsh_{characteristic_length_factor}',
             ['output_file'],
-            step=str((self.path / self.FILENAME['STEP']).absolute()),
-            output_file='tetra.mesh',
-            characteristic_length_factor=mesh_size,
-            nb_threads = 8)
+            step                            = str(self.get_file('STEP',True)),
+            output_file                     = tetra_mesh.FILENAME['tet_mesh'],
+            characteristic_length_factor    = mesh_size,
+            nb_threads                      = 8)
 
 class tetra_mesh(AbstractDataFolder):
     """
@@ -447,30 +460,39 @@ class tetra_mesh(AbstractDataFolder):
                 Settings.path('Graphite'),
                 '{surface_mesh}', # arguments template
                 False,
-                surface_mesh = str((self.path / self.FILENAME['surface_mesh']).absolute())
+                surface_mesh = str(self.get_file('surface_mesh',True))
             )
         else:
             raise Exception(f'tetra_mesh.view() does not recognize \'what\' value: \'{what}\'')
     
+    def get_file(self,which_file : str, must_exist : bool = False) -> Path:
+        path = super().get_file(which_file)
+        if (not must_exist) or (must_exist and path.exists()):
+            return path
+        # so 'file' is missing -> try to auto-compute it
+        if which_file == 'surface_mesh' or which_file == 'surface_map':
+            self.extract_surface()
+            return self.get_file(which_file,True)
+        raise Exception(f'Missing file {str(path)}')
+    
     # ----- Transformative algorithms (modify current folder) --------------------
 
     def extract_surface(self):
-        assert(not (self.path / self.FILENAME['surface_mesh']).exists())
-        assert(not (self.path / self.FILENAME['surface_map']).exists())
+        assert(not self.get_file('surface_mesh').exists())
+        assert(not self.get_file('surface_map').exists())
         TransformativeAlgorithm(
             'extract_surface',
             self.path,
             Settings.path('automatic_polycube') / 'extract_surface',
             '{tetra_mesh} {surface_mesh} {surface_map}',
-            tetra_mesh = str((self.path / self.FILENAME['tet_mesh']).absolute()),
-            surface_mesh = str((self.path / self.FILENAME['surface_mesh']).absolute()),
-            surface_map = str((self.path / self.FILENAME['surface_map']).absolute())
+            tetra_mesh      = str(self.get_file('tet_mesh',     True)),
+            surface_mesh    = str(self.get_file('surface_mesh'      )),
+            surface_map     = str(self.get_file('surface_map'       ))
         )
     
     # ----- Generative algorithms (create subfolders) --------------------
 
     def naive_labeling(self):
-        assert((self.path / self.FILENAME['surface_mesh']).exists()) # TODO auto extract the surface if missing
         return GenerativeAlgorithm(
             'naive_labeling',
             self.path,
@@ -478,8 +500,8 @@ class tetra_mesh(AbstractDataFolder):
             '{surface_mesh} {labeling}',
             'naive_labeling',
             ['labeling'],
-            surface_mesh = str((self.path / self.FILENAME['surface_mesh']).absolute()),
-            labeling = 'surface_labeling.txt'
+            surface_mesh    = str(self.get_file('surface_mesh',True)),
+            labeling        = labeling.FILENAME['surface_labeling']
         )
 
     def automatic_polycube(self):
@@ -489,17 +511,17 @@ class tetra_mesh(AbstractDataFolder):
             Settings.path('automatic_polycube') / 'automatic_polycube',
             '{surface_mesh}',
             False,
-            surface_mesh = str((self.path / self.FILENAME['surface_mesh']).absolute()))
+            surface_mesh = str(self.get_file('surface_mesh',True))
+        )
     
     def HexBox(self):
-        assert((self.path / self.FILENAME['surface_mesh']).exists()) # TODO auto extract the surface if missing
         InteractiveGenerativeAlgorithm(
             'HexBox',
             self.path,
             Settings.path('HexBox'), # path relative to the scripts/ folder
             '{mesh}', # arguments template
             False,
-            mesh = str((self.path / self.FILENAME['surface_mesh']).absolute())
+            mesh = str(self.get_file('surface_mesh',True))
         )
 
 class labeling(AbstractDataFolder):
@@ -539,8 +561,8 @@ class labeling(AbstractDataFolder):
                 Settings.path('automatic_polycube') / 'labeling_viewer',
                 '{surface_mesh} {surface_labeling}', # arguments template
                 False,
-                surface_mesh = str((parent.path / parent.FILENAME['surface_mesh']).absolute()),
-                surface_labeling = str((self.path / self.FILENAME['surface_labeling']).absolute())
+                surface_mesh        = str(parent.get_file('surface_mesh',   True)),
+                surface_labeling    = str(self.get_file('surface_labeling', True))
             )
         elif what == 'fastbndpolycube':
             assert( (self.path / self.FILENAME['polycube_surface_mesh']).exists() ) # TODO autocompute if missing
@@ -550,11 +572,27 @@ class labeling(AbstractDataFolder):
                 Settings.path('automatic_polycube') / 'labeling_viewer', # path relative to the scripts/ folder
                 '{surface_mesh} {surface_labeling}', # arguments template
                 False,
-                surface_mesh = str((self.path / self.FILENAME['polycube_surface_mesh']).absolute()), # surface polycube mesh instead of original surface mesh
-                surface_labeling = str((self.path / self.FILENAME['surface_labeling']).absolute())
+                surface_mesh        = str(self.get_file('polycube_surface_mesh',True)), # surface polycube mesh instead of original surface mesh
+                surface_labeling    = str(self.get_file('surface_labeling',     True))
             )
         else:
             raise Exception(f'labeling.view() does not recognize \'what\' value: \'{what}\'')
+    
+    def get_file(self,which_file : str, must_exist : bool = False) -> Path:
+        path = super().get_file(which_file)
+        if (not must_exist) or (must_exist and path.exists()):
+            return path
+        # so 'file' is missing -> try to auto-compute it
+        if which_file == 'volume_labeling':
+            self.volume_labeling()
+            return self.get_file(which_file,True)
+        elif which_file == 'polycube_surface_mesh':
+            self.fastbndpolycube()
+            return self.get_file(which_file,True)
+        elif which_file == 'preprocessed_tet_mesh':
+            self.preprocess_polycube()
+            return self.get_file(which_file,True)
+        raise Exception(f'Missing file {str(path)}')
         
     # ----- Transformative algorithms (modify current folder) --------------------
         
@@ -566,9 +604,9 @@ class labeling(AbstractDataFolder):
             self.path,
             Settings.path('automatic_polycube') / 'volume_labeling', # path relative to the scripts/ folder
             '{surface_labeling} {surface_map} {tetra_labeling}',
-            surface_labeling = str((self.path / self.FILENAME['surface_labeling']).absolute()),
-            surface_map = str((parent.path / parent.FILENAME['surface_map']).absolute()),
-            tetra_labeling = str((self.path / self.FILENAME['volume_labeling']).absolute())
+            surface_labeling    = str(self.get_file('surface_labeling', True)),
+            surface_map         = str(parent.get_file('surface_map',    True)),
+            tetra_labeling      = str(self.get_file('volume_labeling'       ))
         )
 
     def fastbndpolycube(self):
@@ -579,9 +617,9 @@ class labeling(AbstractDataFolder):
             self.path,
             Settings.path('fastbndpolycube'),
             '{surface_mesh} {surface_labeling} {polycube_mesh}',
-            surface_mesh = str((parent.path / parent.FILENAME['surface_mesh']).absolute()),
-            surface_labeling = str((self.path / self.FILENAME['surface_labeling']).absolute()),
-            polycube_mesh = str((self.path / self.FILENAME['polycube_surface_mesh']).absolute())
+            surface_mesh        = str(parent.get_file('surface_mesh',       True)),
+            surface_labeling    = str(self.get_file('surface_labeling',     True)),
+            polycube_mesh       = str(self.get_file('polycube_surface_mesh'     ))
         )
         # the fastbndpolycube executable also writes a 'flagging.geogram' file, in the current folder
         if Path('flagging.geogram').exists():
@@ -595,9 +633,9 @@ class labeling(AbstractDataFolder):
             self.path,
             Settings.path('preprocess_polycube'),
             '{init_tetra_mesh}  {preprocessed_tetra_mesh} {volume_labeling}',
-            init_tetra_mesh = str(parent.path / parent.FILENAME['tet_mesh'].absolute()),
-            preprocessed_tetra_mesh = str((self.path / self.FILENAME['preprocessed_tet_mesh']).absolute()),
-            volume_labeling = str((self.path / self.FILENAME['volume_labeling']).absolute())
+            init_tetra_mesh         = str(parent.get_file('tet_mesh',           True)),
+            preprocessed_tetra_mesh = str(self.get_file('preprocessed_tet_mesh'     )),
+            volume_labeling         = str(self.get_file('volume_labeling',      True))
         )
 
 class root(AbstractDataFolder):
@@ -640,6 +678,12 @@ class root(AbstractDataFolder):
             print(str(self.path.absolute()))
         else:
             raise Exception(f'labeling.view() does not recognize \'what\' value: \'{what}\'')
+        
+    def get_file(self,which_file : str, must_exist : bool = False) -> Path:
+        path = super().get_file(which_file)
+        if (not must_exist) or (must_exist and path.exists()):
+            return path
+        raise Exception(f'Missing file {str(path)}')
         
     # ----- Generative algorithms (create subfolders) --------------------
 
