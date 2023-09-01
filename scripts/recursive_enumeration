@@ -25,7 +25,7 @@ def recursive_folder_parser(path : Path, depth : int = 0):
 
 parser = ArgumentParser(
     prog='recursive_enumeration',
-    description='Parse all data subfolders and print their type')
+    description='Parse all subfolders of the current data folder and print their type')
 
 args = parser.parse_args()
 

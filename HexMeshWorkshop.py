@@ -653,8 +653,8 @@ class root(AbstractDataFolder):
     def is_instance(path: Path) -> bool:
         return (path / root.FILENAME['collections']).exists()
     
-    def __init__(self,path: Path):
-        assert(path == Settings.data_folder())
+    def __init__(self,path: Path = Settings.data_folder()):
+        assert(path == Settings.data_folder()) # only accept instanciation of the folder given by the settings file. 2nd argument required by abstract class
         if not path.exists(): # if the data folder does not exist
             logging.warning(f'Data folder {str(path)} does not exist and will be created')
             # create the data folder

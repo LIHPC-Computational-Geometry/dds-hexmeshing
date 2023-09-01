@@ -17,6 +17,7 @@ Unless stated otherwise, this file mentions Python scripts located in `scripts/`
 - `volume_labeling` : compute the volume labeling (per cell facet) from the surface labeling (per surface triangle) (executable from [LIHPC-Computational-Geometry/automatic_polycube](https://github.com/LIHPC-Computational-Geometry/automatic_polycube))
 - `preprocess_polycube` : pre-process a tetra mesh so that the interior may not have impossible configuration for a given labeling data folder (create a new tetra mesh inside the labeling data folder, executable from [fprotais/fastbndpolycube](https://github.com/fprotais/fastbndpolycube))
 - `HexBox` : Interactive tool for creating hexahedral meshes (executable from [cg3hci/HexBox](https://github.com/cg3hci/HexBox))
+- `recursive_enumeration` : parse all subfolders of the current data folder and print their type
 
 ### Changed
 
