@@ -26,5 +26,5 @@ if args.input in cm.collections():
     print('input is a colleciton -> batch mode')
     exit(0)
 
-input = instantiate(Path(args.input))
+input = AbstractDataFolder.instantiate(Path(args.input))
 input.preprocess_polycube()

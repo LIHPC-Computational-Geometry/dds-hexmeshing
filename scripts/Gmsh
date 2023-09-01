@@ -34,8 +34,8 @@ if args.input in cm.collections():
     print('input is a colleciton -> batch mode')
     exit(0)
 
-input = instantiate(Path(args.input))
+input = AbstractDataFolder.instantiate(Path(args.input))
 subfolder = input.Gmsh(float(args.mesh_size))
 
-mesh_folder = instantiate(subfolder)
+mesh_folder = AbstractDataFolder.instantiate(subfolder)
 mesh_folder.extract_surface()

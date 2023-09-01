@@ -1,0 +1,34 @@
+#!/usr/bin/python
+
+from argparse import ArgumentParser
+from pathlib import Path
+
+from sys import path
+path.append('../') # required for relative import without package
+from HexMeshWorkshop import *
+
+def recursive_folder_parser(path : Path, depth : int = 0):
+    # print left margin
+    for i in range(depth):
+        print('\t',end='')
+    # print the folder name
+    print(path.name,end='')
+    # try to instanciate the current folder
+    type = ''
+    try:
+        type = AbstractDataFolder.instantiate(path).type()
+    except Exception:
+        type = '?'
+    print(f' ({type})')
+    for subfolder in [x for x in sorted(path.iterdir()) if x.is_dir()]:
+        recursive_folder_parser(subfolder,depth+1)
+
+parser = ArgumentParser(
+    prog='recursive_enumeration',
+    description='Parse all data subfolders and print their type')
+
+args = parser.parse_args()
+
+root_folder = root()
+for subfolder in [x for x in sorted(root_folder.path.iterdir() )if x.is_dir()]:
+    recursive_folder_parser(subfolder)

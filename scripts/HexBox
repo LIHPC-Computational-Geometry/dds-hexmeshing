@@ -20,5 +20,5 @@ parser.add_argument(
 
 args = parser.parse_args()
 
-input = instantiate(Path(args.input))
+input = AbstractDataFolder.instantiate(Path(args.input))
 input.HexBox()

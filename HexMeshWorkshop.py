@@ -1,20 +1,37 @@
 import logging
 from pathlib import Path
-from shutil import copyfile, move
+from shutil import copyfile, move, rmtree, unpack_archive
+from tempfile import mkdtemp
 from os import mkdir
 from json import load, dump
 from abc import ABC, abstractmethod
 import time
 import subprocess
+from types import SimpleNamespace
+from urllib import request
 
 logging.getLogger().setLevel(logging.INFO)
 
-def get_datafolder() -> Path:
+class Settings(SimpleNamespace):
     """
-    Read in settings.json the path to the data folder
+    Interface to the settings file
     """
-    # TODO expect the data folder to exist
-    return Path.expanduser(Path(load(open('../settings.json'))['data_folder'])) # path relative to the scripts/ folder
+
+    FILENAME = '../settings.json' # path relative to the scripts/ folder
+
+    def open_as_dict() -> dict():
+        settings = dict()
+        with open(Settings.FILENAME) as settings_file:
+            settings = load(settings_file)
+        return settings
+    
+    def data_folder() -> Path:
+        # open settings as dict, get 'data_folder' entry, convert to Path, expand '~' to user home
+        return Path.expanduser(Path(Settings.open_as_dict()['data_folder'])).absolute()
+    
+    def path(name : str) -> Path:
+        # open settings as dict, get selected entry in 'paths', convert to Path, expand '~' to user home
+        return Path.expanduser(Path(Settings.open_as_dict()['paths'][name])).absolute()
 
 class UserInput():
     """
@@ -95,7 +112,7 @@ class CollectionsManager():
     Manage entries collections, stored in collections.json
     """
     def __init__(self,datafolder: Path):
-        collections_filename = datafolder / 'collections.json'
+        collections_filename = datafolder / 'collections.json' # TODO move collections manager inside root class, no need to duplicate self.datafolder and 'collections.json'
         if not collections_filename.exists():
             with open(collections_filename,'w') as file:
                 dump(dict(), file)# write empty JSON
@@ -269,7 +286,7 @@ def TransformativeAlgorithm(name: str, input_folder, executable: Path, executabl
         dump(info_file, file, sort_keys=True, indent=4)
     #self.completed_process.check_returncode()# will raise a CalledProcessError if non-zero
 
-class AbstractEntry(ABC):
+class AbstractDataFolder(ABC):
     """
     Represents an entry of the data folder
     """
@@ -277,9 +294,9 @@ class AbstractEntry(ABC):
     @staticmethod
     @abstractmethod
     def is_instance(path: Path) -> bool:
-        raise Exception('Not all AbstractEntry subclasses have specialized is_instance()')
+        raise Exception('Not all AbstractDataFolder subclasses have specialized is_instance()')
     
-    @abstractmethod #prevent user from instanciating an AbstractEntry
+    @abstractmethod #prevent user from instanciating a AbstractDataFolder
     def __init__(self, path: Path):
         if not path.exists():
             logging.error(str(path) + ' does not exist')
@@ -295,15 +312,41 @@ class AbstractEntry(ABC):
     @abstractmethod
     def view(self, what = None):
         print(self)
+
+    # ----- Specific functions of the abstract class --------------------
+
+    @staticmethod
+    def type_inference(path: Path):
+        infered_types = list() # will store all AbstractDataFolder subclasses recognizing path as an instance
+        for subclass in AbstractDataFolder.__subclasses__():
+            if subclass.is_instance(path):
+                infered_types.append(subclass) # current subclass recognize path
+        if len(infered_types) == 0:
+            raise Exception('No known class recognize the folder ' + str(path.absolute()))
+        elif len(infered_types) > 1: # if multiple AbstractDataFolder subclasses recognize path
+            raise Exception('Multiple classes recognize the folder ' + str(path.absolute()) + ' : ' + str([x.__name__ for x in infered_types]))
+        else:
+            return infered_types[0]
+
+    @staticmethod
+    def instantiate(path: Path): # Can this method become AbstractDataFolder.__init__() ??
+        """
+        Instanciate an AbstractDataFolder subclass by infering the type of the given data folder
+        """
+        data_folder = Settings.data_folder()
+        assert(data_folder.is_dir())
+        if not Path.relative_to(path,data_folder):
+            raise Exception(f'Forbidden instanciation because {path.absolute()} is not inside the current data folder {str(data_folder)} (see {Settings.FILENAME})')
+        return (AbstractDataFolder.type_inference(path))(path)
     
 # Checklist for creating a subclass = a new kind of data folder
-# - for almost all cases, __init__(self,path) just need to call AbstractEntry.__init__(self,path)
+# - for almost all cases, __init__(self,path) just need to call AbstractDataFolder.__init__(self,path)
 # - specialize the is_instance(path) static method and write the rule saying if a given folder is an instance of your new type
 # - specialize the view() method to visualize the content of theses data folders the way you want
 # - name your default visualization and create a class variable named DEFAULT_VIEW. overwrite 'what' argument of view() if it's None
 # - create specific methods to add files in your datafolder or to create subfolders
 
-class step(AbstractEntry):
+class step(AbstractDataFolder):
     """
     Interface to a step folder
     """
@@ -329,7 +372,7 @@ class step(AbstractEntry):
                 exit(1)
             mkdir(path)
             copyfile(step_file, path / self.FILENAME['STEP'])
-        AbstractEntry.__init__(self,path)
+        AbstractDataFolder.__init__(self,path)
         if not (path / self.FILENAME['STEP']).exists():
             logging.error('At the end of step.__init__(), ' + str(path) + ' does not exist')
             exit(1)
@@ -346,7 +389,7 @@ class step(AbstractEntry):
             InteractiveGenerativeAlgorithm(
                 'view',
                 self.path,
-                Path.expanduser(Path(load(open('../settings.json'))['paths']['Mayo'])), # path relative to the scripts/ folder
+                Settings.path('Mayo'),
                 '{step} --no-progress', # arguments template
                 False,
                 step = str((self.path / self.FILENAME['STEP']).absolute())
@@ -360,7 +403,7 @@ class step(AbstractEntry):
         return GenerativeAlgorithm(
             'Gmsh',
             self.path,
-            Path.expanduser(Path(load(open('../settings.json'))['paths']['Gmsh'])), # path relative to the scripts/ folder
+            Settings.path('Gmsh'),
             '{step} -3 -format mesh -o {output_file} -setnumber Mesh.CharacteristicLengthFactor {characteristic_length_factor} -nt {nb_threads}',
             'Gmsh_{characteristic_length_factor}',
             ['output_file'],
@@ -369,7 +412,7 @@ class step(AbstractEntry):
             characteristic_length_factor=mesh_size,
             nb_threads = 8)
 
-class tetra_mesh(AbstractEntry):
+class tetra_mesh(AbstractDataFolder):
     """
     Interface to a tetra mesh folder
     """
@@ -387,7 +430,7 @@ class tetra_mesh(AbstractEntry):
         return (path / tetra_mesh.FILENAME['tet_mesh']).exists()
 
     def __init__(self,path: Path):
-        AbstractEntry.__init__(self,Path(path))
+        AbstractDataFolder.__init__(self,Path(path))
     
     def view(self, what = None):
         """
@@ -401,7 +444,7 @@ class tetra_mesh(AbstractEntry):
             InteractiveGenerativeAlgorithm(
                 'view',
                 self.path,
-                Path.expanduser(Path(load(open('../settings.json'))['paths']['Graphite'])), # path relative to the scripts/ folder
+                Settings.path('Graphite'),
                 '{surface_mesh}', # arguments template
                 False,
                 surface_mesh = str((self.path / self.FILENAME['surface_mesh']).absolute())
@@ -412,10 +455,12 @@ class tetra_mesh(AbstractEntry):
     # ----- Transformative algorithms (modify current folder) --------------------
 
     def extract_surface(self):
+        assert(not (self.path / self.FILENAME['surface_mesh']).exists())
+        assert(not (self.path / self.FILENAME['surface_map']).exists())
         TransformativeAlgorithm(
             'extract_surface',
             self.path,
-            Path.expanduser(Path(load(open('../settings.json'))['paths']['automatic_polycube'])) / 'extract_surface',
+            Settings.path('automatic_polycube') / 'extract_surface',
             '{tetra_mesh} {surface_mesh} {surface_map}',
             tetra_mesh = str((self.path / self.FILENAME['tet_mesh']).absolute()),
             surface_mesh = str((self.path / self.FILENAME['surface_mesh']).absolute()),
@@ -429,7 +474,7 @@ class tetra_mesh(AbstractEntry):
         return GenerativeAlgorithm(
             'naive_labeling',
             self.path,
-            Path.expanduser(Path(load(open('../settings.json'))['paths']['automatic_polycube'])) / 'naive_labeling', # path relative to the scripts/ folder
+            Settings.path('automatic_polycube') / 'naive_labeling',
             '{surface_mesh} {labeling}',
             'naive_labeling',
             ['labeling'],
@@ -441,7 +486,7 @@ class tetra_mesh(AbstractEntry):
         InteractiveGenerativeAlgorithm(
             'automatic_polycube',
             self.path,
-            Path.expanduser(Path(load(open('../settings.json'))['paths']['automatic_polycube'])) / 'automatic_polycube',
+            Settings.path('automatic_polycube') / 'automatic_polycube',
             '{surface_mesh}',
             False,
             surface_mesh = str((self.path / self.FILENAME['surface_mesh']).absolute()))
@@ -451,13 +496,13 @@ class tetra_mesh(AbstractEntry):
         InteractiveGenerativeAlgorithm(
             'HexBox',
             self.path,
-            Path.expanduser(Path(load(open('../settings.json'))['paths']['HexBox'])), # path relative to the scripts/ folder
+            Settings.path('HexBox'), # path relative to the scripts/ folder
             '{mesh}', # arguments template
             False,
             mesh = str((self.path / self.FILENAME['surface_mesh']).absolute())
         )
 
-class labeling(AbstractEntry):
+class labeling(AbstractDataFolder):
     """
     Interface to a labeling folder
     """
@@ -477,13 +522,13 @@ class labeling(AbstractEntry):
         return (path / labeling.FILENAME['surface_labeling']).exists() # path is an instance of labeling if it has a surface_labeling.txt file
 
     def __init__(self,path: Path):
-        AbstractEntry.__init__(self,Path(path))
+        AbstractDataFolder.__init__(self,Path(path))
     
     def view(self,what = 'labeled_surface'):
         """
         View labeling with labeling_viewer app from automatic_polycube repo
         """
-        parent = instantiate(self.path.parent) # we need the parent folder to get the surface mesh
+        parent = AbstractDataFolder.instantiate(self.path.parent) # we need the parent folder to get the surface mesh
         assert(parent.type() == 'tetra_mesh') # the parent folder should be of tetra mesh type
         if what == None:
             what = self.DEFAULT_VIEW
@@ -491,7 +536,7 @@ class labeling(AbstractEntry):
             InteractiveGenerativeAlgorithm(
                 'view',
                 self.path,
-                Path.expanduser(Path(load(open('../settings.json'))['paths']['automatic_polycube'])) / 'labeling_viewer', # path relative to the scripts/ folder
+                Settings.path('automatic_polycube') / 'labeling_viewer',
                 '{surface_mesh} {surface_labeling}', # arguments template
                 False,
                 surface_mesh = str((parent.path / parent.FILENAME['surface_mesh']).absolute()),
@@ -502,7 +547,7 @@ class labeling(AbstractEntry):
             InteractiveGenerativeAlgorithm(
                 'view',
                 self.path,
-                Path.expanduser(Path(load(open('../settings.json'))['paths']['automatic_polycube'])) / 'labeling_viewer', # path relative to the scripts/ folder
+                Settings.path('automatic_polycube') / 'labeling_viewer', # path relative to the scripts/ folder
                 '{surface_mesh} {surface_labeling}', # arguments template
                 False,
                 surface_mesh = str((self.path / self.FILENAME['polycube_surface_mesh']).absolute()), # surface polycube mesh instead of original surface mesh
@@ -514,12 +559,12 @@ class labeling(AbstractEntry):
     # ----- Transformative algorithms (modify current folder) --------------------
         
     def volume_labeling(self):
-        parent = instantiate(self.path.parent) # we need the parent folder to get the surface map
+        parent = AbstractDataFolder.instantiate(self.path.parent) # we need the parent folder to get the surface map
         assert(parent.type() == 'tetra_mesh') # the parent folder should be of tetra mesh type
         TransformativeAlgorithm(
             'volume_labeling',
             self.path,
-            Path.expanduser(Path(load(open('../settings.json'))['paths']['automatic_polycube'])) / 'volume_labeling', # path relative to the scripts/ folder
+            Settings.path('automatic_polycube') / 'volume_labeling', # path relative to the scripts/ folder
             '{surface_labeling} {surface_map} {tetra_labeling}',
             surface_labeling = str((self.path / self.FILENAME['surface_labeling']).absolute()),
             surface_map = str((parent.path / parent.FILENAME['surface_map']).absolute()),
@@ -527,12 +572,12 @@ class labeling(AbstractEntry):
         )
 
     def fastbndpolycube(self):
-        parent = instantiate(self.path.parent) # we need the parent folder to get the surface mesh
+        parent = AbstractDataFolder.instantiate(self.path.parent) # we need the parent folder to get the surface mesh
         assert(parent.type() == 'tetra_mesh') # the parent folder should be of tetra mesh type
         TransformativeAlgorithm(
             'fastbndpolycube',
             self.path,
-            Path.expanduser(Path(load(open('../settings.json'))['paths']['fastbndpolycube'])),
+            Settings.path('fastbndpolycube'),
             '{surface_mesh} {surface_labeling} {polycube_mesh}',
             surface_mesh = str((parent.path / parent.FILENAME['surface_mesh']).absolute()),
             surface_labeling = str((self.path / self.FILENAME['surface_labeling']).absolute()),
@@ -543,56 +588,96 @@ class labeling(AbstractEntry):
             move('flagging.geogram', self.path / self.FILENAME['flagging_from_fastbndpolycube'])
 
     def preprocess_polycube(self):
-        parent = instantiate(self.path.parent) # we need the parent folder to get the tetra mesh
+        parent = AbstractDataFolder.instantiate(self.path.parent) # we need the parent folder to get the tetra mesh
         assert(parent.type() == 'tetra_mesh') # the parent folder should be of tetra mesh type
         TransformativeAlgorithm(
             'preprocess_polycube',
             self.path,
-            Path.expanduser(Path(load(open('../settings.json'))['paths']['preprocess_polycube'])),
+            Settings.path('preprocess_polycube'),
             '{init_tetra_mesh}  {preprocessed_tetra_mesh} {volume_labeling}',
             init_tetra_mesh = str(parent.path / parent.FILENAME['tet_mesh'].absolute()),
             preprocessed_tetra_mesh = str((self.path / self.FILENAME['preprocessed_tet_mesh']).absolute()),
             volume_labeling = str((self.path / self.FILENAME['volume_labeling']).absolute())
         )
 
-def type_inference(path: Path):
-    infered_types = list() # will store all AbstractEntry subclasses recognizing path as an instance
-    for subclass in AbstractEntry.__subclasses__():
-        if subclass.is_instance(path):
-            infered_types.append(subclass) # current subclass recognize path
-    if len(infered_types) == 0:
-        raise Exception('No known class recognize the folder ' + str(path.absolute()))
-    elif len(infered_types) > 1: # if multiple AbstractEntry subclasses recognize path
-        raise Exception('Multiple classes recognize the folder ' + str(path.absolute()) + ' : ' + str([x.__name__ for x in infered_types]))
-    else:
-        return infered_types[0]
-
-def instantiate(path: Path):
+class root(AbstractDataFolder):
     """
-    Instanciate an AbstractEntry subclass by infering the type of the given data folder
+    Interface to the root folder of the database
     """
-    # Look inside info.json for a TYPE_KEY_NAME entry
-    # else, type inference from files inside the folder
-    # Note : Loading the JSON should be slower than infering the type each time...
-    #        So disabled for now
 
-    # -- FEATURE DISABLED -------------
-    # TYPE_KEY_NAME = 'type'
-    # info_file = dict()
-    # if (path / 'info.json').exists():
-    #     info_file = load(open(path / 'info.json'))
-    #     if TYPE_KEY_NAME in info_file.keys():
-    #         return globals()[info_file[TYPE_KEY_NAME]](path)
-    # logging.info('The type of ' + str(path) + ' is not explicitly stored in info.json -> type inference from files inside')
-    # ---------------------------------
+    FILENAME = {
+        'collections': 'collections.json' # store (nested) lists of subfolders, for batch execution
+    }
 
-    # call type_inference() to have the class, then instantiate it
-    type = type_inference(path)
+    DEFAULT_VIEW = 'print_path'
 
-    # -- FEATURE DISABLED -------------
-    # info_file[TYPE_KEY_NAME] = type.__name__ # add 'type' entry
-    # with open(path / 'info.json','w') as file:
-    #     dump(info_file, file, sort_keys=True, indent=4)
-    # ---------------------------------
+    @staticmethod
+    def is_instance(path: Path) -> bool:
+        return (path / root.FILENAME['collections']).exists()
+    
+    def __init__(self,path: Path):
+        assert(path == Settings.data_folder())
+        if not path.exists(): # if the data folder does not exist
+            logging.warning(f'Data folder {str(path)} does not exist and will be created')
+            # create the data folder
+            mkdir(path) # TODO manage failure case
+            # write empty collections file
+            with open(path / root.FILENAME['collections'],'w') as file:
+                dump(dict(), file, sort_keys=True, indent=4)
+        self.collections_manager = CollectionsManager(path)
+        AbstractDataFolder.__init__(self,path)
 
-    return type(path)
+    def type(self) -> str:
+        return self.__class__.__name__
+    
+    def __str__(self) -> str:
+        return '{{type={}, path={}}}'.format(self.type(),str(self.path))
+    
+    def view(self, what = None):
+        if what == None:
+            what = self.DEFAULT_VIEW
+        if what == 'print_path':
+            print(str(self.path.absolute()))
+        else:
+            raise Exception(f'labeling.view() does not recognize \'what\' value: \'{what}\'')
+        
+    # ----- Generative algorithms (create subfolders) --------------------
+
+    def import_MAMBO(self,path_to_MAMBO : str = None):
+        tmp_dir_used = True
+        if path_to_MAMBO==None:
+            if not UserInput.ask("No input was given, so the MAMBO dataset will be downloaded, are you sure you want to continue ?"):
+                logging.info("Operation cancelled")
+                exit(0)
+            url = 'https://gitlab.com/franck.ledoux/mambo/-/archive/master/mambo-master.zip'
+            tmp_folder = Path(mkdtemp()) # request an os-specific tmp folder
+            zip_file = tmp_folder / 'mambo-master.zip'
+            path_to_MAMBO = tmp_folder / 'mambo-master'
+            logging.info('Downloading MAMBO')
+            request.urlretrieve(url=url,filename=str(zip_file))
+            logging.info('Extracting archive')
+            unpack_archive(zip_file,extract_dir=tmp_folder)
+        else:
+            tmp_dir_used = False
+            path_to_MAMBO = Path(path_to_MAMBO).absolute()
+            logging.info('MAMBO will be imported from folder ' + str(path_to_MAMBO))
+            if not path_to_MAMBO.exists():
+                logging.fatal(str(path_to_MAMBO) + ' does not exist')
+                exit(1)
+            if not path_to_MAMBO.is_dir():
+                logging.fatal(str(path_to_MAMBO) + ' is not a folder')
+                exit(1)
+        for subfolder in [x for x in path_to_MAMBO.iterdir() if x.is_dir()]:
+            if subfolder.name in ['Scripts', '.git']:
+                continue # ignore this subfolder
+            for file in [x for x in subfolder.iterdir() if x.suffix == '.step']:
+                step_object = step(self.path / file.stem,file)
+                print(file.stem + ' imported')
+                self.collections_manager.append_to_collection('MAMBO_'+subfolder.name,str(file.stem)) # 'MAMBO_Basic', 'MAMBO_Simple' & 'MAMBO_Medium' collections
+            self.collections_manager.append_to_collection('MAMBO','MAMBO_'+subfolder.name) # 'MAMBO' collection, will contain 'MAMBO_Basic', 'MAMBO_Simple' & 'MAMBO_Medium'
+        self.collections_manager.save()
+
+        if tmp_dir_used:
+            # delete the temporary directory
+            logging.debug('Deleting folder \'' + str(tmp_folder) + '\'')
+            rmtree(tmp_folder)
