@@ -26,6 +26,12 @@ parser.add_argument(
     required=False,
     default=0.05)
 
+parser.add_argument(
+    '--view',
+    action='store_true',
+    dest='view_output',
+    help='visualize the output at the end')
+
 args = parser.parse_args()
 
 cm = CollectionsManager(Path.expanduser(Path(load(open('../settings.json'))['data_folder'])))
@@ -39,3 +45,6 @@ subfolder = input.Gmsh(float(args.mesh_size))
 
 mesh_folder = AbstractDataFolder.instantiate(subfolder)
 mesh_folder.extract_surface()
+
+if args.view_output:
+    mesh_folder.view()

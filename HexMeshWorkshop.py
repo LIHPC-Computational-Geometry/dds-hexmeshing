@@ -392,7 +392,7 @@ class step(AbstractDataFolder):
         if what == None:
             what = self.DEFAULT_VIEW
         if what == 'step':
-            logging.warning('Infinite loading with NVIDIA drivers. Check __NV_PRIME_RENDER_OFFLOAD and __GLX_VENDOR_LIBRARY_NAME shell variables value.')
+            logging.warning('With Mayo, you may experience infinite loading with NVIDIA drivers. Check __NV_PRIME_RENDER_OFFLOAD and __GLX_VENDOR_LIBRARY_NAME shell variables value.')
             InteractiveGenerativeAlgorithm(
                 'view',
                 self.path,
@@ -518,7 +518,7 @@ class tetra_mesh(AbstractDataFolder):
         InteractiveGenerativeAlgorithm(
             'HexBox',
             self.path,
-            Settings.path('HexBox'), # path relative to the scripts/ folder
+            Settings.path('HexBox'), 
             '{mesh}', # arguments template
             False,
             mesh = str(self.get_file('surface_mesh',True))
@@ -565,15 +565,23 @@ class labeling(AbstractDataFolder):
                 surface_labeling    = str(self.get_file('surface_labeling', True))
             )
         elif what == 'fastbndpolycube':
-            assert( (self.path / self.FILENAME['polycube_surface_mesh']).exists() ) # TODO autocompute if missing
             InteractiveGenerativeAlgorithm(
                 'view',
                 self.path,
-                Settings.path('automatic_polycube') / 'labeling_viewer', # path relative to the scripts/ folder
+                Settings.path('automatic_polycube') / 'labeling_viewer', 
                 '{surface_mesh} {surface_labeling}', # arguments template
                 False,
                 surface_mesh        = str(self.get_file('polycube_surface_mesh',True)), # surface polycube mesh instead of original surface mesh
                 surface_labeling    = str(self.get_file('surface_labeling',     True))
+            )
+        elif what == 'preprocessed_polycube':
+            InteractiveGenerativeAlgorithm(
+                'view',
+                self.path,
+                Settings.path('Graphite'),
+                '{mesh}', # arguments template
+                False,
+                mesh = str(self.get_file('preprocessed_tet_mesh',True))
             )
         else:
             raise Exception(f'labeling.view() does not recognize \'what\' value: \'{what}\'')
@@ -602,7 +610,7 @@ class labeling(AbstractDataFolder):
         TransformativeAlgorithm(
             'volume_labeling',
             self.path,
-            Settings.path('automatic_polycube') / 'volume_labeling', # path relative to the scripts/ folder
+            Settings.path('automatic_polycube') / 'volume_labeling', 
             '{surface_labeling} {surface_map} {tetra_labeling}',
             surface_labeling    = str(self.get_file('surface_labeling', True)),
             surface_map         = str(parent.get_file('surface_map',    True)),

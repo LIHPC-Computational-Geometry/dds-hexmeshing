@@ -18,6 +18,12 @@ parser.add_argument(
     help='path to the input data folder (type tetra_mesh)',
     required=True)
 
+parser.add_argument(
+    '--view',
+    action='store_true',
+    dest='view_output',
+    help='visualize the output at the end')
+
 args = parser.parse_args()
 
 cm = CollectionsManager(Path.expanduser(Path(load(open('../settings.json'))['data_folder'])))
@@ -28,3 +34,7 @@ if args.input in cm.collections():
 
 input = AbstractDataFolder.instantiate(Path(args.input))
 subfolder = input.naive_labeling()
+
+if args.view_output:
+    labeling_folder = AbstractDataFolder.instantiate(subfolder)
+    labeling_folder.view()

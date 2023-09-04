@@ -14,8 +14,14 @@ parser.add_argument(
     '-i', '--input',
     dest='input',
     metavar='PATH',
-    help='path to the MAMBO folder',
+    help='path to the STEP file to import',
     required=False)
+
+parser.add_argument(
+    '--view',
+    action='store_true',
+    dest='view_output',
+    help='visualize the imported STEP file at the end')
 
 args = parser.parse_args()
 
@@ -24,3 +30,6 @@ assert(input.exists())
 step_object = step(Settings.data_folder() / input.stem, input)
 print(input.stem + ' imported')
 # TODO allow to append to a collection
+
+if args.view_output:
+    step_object.view()
