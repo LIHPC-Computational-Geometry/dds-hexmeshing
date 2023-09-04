@@ -4,4 +4,4 @@ from sys import path
 path.append('../') # required for relative import without package
 from HexMeshWorkshop import *
 
-print(str(Settings.data_folder()))
+print(str(Settings.path('data_folder')))

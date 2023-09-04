@@ -25,10 +25,6 @@ class Settings(SimpleNamespace):
             settings = load(settings_file)
         return settings
     
-    def data_folder() -> Path:
-        # open settings as dict, get 'data_folder' entry, convert to Path, expand '~' to user home
-        return Path.expanduser(Path(Settings.open_as_dict()['data_folder'])).absolute()
-    
     def path(name : str) -> Path:
         # open settings as dict, get selected entry in 'paths', convert to Path, expand '~' to user home
         return Path.expanduser(Path(Settings.open_as_dict()['paths'][name])).absolute()
@@ -338,7 +334,7 @@ class AbstractDataFolder(ABC):
         """
         Instanciate an AbstractDataFolder subclass by infering the type of the given data folder
         """
-        data_folder = Settings.data_folder()
+        data_folder = Settings.path('data_folder')
         assert(data_folder.is_dir())
         if not Path.relative_to(path,data_folder):
             raise Exception(f'Forbidden instanciation because {path.absolute()} is not inside the current data folder {str(data_folder)} (see {Settings.FILENAME})')
@@ -661,8 +657,8 @@ class root(AbstractDataFolder):
     def is_instance(path: Path) -> bool:
         return (path / root.FILENAME['collections']).exists()
     
-    def __init__(self,path: Path = Settings.data_folder()):
-        assert(path == Settings.data_folder()) # only accept instanciation of the folder given by the settings file. 2nd argument required by abstract class
+    def __init__(self,path: Path = Settings.path('data_folder')):
+        assert(path == Settings.path('data_folder')) # only accept instanciation of the folder given by the settings file. 2nd argument required by abstract class
         if not path.exists(): # if the data folder does not exist
             logging.warning(f'Data folder {str(path)} does not exist and will be created')
             # create the data folder

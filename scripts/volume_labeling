@@ -20,7 +20,7 @@ parser.add_argument(
 
 args = parser.parse_args()
 
-cm = CollectionsManager(Settings.data_folder())
+cm = CollectionsManager(Settings.path('data_folder'))
 
 if args.input in cm.collections():
     print('input is a colleciton -> batch mode')

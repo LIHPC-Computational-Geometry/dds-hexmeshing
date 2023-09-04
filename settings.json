@@ -1,6 +1,6 @@
 {
-    "data_folder": "~/testdata",
     "paths": {
+        "data_folder": "~/testdata",
         "automatic_polycube": "~/code/automatic_polycube/build/Linux64-gcc-dynamic-Debug/bin",
         "Mayo": "~/.local/bin/mayo",
         "Graphite": "~/.local/bin/graphite",

@@ -23,6 +23,7 @@ Unless stated otherwise, this file mentions Python scripts located in `scripts/`
 
 - `view` : now has an optional "what" argument to specify the kind of visualization. On labeling data folders, you can add `--what fastbndpolycube` to display the output of `fastbndpolycube`.
 - `extract_surface`, `Gmsh` and `import_step` : now have an optional `--view` argument, to visualize the output/imported file
+- `settings.json` (in the repo's root) : the "data_folder" entry is now inside "paths"
 
 ## [0.2.0] - 2023-08-29
 

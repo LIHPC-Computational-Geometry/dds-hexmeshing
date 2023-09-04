@@ -27,7 +27,7 @@ args = parser.parse_args()
 
 input = Path(args.input)
 assert(input.exists())
-step_object = step(Settings.data_folder() / input.stem, input)
+step_object = step(Settings.path('data_folder') / input.stem, input)
 print(input.stem + ' imported')
 # TODO allow to append to a collection
 

@@ -6,6 +6,6 @@ from HexMeshWorkshop import *
 
 # TODO move to a root data folder method
 
-collections_manager = CollectionsManager(Settings.data_folder())
+collections_manager = CollectionsManager(Settings.path('data_folder'))
 for collection in collections_manager.collections():
     print(collection)
