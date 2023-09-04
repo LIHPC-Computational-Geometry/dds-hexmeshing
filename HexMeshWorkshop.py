@@ -9,6 +9,7 @@ import time
 import subprocess
 from types import SimpleNamespace
 from urllib import request
+from math import floor
 
 logging.getLogger().setLevel(logging.INFO)
 
@@ -135,9 +136,9 @@ def simple_human_readable_duration(duration_seconds) -> str:
     Return a human-readable text (str) for a given duration in seconds:
     hours, minutes & seconds elapsed
     """
-    hours   = duration_seconds // 3600
-    minutes = duration_seconds % 3600 // 60
-    seconds = round(duration_seconds % 60,3)
+    hours   = floor(duration_seconds // 3600)
+    minutes = floor(duration_seconds % 3600 // 60)
+    seconds = floor(duration_seconds % 60) if duration_seconds > 60 else round(duration_seconds % 60,3) # high precision only for small durations
     formatted_duration = ''
     if hours != 0:
         formatted_duration += '{}h '.format(hours)
@@ -161,8 +162,12 @@ def GenerativeAlgorithm(name: str, input_folder, executable: Path, executable_ar
             raise Exception("'" + parameter + "' is not a parameter of the executable, so it cannot specified as inside the subfolder")
         if parameter in name_template.get_parameters():
             raise Exception("'" + parameter + "' is specified as inside the subfolder, so it cannot be a part of the name of the subfolder")
+    start_datetime = time.localtime()
+    start_datetime_iso = time.strftime('%Y-%m-%dT%H:%M:%SZ', start_datetime)
+    # ISO 8601 cannot be used in the subfolder filename, because ':' is forbidden on Windows
+    start_datetime_filesystem = time.strftime('%Y%m%d_%H%M%S', start_datetime)
     # Assemble name of to-be-created subfolder
-    subfolder_name = name_template.assemble(False,**kwargs)
+    subfolder_name = name_template.assemble(False,**kwargs).replace('%d',start_datetime_filesystem)
     # Check there is no subfolder with this name
     if (input_folder / subfolder_name).exists():
         raise Exception("Already a subfolder named '{}'".format(subfolder_name))
@@ -176,7 +181,6 @@ def GenerativeAlgorithm(name: str, input_folder, executable: Path, executable_ar
     # TODO check if the executable exists
     command = str(executable.absolute()) + " " + executable_arugments.assemble(False,**kwargs)
     # Write parameters value in a dict (will be dumped as JSON)
-    start_datetime_iso = time.strftime('%Y-%m-%dT%H:%M:%SZ', time.localtime())
     info_file = dict()
     info_file[start_datetime_iso] = {
         'GenerativeAlgorithm': name,
@@ -212,18 +216,87 @@ def GenerativeAlgorithm(name: str, input_folder, executable: Path, executable_ar
     #self.completed_process.check_returncode()# will raise a CalledProcessError if non-zero
     return input_folder / subfolder_name
 
-def InteractiveGenerativeAlgorithm(name: str, input_folder, executable: Path, executable_arugments: str, store_output: bool, **kwargs):
+def InteractiveGenerativeAlgorithm(name: str, input_folder, executable: Path, executable_arugments: str, name_template: str = None, inside_subfolder: list = [], **kwargs):
     """
     Define and execute an interactive generative algorithm, that is an interactive algorithm on a data folder which creates a subfolder (optional).
     Wrap an executable and manage command line assembly from parameters.
     """
-    if store_output:
-        raise Exception('Not implemented')
     executable_arugments = ParametricString(executable_arugments)
+    start_datetime = time.localtime()
+    start_datetime_iso = time.strftime('%Y-%m-%dT%H:%M:%SZ', start_datetime)
+    # ISO 8601 cannot be used in the subfolder filename, because ':' is forbidden on Windows
+    start_datetime_filesystem = time.strftime('%Y%m%d_%H%M%S', start_datetime)
+    if name_template != None:
+        name_template = ParametricString(name_template)
+        for parameter in name_template.get_parameters():
+            if parameter not in executable_arugments.get_parameters():
+                raise Exception("'" + parameter + "' is not a parameter of the executable, so it cannot be a part of the subfolder filename")
+        for parameter in inside_subfolder:
+            # if parameter not in executable_arugments.get_parameters(): -> not checked for an interactive algorithm
+            if parameter in name_template.get_parameters():
+                raise Exception("'" + parameter + "' is specified as inside the subfolder, so it cannot be a part of the name of the subfolder")
+        # Assemble name of to-be-created subfolder
+        subfolder_name = name_template.assemble(False,**kwargs).replace('%d',start_datetime_filesystem)
+        # Check there is no subfolder with this name
+        if (input_folder / subfolder_name).exists():
+            raise Exception("Already a subfolder named '{}'".format(subfolder_name))
+        # Create the subfolder
+        mkdir(input_folder / subfolder_name)
+        # add subfolder name as prefix for subset of kwargs, given by inside_subfolder
+        # also print help message about expected output files location
+        print(f'You must save the output file(s) as:')
+        for k,v in kwargs.items():
+            if k in inside_subfolder:
+                kwargs[k] = str((input_folder / subfolder_name / v).absolute())
+                print(kwargs[k])
+        print(f'then close the window to stop the timer.')
+    # else: name_template is None, no output will be stored
+
     # Assemble command string
     # TODO check if the executable exists
-    command = str(executable.absolute()) + " " + executable_arugments.assemble(True,**kwargs)
-    subprocess.run(command, shell=True, capture_output=False)
+    command = str(executable.absolute()) + " " + executable_arugments.assemble(False,**kwargs) # False because kwargs can be bigger than executable_arugments.get_parameters() for an interactive algorithm
+
+    info_file = dict()
+    if name_template != None:
+        start_datetime_iso = time.strftime('%Y-%m-%dT%H:%M:%SZ', time.localtime())
+        info_file[start_datetime_iso] = {
+            'InteractiveGenerativeAlgorithm': name,
+            'command': command,
+            'parameters': dict()
+        }
+        for k,v in kwargs.items():
+            info_file[start_datetime_iso]['parameters'][k] = v
+
+    # Start chrono, call executable and store stdout/stderr
+    chrono_start = time.monotonic()
+    completed_process = subprocess.run(command, shell=True, capture_output=(name_template != None))
+    chrono_stop = time.monotonic()
+
+    if name_template != None:
+        # write stdout and stderr
+        if completed_process.stdout != b'': # if the subprocess wrote something in standard output
+            filename = name + '.stdout.txt'
+            f = open(input_folder / subfolder_name / filename,'xb')# x = create new file, b = binary mode
+            f.write(completed_process.stdout)
+            f.close()
+            info_file[start_datetime_iso]['stdout'] = filename
+        if completed_process.stderr != b'': # if the subprocess wrote something in standard error
+            filename =  name + '.stderr.txt'
+            f = open(input_folder / subfolder_name / filename,'xb')
+            f.write(completed_process.stderr)
+            f.close()
+            info_file[start_datetime_iso]['stderr'] = filename
+        # store return code and duration
+        info_file[start_datetime_iso]["return_code"] = completed_process.returncode
+        duration = chrono_stop - chrono_start
+        info_file[start_datetime_iso]["duration"] = [duration, simple_human_readable_duration(duration)]
+        # write JSON file
+        with open(input_folder / subfolder_name / 'info.json','w') as file:
+                dump(info_file, file, sort_keys=True, indent=4)
+        #self.completed_process.check_returncode()# will raise a CalledProcessError if non-zero
+        return input_folder / subfolder_name
+    else:
+        return None # no subfolder created
 
 def TransformativeAlgorithm(name: str, input_folder, executable: Path, executable_arugments: str, **kwargs):
     """
@@ -394,7 +467,8 @@ class step(AbstractDataFolder):
                 self.path,
                 Settings.path('Mayo'),
                 '{step} --no-progress', # arguments template
-                False,
+                None,
+                [],
                 step = str(self.get_file('STEP',True))
             )
         else:
@@ -455,7 +529,8 @@ class tetra_mesh(AbstractDataFolder):
                 self.path,
                 Settings.path('Graphite'),
                 '{surface_mesh}', # arguments template
-                False,
+                None,
+                [],
                 surface_mesh = str(self.get_file('surface_mesh',True))
             )
         else:
@@ -506,8 +581,10 @@ class tetra_mesh(AbstractDataFolder):
             self.path,
             Settings.path('automatic_polycube') / 'automatic_polycube',
             '{surface_mesh}',
-            False,
-            surface_mesh = str(self.get_file('surface_mesh',True))
+            'automatic_polycube_%d',
+            ['labeling'],
+            surface_mesh = str(self.get_file('surface_mesh',True)),
+            labeling     = labeling.FILENAME['surface_labeling']
         )
     
     def HexBox(self):
@@ -516,8 +593,10 @@ class tetra_mesh(AbstractDataFolder):
             self.path,
             Settings.path('HexBox'), 
             '{mesh}', # arguments template
-            False,
-            mesh = str(self.get_file('surface_mesh',True))
+            'HexBox_%d',
+            ['labeling'],
+            mesh        = str(self.get_file('surface_mesh',True)),
+            labeling    = labeling.FILENAME['surface_labeling']
         )
 
 class labeling(AbstractDataFolder):
@@ -556,7 +635,8 @@ class labeling(AbstractDataFolder):
                 self.path,
                 Settings.path('automatic_polycube') / 'labeling_viewer',
                 '{surface_mesh} {surface_labeling}', # arguments template
-                False,
+                None,
+                [],
                 surface_mesh        = str(parent.get_file('surface_mesh',   True)),
                 surface_labeling    = str(self.get_file('surface_labeling', True))
             )
@@ -566,7 +646,8 @@ class labeling(AbstractDataFolder):
                 self.path,
                 Settings.path('automatic_polycube') / 'labeling_viewer', 
                 '{surface_mesh} {surface_labeling}', # arguments template
-                False,
+                None,
+                [],
                 surface_mesh        = str(self.get_file('polycube_surface_mesh',True)), # surface polycube mesh instead of original surface mesh
                 surface_labeling    = str(self.get_file('surface_labeling',     True))
             )
@@ -576,7 +657,8 @@ class labeling(AbstractDataFolder):
                 self.path,
                 Settings.path('Graphite'),
                 '{mesh}', # arguments template
-                False,
+                None,
+                [],
                 mesh = str(self.get_file('preprocessed_tet_mesh',True))
             )
         else:
