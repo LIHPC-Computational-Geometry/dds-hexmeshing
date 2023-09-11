@@ -2,7 +2,7 @@ import logging
 from pathlib import Path
 from shutil import copyfile, move, rmtree, unpack_archive
 from tempfile import mkdtemp
-from os import mkdir
+from os import mkdir, unlink
 from json import load, dump
 from abc import ABC, abstractmethod
 import time
@@ -574,6 +574,62 @@ class tetra_mesh(AbstractDataFolder):
             surface_mesh    = str(self.get_file('surface_mesh',True)),
             labeling        = labeling.FILENAME['surface_labeling']
         )
+    
+    def evocube(self):
+        # Instead of asking for the path of the output labeling, the executable wants the path to a folder where to write all output files.
+        # But we dont know the output folder name given by GenerativeAlgorithm a priori (depend on the datetime) -> use a tmp output folder, then move its content into the folder created by GenerativeAlgorithm
+        tmp_folder = Path(mkdtemp()) # request an os-specific tmp folder
+        # evocube also wants the surface map, as 'tris_to_tets.txt', inside the output folder, but without the 'triangles' and 'tetrahedra' annotations
+        with open(self.get_file('surface_map'),'r') as infile:
+            with open(tmp_folder / 'tris_to_tets.txt','w') as outfile: # where evocube expects the surface map
+                for line in infile.readlines():
+                    outfile.write(line.split()[0] + '\n') # keep only what is before ' '
+        output_folder = GenerativeAlgorithm(
+            'evocube',
+            self.path,
+            Settings.path('evocube'),
+            '{surface_mesh} {output_folder}',
+            'evocube_%d',
+            [],
+            surface_mesh    = str(self.get_file('surface_mesh',True)),
+            output_folder   = str(tmp_folder.absolute())
+        )
+        for outfile in tmp_folder.iterdir():
+            move(
+                str(outfile.absolute()),
+                str(output_folder.absolute())
+            )
+        rmtree(tmp_folder)
+        # rename some files having hard-coded names in evocube
+        if (output_folder / 'logs.json').exists():
+            move(
+                str((output_folder / 'logs.json').absolute()),
+                str((output_folder / 'evocube.logs.json').absolute())
+            )
+        if (output_folder / 'labeling.txt').exists():
+            move(
+                str((output_folder / 'labeling.txt').absolute()),
+                str((output_folder / labeling.FILENAME['surface_labeling']).absolute())
+            )
+        if (output_folder / 'labeling_init.txt').exists():
+            move(
+                str((output_folder / 'labeling_init.txt').absolute()),
+                str((output_folder / 'initial_surface_labeling.txt').absolute())
+            )
+        if (output_folder / 'labeling_on_tets.txt').exists():
+            move(
+                str((output_folder / 'labeling_on_tets.txt').absolute()),
+                str((output_folder / labeling.FILENAME['volume_labeling']).absolute())
+            )
+        if (output_folder / 'fast_polycube_surf.obj').exists():
+            move(
+                str((output_folder / 'fast_polycube_surf.obj').absolute()),
+                str((output_folder / labeling.FILENAME['polycube_surface_mesh']).absolute())
+            )
+        # remove the tris_to_tets file created before the GenerativeAlgorithm
+        if (output_folder / 'tris_to_tets.txt').exists():
+            unlink(output_folder / 'tris_to_tets.txt')
+        return output_folder
 
     def automatic_polycube(self):
         InteractiveGenerativeAlgorithm(
