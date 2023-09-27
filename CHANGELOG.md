@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Unless stated otherwise, this file mentions Python scripts located in `scripts/`.
 
+
+## [Unreleased]
+
+### Added
+
+- `evocube` : generate a labeling with a genetic algorithm (executable from [LIHPC-Computational-Geometry/evocube](https://github.com/LIHPC-Computational-Geometry/evocube))
+- `AlgoHex` : frame-field pipeline for hex-meshing (executable from [cgg-bern/AlgoHex](https://github.com/cgg-bern/AlgoHex))
+
 ## [0.3.0] - 2023-09-05
 
 ### Added
