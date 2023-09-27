@@ -1,0 +1,33 @@
+#!/usr/bin/python
+
+from pathlib import Path
+from argparse import ArgumentParser
+
+from sys import path
+path.append('../') # required for relative import without package
+from HexMeshWorkshop import *
+
+parser = ArgumentParser(
+    prog='AlgoHex',
+    description='https://github.com/cgg-bern/AlgoHex')
+
+parser.add_argument(
+    '-i', '--input',
+    dest='input',
+    metavar='PATH',
+    help='path to the input folder',
+    required=True)
+
+parser.add_argument(
+    '--view',
+    action='store_true',
+    dest='view_output',
+    help='visualize the output at the end')
+
+args = parser.parse_args()
+
+input = AbstractDataFolder.instantiate(Path(args.input))
+subfolder = input.AlgoHex()
+
+if args.view_output:
+    subfolder.view()

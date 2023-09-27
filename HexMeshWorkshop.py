@@ -502,6 +502,7 @@ class tetra_mesh(AbstractDataFolder):
 
     FILENAME = {
         'tet_mesh': 'tetra.mesh',           # tetrahedral mesh in the GMF/MEDIT ASCII format
+        'tet_mesh_VTKv2.0' : 'tet.vtk',     # tetrahedral mesh in the VTK DataFile Version 2.0 ASCII
         'surface_mesh': 'surface.obj',      # (triangle) surface of the tet-mesh, in the Wavefront format
         'surface_map': 'surface_map.txt'    # association between surface triangles and tet facets (see https://github.com/LIHPC-Computational-Geometry/automatic_polycube/blob/main/app/extract_surface.cpp for the format)
     }
@@ -544,6 +545,9 @@ class tetra_mesh(AbstractDataFolder):
         if which_file == 'surface_mesh' or which_file == 'surface_map':
             self.extract_surface()
             return self.get_file(which_file,True)
+        if which_file == 'tet_mesh_VTKv2.0':
+            self.Gmsh_convert_to_VTKv2()
+            return self.get_file(which_file,True)
         raise Exception(f'Missing file {str(path)}')
     
     # ----- Transformative algorithms (modify current folder) --------------------
@@ -559,6 +563,17 @@ class tetra_mesh(AbstractDataFolder):
             tetra_mesh      = str(self.get_file('tet_mesh',     True)),
             surface_mesh    = str(self.get_file('surface_mesh'      )),
             surface_map     = str(self.get_file('surface_map'       ))
+        )
+
+    def Gmsh_convert_to_VTKv2(self):
+        assert(self.get_file('surface_mesh').exists())
+        TransformativeAlgorithm(
+            'Gmsh_convert_to_VTKv2',
+            self.path,
+            Settings.path('Gmsh'),
+            '{input} -format vtk -o {output} -save',
+            input   = str(self.get_file('tet_mesh',         True)),
+            output  = str(self.get_file('tet_mesh_VTKv2.0'      )),
         )
     
     # ----- Generative algorithms (create subfolders) --------------------
@@ -653,6 +668,18 @@ class tetra_mesh(AbstractDataFolder):
             ['labeling'],
             mesh        = str(self.get_file('surface_mesh',True)),
             labeling    = labeling.FILENAME['surface_labeling']
+        )
+
+    def AlgoHex(self):
+        return GenerativeAlgorithm(
+            'AlgoHex',
+            self.path,
+            Settings.path('AlgoHex'),
+            '-i {tet_mesh} -o {hex_mesh}',
+            'AlgoHex',
+            ['hex_mesh'],
+            tet_mesh    = str(self.get_file('tet_mesh_VTKv2.0',True)),
+            hex_mesh    = hex_mesh.FILENAME['hex_mesh_OVM']
         )
 
 class labeling(AbstractDataFolder):
@@ -778,6 +805,66 @@ class labeling(AbstractDataFolder):
             init_tetra_mesh         = str(parent.get_file('tet_mesh',           True)),
             preprocessed_tetra_mesh = str(self.get_file('preprocessed_tet_mesh'     )),
             volume_labeling         = str(self.get_file('volume_labeling',      True))
+        )
+
+class hex_mesh(AbstractDataFolder):
+    """
+    Interface to a hex mesh data subfolder
+    """
+
+    FILENAME = {
+        'hex_mesh_MEDIT': 'hex.mesh',   # per-surface-triangle labels, values from 0 to 5 -> {+X,-X,+Y,-Y,+Z,-Z}
+        'hex_mesh_OVM': 'hex.ovm'       # per-tet-facets labels, same values + "-1" for "no label"
+    }
+
+    DEFAULT_VIEW = 'hex_mesh'
+
+    @staticmethod
+    def is_instance(path: Path) -> bool:
+        return (path / hex_mesh.FILENAME['hex_mesh_MEDIT']).exists() or (path / hex_mesh.FILENAME['hex_mesh_OVM']).exists()
+
+    def __init__(self,path: Path):
+        AbstractDataFolder.__init__(self,Path(path))
+    
+    def view(self, what = None):
+        """
+        View hex-mesh (MEDIT format) with hex_mesh_viewer from automatic_polycube
+        """
+        if what == None:
+            what = self.DEFAULT_VIEW
+        if what == 'hex_mesh':
+            InteractiveGenerativeAlgorithm(
+                'view',
+                self.path,
+                Settings.path('automatic_polycube') / 'hex_mesh_viewer',
+                '{mesh}', # arguments template
+                None,
+                [],
+                mesh = str(self.get_file('hex_mesh_MEDIT',True))
+            )
+        else:
+            raise Exception(f'tetra_mesh.view() does not recognize \'what\' value: \'{what}\'')
+    
+    def get_file(self,which_file : str, must_exist : bool = False) -> Path:
+        path = super().get_file(which_file)
+        if (not must_exist) or (must_exist and path.exists()):
+            return path
+        # so 'file' is missing -> try to auto-compute it
+        if which_file == 'hex_mesh_MEDIT' and (self.path / self.FILENAME['hex_mesh_OVM']).exists() :
+            self.OVM_to_MEDIT()
+            return self.get_file(which_file,True)
+        raise Exception(f'Missing file {str(path)}')
+
+    # ----- Transformative algorithms (modify current folder) --------------------
+
+    def OVM_to_MEDIT(self):
+        TransformativeAlgorithm(
+            'OVM_to_MEDIT',
+            self.path,
+            Settings.path('ovm.io'),
+            '{input} {output}',
+            input   = str(self.get_file('hex_mesh_OVM',     True)),
+            output  = str(self.get_file('hex_mesh_MEDIT'        )),
         )
 
 class root(AbstractDataFolder):
