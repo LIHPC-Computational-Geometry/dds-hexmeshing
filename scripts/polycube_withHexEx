@@ -8,15 +8,22 @@ path.append('../') # required for relative import without package
 from HexMeshWorkshop import *
 
 parser = ArgumentParser(
-    prog='AlgoHex',
-    description='https://github.com/cgg-bern/AlgoHex')
+    prog='polycube_withHexEx',
+    description='Simple polycube parametrization for libHexEx')
 
 parser.add_argument(
     '-i', '--input',
     dest='input',
     metavar='PATH',
-    help='path to the input folder',
+    help='path to the input folder (type labeling)',
     required=True)
+
+parser.add_argument(
+    '--scale',
+    dest='scale',
+    metavar='FLOAT',
+    help='scaling factor applied before libHexEx. higher = more hexahedra',
+    default='1.0')
 
 parser.add_argument(
     '--view',
@@ -26,8 +33,14 @@ parser.add_argument(
 
 args = parser.parse_args()
 
+cm = CollectionsManager(Settings.path('data_folder'))
+
+if args.input in cm.collections():
+    print('input is a colleciton -> batch mode')
+    exit(0)
+
 input = AbstractDataFolder.instantiate(Path(args.input))
-subfolder = input.AlgoHex()
+subfolder = input.polycube_withHexEx(args.scale)
 
 hexmesh_folder = AbstractDataFolder.instantiate(subfolder)
 hexmesh_folder.extract_surface()

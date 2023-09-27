@@ -16,6 +16,7 @@ Unless stated otherwise, this file mentions Python scripts located in `scripts/`
 - `AlgoHex` : frame-field pipeline for hex-meshing (executable from [cgg-bern/AlgoHex](https://github.com/cgg-bern/AlgoHex))
 - `labeling_painter` : labeling interactive modification (executable from [LIHPC-Computational-Geometry/automatic_polycube](https://github.com/LIHPC-Computational-Geometry/automatic_polycube))
 - `graphcut_labeling` : interactive labeling generation with a graph-cut optimization (executable from [LIHPC-Computational-Geometry/automatic_polycube](https://github.com/LIHPC-Computational-Geometry/automatic_polycube))
+- `polycube_withHexEx` : hex-mesh extraction through libHexEx from a labeling (executable from [fprotais/polycube_withHexEx](https://github.com/fprotais/polycube_withHexEx))
 
 ## [0.3.0] - 2023-09-05
 

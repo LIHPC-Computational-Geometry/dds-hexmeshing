@@ -831,14 +831,38 @@ class labeling(AbstractDataFolder):
             volume_labeling         = str(self.get_file('volume_labeling',      True))
         )
 
+    def polycube_withHexEx(self,scale):
+        parent = AbstractDataFolder.instantiate(self.path.parent) # we need the parent folder to get the tetra mesh
+        assert(parent.type() == 'tetra_mesh') # the parent folder should be of tetra mesh type
+        subfolder = GenerativeAlgorithm(
+            'polycube_withHexEx',
+            self.path,
+            Settings.path('polycube_withHexEx'),
+            '{tet_mesh} {volume_labeling} {hex_mesh} {scale}',
+            'polycube_withHexEx_{scale}',
+            ['hex_mesh'],
+            tet_mesh        = str(parent.get_file('tet_mesh',           True)),
+            volume_labeling = str(self.get_file('volume_labeling',      True)),
+            hex_mesh        = hex_mesh.FILENAME['hex_mesh_MEDIT'],
+            scale           = scale # scaling factor applied before libHexEx. higher = more hexahedra
+        )
+        # the executable also writes 2 debug .geogram files
+        if Path('Param.geogram').exists():
+            move('Param.geogram', subfolder / hex_mesh.FILENAME['parametrization'])
+        if Path('Polycube.geogram').exists():
+            move('Polycube.geogram', subfolder / hex_mesh.FILENAME['polycube'])
+        return subfolder
+
 class hex_mesh(AbstractDataFolder):
     """
     Interface to a hex mesh data subfolder
     """
 
     FILENAME = {
-        'hex_mesh_MEDIT': 'hex.mesh',   # per-surface-triangle labels, values from 0 to 5 -> {+X,-X,+Y,-Y,+Z,-Z}
-        'hex_mesh_OVM': 'hex.ovm'       # per-tet-facets labels, same values + "-1" for "no label"
+        'hex_mesh_MEDIT': 'hex.mesh',                           # per-surface-triangle labels, values from 0 to 5 -> {+X,-X,+Y,-Y,+Z,-Z}
+        'hex_mesh_OVM': 'hex.ovm',                              # per-tet-facets labels, same values + "-1" for "no label"
+        'parametrization': 'polycube_withHexEx.param.geogram',  # intermediate file outputted by polycube_withHexEx, in the Geogram format
+        'polycube': 'polycube_withHexEx.polycube.geogram'       # intermediate file outputted by polycube_withHexEx, in the Geogram format
     }
 
     DEFAULT_VIEW = 'hex_mesh'

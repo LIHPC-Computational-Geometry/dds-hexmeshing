@@ -10,6 +10,7 @@
         "HexBox": "~/.local/HexBox/build/gui/gui",
         "evocube": "~/.local/evocube/build_Release/evolabel",
         "ovm.io": "~/code/ovm.io/build/Linux64-gcc-dynamic-Debug/ovm.io",
-        "AlgoHex": "~/.local/AlgoHex/build_Release/Build/bin/HexMeshing"
+        "AlgoHex": "~/.local/AlgoHex/build_Release/Build/bin/HexMeshing",
+        "polycube_withHexEx": "~/.local/polycube_withHexEx/build_Release/polycube"
     }
 }
