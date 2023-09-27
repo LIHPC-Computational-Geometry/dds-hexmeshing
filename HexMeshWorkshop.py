@@ -590,6 +590,18 @@ class tetra_mesh(AbstractDataFolder):
             labeling        = labeling.FILENAME['surface_labeling']
         )
     
+    def labeling_painter(self):
+        InteractiveGenerativeAlgorithm(
+            'labeling_painter',
+            self.path,
+            Settings.path('automatic_polycube') / 'labeling_painter', 
+            '{mesh}', # arguments template
+            'labeling_painter_%d',
+            ['labeling'],
+            mesh        = str(self.get_file('surface_mesh',True)),
+            labeling    = labeling.FILENAME['surface_labeling']
+        )
+    
     def evocube(self):
         # Instead of asking for the path of the output labeling, the executable wants the path to a folder where to write all output files.
         # But we dont know the output folder name given by GenerativeAlgorithm a priori (depend on the datetime) -> use a tmp output folder, then move its content into the folder created by GenerativeAlgorithm

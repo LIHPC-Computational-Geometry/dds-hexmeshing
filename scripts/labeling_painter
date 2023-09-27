@@ -1,0 +1,24 @@
+#!/usr/bin/python
+
+from pathlib import Path
+from argparse import ArgumentParser
+
+from sys import path
+path.append('../') # required for relative import without package
+from HexMeshWorkshop import *
+
+parser = ArgumentParser(
+    prog='labeling_painter',
+    description='Manual polycube labeling edition')
+
+parser.add_argument(
+    '-i', '--input',
+    dest='input',
+    metavar='PATH',
+    help='path to the input folder (type tetra_mesh)',
+    required=True)
+
+args = parser.parse_args()
+
+input = AbstractDataFolder.instantiate(Path(args.input))
+input.labeling_painter()

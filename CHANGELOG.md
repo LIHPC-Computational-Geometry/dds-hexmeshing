@@ -14,6 +14,7 @@ Unless stated otherwise, this file mentions Python scripts located in `scripts/`
 
 - `evocube` : generate a labeling with a genetic algorithm (executable from [LIHPC-Computational-Geometry/evocube](https://github.com/LIHPC-Computational-Geometry/evocube))
 - `AlgoHex` : frame-field pipeline for hex-meshing (executable from [cgg-bern/AlgoHex](https://github.com/cgg-bern/AlgoHex))
+- `labeling_painter` : labeling interactive modification (executable from [LIHPC-Computational-Geometry/automatic_polycube](https://github.com/LIHPC-Computational-Geometry/automatic_polycube))
 
 ## [0.3.0] - 2023-09-05
 
