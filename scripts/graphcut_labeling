@@ -1,0 +1,24 @@
+#!/usr/bin/python
+
+from pathlib import Path
+from argparse import ArgumentParser
+
+from sys import path
+path.append('../') # required for relative import without package
+from HexMeshWorkshop import *
+
+parser = ArgumentParser(
+    prog='graphcut_labeling',
+    description='Interactive labeling generation with a graph-cut optimization')
+
+parser.add_argument(
+    '-i', '--input',
+    dest='input',
+    metavar='PATH',
+    help='path to the input folder (type tetra_mesh)',
+    required=True)
+
+args = parser.parse_args()
+
+input = AbstractDataFolder.instantiate(Path(args.input))
+input.graphcut_labeling()

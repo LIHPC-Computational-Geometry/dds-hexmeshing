@@ -601,6 +601,18 @@ class tetra_mesh(AbstractDataFolder):
             mesh        = str(self.get_file('surface_mesh',True)),
             labeling    = labeling.FILENAME['surface_labeling']
         )
+
+    def graphcut_labeling(self):
+        InteractiveGenerativeAlgorithm(
+            'graphcut_labeling',
+            self.path,
+            Settings.path('automatic_polycube') / 'graphcut_labeling', 
+            '{mesh}', # arguments template
+            'graphcut_labeling_%d',
+            ['labeling'],
+            mesh        = str(self.get_file('surface_mesh',True)),
+            labeling    = labeling.FILENAME['surface_labeling']
+        )
     
     def evocube(self):
         # Instead of asking for the path of the output labeling, the executable wants the path to a folder where to write all output files.
