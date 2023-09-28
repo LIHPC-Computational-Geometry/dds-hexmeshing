@@ -1,7 +1,7 @@
 {
     "paths": {
-        "data_folder": "~/testdata",
-        "automatic_polycube": "~/code/automatic_polycube/build/Linux64-gcc-dynamic-Debug/bin",
+        "data_folder": "~/testdata/",
+        "automatic_polycube": "~/code/automatic_polycube/build/Linux64-gcc-dynamic-Debug/bin/",
         "Mayo": "~/.local/bin/mayo",
         "Graphite": "~/.local/bin/graphite",
         "Gmsh": "~/.local/Gmsh/gmsh-4.11.1-Linux64/bin/gmsh",
@@ -11,6 +11,7 @@
         "evocube": "~/.local/evocube/build_Release/evolabel",
         "ovm.io": "~/code/ovm.io/build/Linux64-gcc-dynamic-Debug/ovm.io",
         "AlgoHex": "~/.local/AlgoHex/build_Release/Build/bin/HexMeshing",
-        "polycube_withHexEx": "~/.local/polycube_withHexEx/build_Release/polycube"
+        "polycube_withHexEx": "~/.local/polycube_withHexEx/build_Release/polycube",
+        "robustPolycube": "~/.local/robustPolycube/build_Release/"
     }
 }

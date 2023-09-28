@@ -715,8 +715,11 @@ class labeling(AbstractDataFolder):
         'surface_labeling': 'surface_labeling.txt',                         # per-surface-triangle labels, values from 0 to 5 -> {+X,-X,+Y,-Y,+Z,-Z}
         'volume_labeling': 'tetra_labeling.txt',                            # per-tet-facets labels, same values + "-1" for "no label"
         'polycube_surface_mesh': 'fastbndpolycube.obj',                     # polycube deformation of the surface mesh, in the Wavefront format
-        'preprocessed_tet_mesh': 'preprocessed.tetra.mesh',                 # tet-mesh with additional cells to avoid impossible configuration regarding the labeling. GMF/MEDIT ASCII format
-        'flagging_from_fastbndpolycube': 'fastbndpolycube.flagging.geogram' # intermediate file outputted by fastbndpolycube, in the Geogram format
+        'preprocessed_tet_mesh': 'preprocessed.tetra.mesh',                 # tet-mesh with additional cells to avoid impossible configuration regarding the labeling. GMF/MEDIT ASCII format. Output of https://github.com/fprotais/preprocess_polycube
+        'flagging_from_fastbndpolycube': 'fastbndpolycube.flagging.geogram',# intermediate file outputted by fastbndpolycube, in the Geogram format
+        'remeshed_tet_mesh': 'tet.remeshed.mesh',                           # tet-mesh aiming bijectivity for the polycube. GMF/MEDIT ASCII format. Output of https://github.com/fprotais/robustPolycube
+        'remeshed_tet_mesh_labeling': 'tet.remeshed.volume_labeling.txt',   # volume labeling of remeshed_tet_mesh. Should be the same as volume_labeling.
+        'polycuboid_mesh': 'polycuboid.mesh'                                # polycuboid generated from remeshed_tet_mesh and its labeling. GMF/MEDIT ASCII format.
     }
 
     DEFAULT_VIEW = 'labeled_surface'
@@ -785,6 +788,9 @@ class labeling(AbstractDataFolder):
         elif which_file == 'preprocessed_tet_mesh':
             self.preprocess_polycube()
             return self.get_file(which_file,True)
+        elif which_file in ['remeshed_tet_mesh', 'remeshed_tet_mesh_labeling', 'polycuboid_mesh']:
+            self.rb_generate_deformation()
+            return self.get_file(which_file,True)
         raise Exception(f'Missing file {str(path)}')
         
     # ----- Transformative algorithms (modify current folder) --------------------
@@ -819,6 +825,13 @@ class labeling(AbstractDataFolder):
             move('flagging.geogram', self.path / self.FILENAME['flagging_from_fastbndpolycube'])
 
     def preprocess_polycube(self):
+        """
+        Edit a tetrahedral mesh, pre-processing a polycube by avoiding some configurations
+
+        https://github.com/fprotais/preprocess_polycube
+
+        Not really needed, see issue [#1](https://github.com/fprotais/preprocess_polycube/issues/1)
+        """
         parent = AbstractDataFolder.instantiate(self.path.parent) # we need the parent folder to get the tetra mesh
         assert(parent.type() == 'tetra_mesh') # the parent folder should be of tetra mesh type
         TransformativeAlgorithm(
@@ -851,6 +864,83 @@ class labeling(AbstractDataFolder):
             move('Param.geogram', subfolder / hex_mesh.FILENAME['parametrization'])
         if Path('Polycube.geogram').exists():
             move('Polycube.geogram', subfolder / hex_mesh.FILENAME['polycube'])
+        return subfolder
+    
+    def rb_generate_deformation(self):
+        """
+        https://github.com/fprotais/robustPolycube#rb_generate_deformation
+        """
+        if( self.get_file('remeshed_tet_mesh').exists() and 
+            self.get_file('remeshed_tet_mesh_labeling').exists() and 
+            self.get_file('polycuboid_mesh').exists() ):
+            # output files already exist, no need to re-run
+            return
+        parent = AbstractDataFolder.instantiate(self.path.parent) # we need the parent folder to get the surface map
+        assert(parent.type() == 'tetra_mesh') # the parent folder should be of tetra mesh type
+        TransformativeAlgorithm(
+            'rb_generate_deformation',
+            self.path,
+            Settings.path('robustPolycube') / 'rb_generate_deformation',
+            '{tet_mesh} {volume_labeling} {tet_remeshed} {tet_remeshed_labeling} {polycuboid}',
+            tet_mesh                = str(parent.get_file('tet_mesh',               True)),
+            volume_labeling         = str(self.get_file('volume_labeling',          True)),
+            tet_remeshed            = str(self.get_file('remeshed_tet_mesh'             )),
+            tet_remeshed_labeling   = str(self.get_file('remeshed_tet_mesh_labeling'    )),
+            polycuboid              = str(self.get_file('polycuboid_mesh'               ))
+        )
+        # the executable also writes debug .geogram files
+        for debug_filename in [
+            'debug_volume_0.geogram',
+            'debug_flagging_1.geogram',
+            'debug_volume_flagging_2.geogram',
+            'debug_embedded_mesh_3.geogram',
+            'debug_corrected_polycuboid_4.geogram',
+            'debug__wflagging_5.geogram',
+            'debug_corrected_param_6.geogram'
+        ]:
+            if Path(debug_filename).exists():
+                move(debug_filename, self.path / ('rb_generate_deformation.' + str(debug_filename)))
+    
+    def rb_generate_quantization(self,element_sizing):
+        """
+        https://github.com/fprotais/robustPolycube#rb_generate_quantization
+        """
+        subfolder = GenerativeAlgorithm(
+            'rb_generate_quantization',
+            self.path,
+            Settings.path('robustPolycube') / 'rb_generate_quantization',
+            '{tet_remeshed} {tet_remeshed_labeling} {polycuboid} {element_sizing} {hex_mesh}',
+            'robustPolycube_{element_sizing}',
+            ['hex_mesh'],
+            tet_remeshed            = str(self.get_file('remeshed_tet_mesh',            True)),
+            tet_remeshed_labeling   = str(self.get_file('remeshed_tet_mesh_labeling',   True)),
+            polycuboid              = str(self.get_file('polycuboid_mesh',              True)),
+            element_sizing          = element_sizing, # ratio compared to tet_remeshed edge size. smaller = more hexahedra
+            hex_mesh                = hex_mesh.FILENAME['hex_mesh_MEDIT']
+        )
+        # the executable also writes debug .geogram files and a .lua script
+        for debug_filename in [
+            'debug_volume_0.geogram',
+            'debug_polycuboid_1.geogram',
+            'debug_flagging_2.geogram',
+            'debug_corrected_flagging_3.geogram',
+            'debug_charts_dim_0__4.geogram',
+            'debug_charts_dim_1__5.geogram',
+            'debug_charts_dim_2__6.geogram',
+            'debug_Blocks_on_mesh_7.geogram',
+            'debug_Blocks_blocks_8.geogram',
+            'debug_Blocks_on_polycuboid_9.geogram',
+            'debug_Blocks_on_polycube_10.geogram',
+            'debug_coarsehexmesh_11.geogram',
+            'debug_coarsehexmesh_charts_12.geogram',
+            'debug_polycubehexmesh_13.geogram',
+            'debug_polycubehexmesh_charts_14.geogram',
+            'debug_hexmesh_15.geogram',
+            'debug_hexmesh_charts_16.geogram',
+            'view.lua'
+        ]:
+            if Path(debug_filename).exists():
+                move(debug_filename, subfolder / ('rb_generate_quantization.' + str(debug_filename)))
         return subfolder
 
 class hex_mesh(AbstractDataFolder):

@@ -17,6 +17,7 @@ Unless stated otherwise, this file mentions Python scripts located in `scripts/`
 - `labeling_painter` : labeling interactive modification (executable from [LIHPC-Computational-Geometry/automatic_polycube](https://github.com/LIHPC-Computational-Geometry/automatic_polycube))
 - `graphcut_labeling` : interactive labeling generation with a graph-cut optimization (executable from [LIHPC-Computational-Geometry/automatic_polycube](https://github.com/LIHPC-Computational-Geometry/automatic_polycube))
 - `polycube_withHexEx` : hex-mesh extraction through libHexEx from a labeling (executable from [fprotais/polycube_withHexEx](https://github.com/fprotais/polycube_withHexEx))
+- `robustPolycube` : robust hex-mesh extraction from a labeling (executable from [fprotais/robustPolycube](https://github.com/fprotais/robustPolycube))
 
 ## [0.3.0] - 2023-09-05
 
