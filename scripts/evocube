@@ -15,7 +15,7 @@ parser.add_argument(
     '-i', '--input',
     dest='input',
     metavar='PATH',
-    help='path to the input data folder (type tetra_mesh)',
+    help='path to the input data folder (type tet_mesh)',
     required=True)
 
 parser.add_argument(

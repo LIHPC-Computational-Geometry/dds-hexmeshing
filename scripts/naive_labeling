@@ -9,13 +9,13 @@ from HexMeshWorkshop import *
 
 parser = ArgumentParser(
     prog='naive_labeling',
-    description='Generate the naive labeling of a tetra_mesh data folder')
+    description='Generate the naive labeling of a tet_mesh data folder')
 
 parser.add_argument(
     '-i', '--input',
     dest='input',
     metavar='PATH',
-    help='path to the input data folder (type tetra_mesh)',
+    help='path to the input data folder (type tet_mesh)',
     required=True)
 
 parser.add_argument(

@@ -491,11 +491,11 @@ class step(AbstractDataFolder):
             'Gmsh_{characteristic_length_factor}',
             ['output_file'],
             step                            = str(self.get_file('STEP',True)),
-            output_file                     = tetra_mesh.FILENAME['tet_mesh'],
+            output_file                     = tet_mesh.FILENAME['tet_mesh'],
             characteristic_length_factor    = mesh_size,
             nb_threads                      = 8)
 
-class tetra_mesh(AbstractDataFolder):
+class tet_mesh(AbstractDataFolder):
     """
     Interface to a tetra mesh folder
     """
@@ -511,7 +511,7 @@ class tetra_mesh(AbstractDataFolder):
 
     @staticmethod
     def is_instance(path: Path) -> bool:
-        return (path / tetra_mesh.FILENAME['tet_mesh']).exists()
+        return (path / tet_mesh.FILENAME['tet_mesh']).exists()
 
     def __init__(self,path: Path):
         AbstractDataFolder.__init__(self,Path(path))
@@ -535,7 +535,7 @@ class tetra_mesh(AbstractDataFolder):
                 surface_mesh = str(self.get_file('surface_mesh',True))
             )
         else:
-            raise Exception(f'tetra_mesh.view() does not recognize \'what\' value: \'{what}\'')
+            raise Exception(f'tet_mesh.view() does not recognize \'what\' value: \'{what}\'')
     
     def get_file(self,which_file : str, must_exist : bool = False) -> Path:
         path = super().get_file(which_file)
@@ -559,8 +559,8 @@ class tetra_mesh(AbstractDataFolder):
             'extract_surface',
             self.path,
             Settings.path('automatic_polycube') / 'extract_surface',
-            '{tetra_mesh} {surface_mesh} {surface_map}',
-            tetra_mesh      = str(self.get_file('tet_mesh',     True)),
+            '{tet_mesh} {surface_mesh} {surface_map}',
+            tet_mesh      = str(self.get_file('tet_mesh',     True)),
             surface_mesh    = str(self.get_file('surface_mesh'      )),
             surface_map     = str(self.get_file('surface_map'       ))
         )
@@ -772,7 +772,7 @@ class marchinghex_grid(AbstractDataFolder):
     def marchinghex_hexmeshing(self, keep_debug_files):
         # note: will transform the folder type from marchinghex_grid to hex_mesh
         parent = AbstractDataFolder.instantiate(self.path.parent) # we need the parent folder to get the surface mesh
-        assert(parent.type() == 'tetra_mesh') # the parent folder should be of tetra mesh type
+        assert(parent.type() == 'tet_mesh') # the parent folder should be of tetra mesh type
         TransformativeAlgorithm(
             'marchinghex_hexmeshing',
             self.path,
@@ -827,7 +827,7 @@ class labeling(AbstractDataFolder):
         View labeling with labeling_viewer app from automatic_polycube repo
         """
         parent = AbstractDataFolder.instantiate(self.path.parent) # we need the parent folder to get the surface mesh
-        assert(parent.type() == 'tetra_mesh') # the parent folder should be of tetra mesh type
+        assert(parent.type() == 'tet_mesh') # the parent folder should be of tetra mesh type
         if what == None:
             what = self.DEFAULT_VIEW
         if what == 'labeled_surface':
@@ -888,7 +888,7 @@ class labeling(AbstractDataFolder):
         
     def volume_labeling(self):
         parent = AbstractDataFolder.instantiate(self.path.parent) # we need the parent folder to get the surface map
-        assert(parent.type() == 'tetra_mesh') # the parent folder should be of tetra mesh type
+        assert(parent.type() == 'tet_mesh') # the parent folder should be of tetra mesh type
         TransformativeAlgorithm(
             'volume_labeling',
             self.path,
@@ -901,7 +901,7 @@ class labeling(AbstractDataFolder):
 
     def fastbndpolycube(self):
         parent = AbstractDataFolder.instantiate(self.path.parent) # we need the parent folder to get the surface mesh
-        assert(parent.type() == 'tetra_mesh') # the parent folder should be of tetra mesh type
+        assert(parent.type() == 'tet_mesh') # the parent folder should be of tetra mesh type
         TransformativeAlgorithm(
             'fastbndpolycube',
             self.path,
@@ -924,20 +924,20 @@ class labeling(AbstractDataFolder):
         Not really needed, see issue [#1](https://github.com/fprotais/preprocess_polycube/issues/1)
         """
         parent = AbstractDataFolder.instantiate(self.path.parent) # we need the parent folder to get the tetra mesh
-        assert(parent.type() == 'tetra_mesh') # the parent folder should be of tetra mesh type
+        assert(parent.type() == 'tet_mesh') # the parent folder should be of tetra mesh type
         TransformativeAlgorithm(
             'preprocess_polycube',
             self.path,
             Settings.path('preprocess_polycube'),
-            '{init_tetra_mesh}  {preprocessed_tetra_mesh} {volume_labeling}',
-            init_tetra_mesh         = str(parent.get_file('tet_mesh',           True)),
-            preprocessed_tetra_mesh = str(self.get_file('preprocessed_tet_mesh'     )),
+            '{init_tet_mesh}  {preprocessed_tet_mesh} {volume_labeling}',
+            init_tet_mesh         = str(parent.get_file('tet_mesh',           True)),
+            preprocessed_tet_mesh = str(self.get_file('preprocessed_tet_mesh'     )),
             volume_labeling         = str(self.get_file('volume_labeling',      True))
         )
 
     def polycube_withHexEx(self, scale, keep_debug_files = False):
         parent = AbstractDataFolder.instantiate(self.path.parent) # we need the parent folder to get the tetra mesh
-        assert(parent.type() == 'tetra_mesh') # the parent folder should be of tetra mesh type
+        assert(parent.type() == 'tet_mesh') # the parent folder should be of tetra mesh type
         subfolder = GenerativeAlgorithm(
             'polycube_withHexEx',
             self.path,
@@ -969,7 +969,7 @@ class labeling(AbstractDataFolder):
             # output files already exist, no need to re-run
             return
         parent = AbstractDataFolder.instantiate(self.path.parent) # we need the parent folder to get the surface map
-        assert(parent.type() == 'tetra_mesh') # the parent folder should be of tetra mesh type
+        assert(parent.type() == 'tet_mesh') # the parent folder should be of tetra mesh type
         TransformativeAlgorithm(
             'rb_generate_deformation',
             self.path,
