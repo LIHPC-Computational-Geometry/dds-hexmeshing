@@ -10,6 +10,8 @@ Unless stated otherwise, this file mentions Python scripts located in `scripts/`
 
 ## [Unreleased]
 
+## [0.4.0] - 2023-09-30
+
 ### Added
 
 - `evocube` : generate a labeling with a genetic algorithm (executable from [LIHPC-Computational-Geometry/evocube](https://github.com/LIHPC-Computational-Geometry/evocube))
@@ -20,6 +22,10 @@ Unless stated otherwise, this file mentions Python scripts located in `scripts/`
 - `robustPolycube` : robust hex-mesh extraction from a labeling (executable from [fprotais/robustPolycube](https://github.com/fprotais/robustPolycube))
 - `marchinghex` : robust hex-meshing using the Dhondt cut approach (executable from [fprotais/marchinghex](https://github.com/fprotais/marchinghex))
 - `recursive_update` : update filenames to the up-to-date convention
+
+### Changed
+
+- `fastbndpolycube` now has an optional argument `--keep-debug-files`
 
 ## [0.3.0] - 2023-09-05
 
