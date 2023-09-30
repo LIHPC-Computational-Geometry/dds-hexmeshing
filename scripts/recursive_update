@@ -1,0 +1,16 @@
+#!/usr/bin/python
+
+from argparse import ArgumentParser
+
+from sys import path
+path.append('../') # required for relative import without package
+from HexMeshWorkshop import *
+
+parser = ArgumentParser(
+    prog='recursive_update',
+    description='Update all subfolder of the data folder to keep data up to date with the evolving structure')
+
+args = parser.parse_args()
+
+root_folder = root()
+root_folder.recursive_update()

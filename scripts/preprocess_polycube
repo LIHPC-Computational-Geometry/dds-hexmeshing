@@ -9,7 +9,7 @@ from HexMeshWorkshop import *
 
 parser = ArgumentParser(
     prog='preprocess_polycube',
-    description='Pre-process a tetra mesh so that the interior may not have impossible configuration for a given labeling')
+    description='Pre-process a tet-mesh so that the interior may not have impossible configuration for a given labeling')
 
 parser.add_argument(
     '-i', '--input',

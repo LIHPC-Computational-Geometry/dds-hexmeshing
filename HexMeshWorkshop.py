@@ -355,6 +355,33 @@ def TransformativeAlgorithm(name: str, input_folder, executable: Path, executabl
         dump(info_file, file, sort_keys=True, indent=4)
     #self.completed_process.check_returncode()# will raise a CalledProcessError if non-zero
 
+def rename_file(input_folder, old_filename: str, new_filename: str):
+    assert(old_filename != new_filename)
+    # Read JSON file
+    info_file = dict()
+    if (input_folder / 'info.json').exists():
+        info_file = load(open(input_folder / 'info.json'))
+        assert (len(info_file) != 0)
+    # Write parameters in the dict (will be dumped as JSON)
+    start_datetime_iso = ''
+    while 1:
+        start_datetime_iso = time.strftime('%Y-%m-%dT%H:%M:%SZ', time.localtime())
+        if start_datetime_iso not in info_file.keys():
+            break
+        # else : already a key with this datetime (can append with very fast algorithms)
+        time.sleep(1.0)
+    info_file[start_datetime_iso] = {
+        'TransformativeAlgorithm': 'rename',
+        'old_filename': old_filename,
+        'new_filename': new_filename
+    }
+    move(input_folder / old_filename, input_folder / new_filename)
+    # write JSON file
+    with open(input_folder / 'info.json','w') as file:
+        dump(info_file, file, sort_keys=True, indent=4)
+    logging.info(f'In {input_folder}, {old_filename} renamed to {new_filename}')
+
+
 class AbstractDataFolder(ABC):
     """
     Represents an entry of the data folder
@@ -497,12 +524,12 @@ class step(AbstractDataFolder):
 
 class tet_mesh(AbstractDataFolder):
     """
-    Interface to a tetra mesh folder
+    Interface to a tet-mesh folder
     """
 
     FILENAME = {
-        'tet_mesh': 'tetra.mesh',           # tetrahedral mesh in the GMF/MEDIT ASCII format
-        'tet_mesh_VTKv2.0' : 'tet.vtk',     # tetrahedral mesh in the VTK DataFile Version 2.0 ASCII
+        'tet_mesh': 'tet.mesh',           # tetrahedral mesh in the GMF/MEDIT ASCII format
+        'tet_mesh_VTKv2.0' : 'tet_mesh.vtk',     # tetrahedral mesh in the VTK DataFile Version 2.0 ASCII
         'surface_mesh': 'surface.obj',      # (triangle) surface of the tet-mesh, in the Wavefront format
         'surface_map': 'surface_map.txt'    # association between surface triangles and tet facets (see https://github.com/LIHPC-Computational-Geometry/automatic_polycube/blob/main/app/extract_surface.cpp for the format)
     }
@@ -772,7 +799,7 @@ class marchinghex_grid(AbstractDataFolder):
     def marchinghex_hexmeshing(self, keep_debug_files):
         # note: will transform the folder type from marchinghex_grid to hex_mesh
         parent = AbstractDataFolder.instantiate(self.path.parent) # we need the parent folder to get the surface mesh
-        assert(parent.type() == 'tet_mesh') # the parent folder should be of tetra mesh type
+        assert(parent.type() == 'tet_mesh') # the parent folder should be of tet_mesh type
         TransformativeAlgorithm(
             'marchinghex_hexmeshing',
             self.path,
@@ -804,7 +831,7 @@ class labeling(AbstractDataFolder):
 
     FILENAME = {
         'surface_labeling': 'surface_labeling.txt',                         # per-surface-triangle labels, values from 0 to 5 -> {+X,-X,+Y,-Y,+Z,-Z}
-        'volume_labeling': 'tetra_labeling.txt',                            # per-tet-facets labels, same values + "-1" for "no label"
+        'volume_labeling': 'volume_labeling.txt',                           # per-tet-facets labels, same values + "-1" for "no label"
         'polycube_surface_mesh': 'fastbndpolycube.obj',                     # polycube deformation of the surface mesh, in the Wavefront format
         'preprocessed_tet_mesh': 'preprocessed.tetra.mesh',                 # tet-mesh with additional cells to avoid impossible configuration regarding the labeling. GMF/MEDIT ASCII format. Output of https://github.com/fprotais/preprocess_polycube
         'flagging_from_fastbndpolycube': 'fastbndpolycube.flagging.geogram',# intermediate file outputted by fastbndpolycube, in the Geogram format
@@ -827,7 +854,7 @@ class labeling(AbstractDataFolder):
         View labeling with labeling_viewer app from automatic_polycube repo
         """
         parent = AbstractDataFolder.instantiate(self.path.parent) # we need the parent folder to get the surface mesh
-        assert(parent.type() == 'tet_mesh') # the parent folder should be of tetra mesh type
+        assert(parent.type() == 'tet_mesh') # the parent folder should be of tet-mesh type
         if what == None:
             what = self.DEFAULT_VIEW
         if what == 'labeled_surface':
@@ -888,7 +915,7 @@ class labeling(AbstractDataFolder):
         
     def volume_labeling(self):
         parent = AbstractDataFolder.instantiate(self.path.parent) # we need the parent folder to get the surface map
-        assert(parent.type() == 'tet_mesh') # the parent folder should be of tetra mesh type
+        assert(parent.type() == 'tet_mesh') # the parent folder should be of tet_mesh type
         TransformativeAlgorithm(
             'volume_labeling',
             self.path,
@@ -901,7 +928,7 @@ class labeling(AbstractDataFolder):
 
     def fastbndpolycube(self):
         parent = AbstractDataFolder.instantiate(self.path.parent) # we need the parent folder to get the surface mesh
-        assert(parent.type() == 'tet_mesh') # the parent folder should be of tetra mesh type
+        assert(parent.type() == 'tet_mesh') # the parent folder should be of tet_mesh type
         TransformativeAlgorithm(
             'fastbndpolycube',
             self.path,
@@ -923,8 +950,8 @@ class labeling(AbstractDataFolder):
 
         Not really needed, see issue [#1](https://github.com/fprotais/preprocess_polycube/issues/1)
         """
-        parent = AbstractDataFolder.instantiate(self.path.parent) # we need the parent folder to get the tetra mesh
-        assert(parent.type() == 'tet_mesh') # the parent folder should be of tetra mesh type
+        parent = AbstractDataFolder.instantiate(self.path.parent) # we need the parent folder to get the tet mesh
+        assert(parent.type() == 'tet_mesh') # the parent folder should be of tet_mesh type
         TransformativeAlgorithm(
             'preprocess_polycube',
             self.path,
@@ -936,8 +963,8 @@ class labeling(AbstractDataFolder):
         )
 
     def polycube_withHexEx(self, scale, keep_debug_files = False):
-        parent = AbstractDataFolder.instantiate(self.path.parent) # we need the parent folder to get the tetra mesh
-        assert(parent.type() == 'tet_mesh') # the parent folder should be of tetra mesh type
+        parent = AbstractDataFolder.instantiate(self.path.parent) # we need the parent folder to get the tet mesh
+        assert(parent.type() == 'tet_mesh') # the parent folder should be of tet_mesh type
         subfolder = GenerativeAlgorithm(
             'polycube_withHexEx',
             self.path,
@@ -969,7 +996,7 @@ class labeling(AbstractDataFolder):
             # output files already exist, no need to re-run
             return
         parent = AbstractDataFolder.instantiate(self.path.parent) # we need the parent folder to get the surface map
-        assert(parent.type() == 'tet_mesh') # the parent folder should be of tetra mesh type
+        assert(parent.type() == 'tet_mesh') # the parent folder should be of tet_mesh type
         TransformativeAlgorithm(
             'rb_generate_deformation',
             self.path,
@@ -1048,8 +1075,8 @@ class hex_mesh(AbstractDataFolder):
     """
 
     FILENAME = {
-        'hex_mesh_MEDIT': 'hex.mesh',                           # per-surface-triangle labels, values from 0 to 5 -> {+X,-X,+Y,-Y,+Z,-Z}
-        'hex_mesh_OVM': 'hex.ovm',                              # per-tet-facets labels, same values + "-1" for "no label"
+        'hex_mesh_MEDIT': 'hex.mesh', # hexahedral mesh, GMF/MEDIT ASCII format
+        'hex_mesh_OVM': 'hex.ovm',    # hexahedral mesh, OpenVolumeMesh format
     }
 
     DEFAULT_VIEW = 'hex_mesh'
@@ -1128,12 +1155,6 @@ class root(AbstractDataFolder):
                 dump(dict(), file, sort_keys=True, indent=4)
         self.collections_manager = CollectionsManager(path)
         AbstractDataFolder.__init__(self,path)
-
-    def type(self) -> str:
-        return self.__class__.__name__
-    
-    def __str__(self) -> str:
-        return '{{type={}, path={}}}'.format(self.type(),str(self.path))
     
     def view(self, what = None):
         if what == None:
@@ -1148,6 +1169,27 @@ class root(AbstractDataFolder):
         if (not must_exist) or (must_exist and path.exists()):
             return path
         raise Exception(f'Missing file {str(path)}')
+
+    def recursive_update(self):
+        count = 0
+        for subdir in [x for x in self.path.rglob('*') if x.is_dir()]: # recursive exploration of all folders
+            # 2023-09-30 : old filename of 'tet_mesh' (tet_mesh type)
+            if (subdir / 'tetra.mesh').exists():
+                rename_file(subdir, 'tetra.mesh', tet_mesh.FILENAME['tet_mesh'])
+                count += 1
+            # 2023-09-30 : old filename of 'tet_mesh_VTKv2.0' (tet_mesh type)
+            if (subdir / 'tet.vtk').exists():
+                rename_file(subdir, 'tet.vtk', tet_mesh.FILENAME['tet_mesh_VTKv2.0'])
+                count += 1
+            # 2023-09-30 : old filename of 'volume_labeling' (labeling type)
+            if (subdir / 'tetra_labeling.txt').exists():
+                rename_file(subdir, 'tetra_labeling.txt', labeling.FILENAME['volume_labeling'])
+                count += 1
+            # 2023-09-30 : old filename of 'preprocessed_tet_mesh' (labeling type)
+            if (subdir / 'preprocessed.tetra.mesh').exists():
+                rename_file(subdir, 'preprocessed.tetra.mesh', labeling.FILENAME['preprocessed_tet_mesh'])
+                count += 1
+        logging.info(f'root.recursive_update() : {count} modifications')
         
     # ----- Generative algorithms (create subfolders) --------------------
 

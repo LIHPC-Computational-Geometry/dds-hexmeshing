@@ -19,16 +19,17 @@ Unless stated otherwise, this file mentions Python scripts located in `scripts/`
 - `polycube_withHexEx` : hex-mesh extraction through libHexEx from a labeling (executable from [fprotais/polycube_withHexEx](https://github.com/fprotais/polycube_withHexEx))
 - `robustPolycube` : robust hex-mesh extraction from a labeling (executable from [fprotais/robustPolycube](https://github.com/fprotais/robustPolycube))
 - `marchinghex` : robust hex-meshing using the Dhondt cut approach (executable from [fprotais/marchinghex](https://github.com/fprotais/marchinghex))
+- `recursive_update` : update filenames to the up-to-date convention
 
 ## [0.3.0] - 2023-09-05
 
 ### Added
 
-- `naive_labeling` : generate the naive labeling from a tetra mesh folder (executable from [LIHPC-Computational-Geometry/automatic_polycube](https://github.com/LIHPC-Computational-Geometry/automatic_polycube))
+- `naive_labeling` : generate the naive labeling from a tet-mesh folder (executable from [LIHPC-Computational-Geometry/automatic_polycube](https://github.com/LIHPC-Computational-Geometry/automatic_polycube))
 - `typeof` : print the type of a given data folder
 - `fastbndpolycube` : generate a surface polycube from a labeling data folder (executable from [fprotais/fastbndpolycube](https://github.com/fprotais/fastbndpolycube))
 - `volume_labeling` : compute the volume labeling (per cell facet) from the surface labeling (per surface triangle) (executable from [LIHPC-Computational-Geometry/automatic_polycube](https://github.com/LIHPC-Computational-Geometry/automatic_polycube))
-- `preprocess_polycube` : pre-process a tetra mesh so that the interior may not have impossible configuration for a given labeling data folder (create a new tetra mesh inside the labeling data folder, executable from [fprotais/fastbndpolycube](https://github.com/fprotais/fastbndpolycube))
+- `preprocess_polycube` : pre-process a tet-mesh so that the interior may not have impossible configuration for a given labeling data folder (create a new tet-mesh inside the labeling data folder, executable from [fprotais/fastbndpolycube](https://github.com/fprotais/fastbndpolycube))
 - `HexBox` : Interactive tool for creating hexahedral meshes (executable from [cg3hci/HexBox](https://github.com/cg3hci/HexBox))
 - `recursive_enumeration` : parse all subfolders of the current data folder and print their type
 
@@ -44,7 +45,7 @@ Unless stated otherwise, this file mentions Python scripts located in `scripts/`
 ### Added
 
 - `Gmsh` : generate a tetrahedral mesh from a step folder with [Gmsh](https://gmsh.info/), and extract the surface
-- `extract_surface` : Compute the surface (triangle) mesh in a tetra mesh folder (executable from [LIHPC-Computational-Geometry/automatic_polycube](https://github.com/LIHPC-Computational-Geometry/automatic_polycube))
+- `extract_surface` : Compute the surface (triangle) mesh in a tet-mesh folder (executable from [LIHPC-Computational-Geometry/automatic_polycube](https://github.com/LIHPC-Computational-Geometry/automatic_polycube))
 - `automatic_polycube` : call the main executable of [LIHPC-Computational-Geometry/automatic_polycube](https://github.com/LIHPC-Computational-Geometry/automatic_polycube)
 - `view` : visualize the content of the input data folder (visualization software depends on the data folder type)
 
