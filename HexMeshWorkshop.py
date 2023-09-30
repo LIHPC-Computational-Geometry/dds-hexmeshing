@@ -2,7 +2,7 @@ import logging
 from pathlib import Path
 from shutil import copyfile, move, rmtree, unpack_archive
 from tempfile import mkdtemp
-from os import mkdir, unlink
+from os import mkdir, unlink, curdir
 from json import load, dump
 from abc import ABC, abstractmethod
 import time
@@ -705,6 +705,97 @@ class tetra_mesh(AbstractDataFolder):
             tet_mesh    = str(self.get_file('tet_mesh_VTKv2.0',True)),
             hex_mesh    = hex_mesh.FILENAME['hex_mesh_OVM']
         )
+    
+    def gridgenerator(self, scale):
+        return GenerativeAlgorithm(
+            'marchinghex_gridgenerator',
+            self.path,
+            Settings.path('marchinghex') / 'gridgenerator',
+            '{input_mesh} {output_grid_mesh} {scale}',
+            'marchinghex_{scale}',
+            ['output_grid_mesh'],
+            input_mesh    = str(self.get_file('tet_mesh',True)),
+            output_grid_mesh    = marchinghex_grid.FILENAME['grid_mesh'],
+            scale = scale
+        )
+
+    def marchinghex(self, scale, keep_debug_files = False):
+        # TODO if a marchinghex_grid subfolder of the same scale exists, just execute marchinghex_hexmeshing()
+        subfolder = self.gridgenerator(scale)
+        grid_data_subfolder = AbstractDataFolder.instantiate(subfolder)
+        grid_data_subfolder.marchinghex_hexmeshing(keep_debug_files)
+        return subfolder
+
+class marchinghex_grid(AbstractDataFolder):
+    """
+    Interface to the intermediate step of the marchinghex algorithm (regular grid)
+    """
+
+    FILENAME = {
+        'grid_mesh': 'grid.mesh' # regular hex mesh of the bounding box, in the GMF/MEDIT ASCII format
+    }
+
+    DEFAULT_VIEW = 'grid'
+
+    @staticmethod
+    def is_instance(path: Path) -> bool:
+        return (path / marchinghex_grid.FILENAME['grid_mesh']).exists() and not  (path / hex_mesh.FILENAME['hex_mesh_MEDIT']).exists()
+
+    def __init__(self,path: Path):
+        AbstractDataFolder.__init__(self,Path(path))
+    
+    def view(self, what = None):
+        if what == None:
+            what = self.DEFAULT_VIEW
+        if what == 'grid':
+            InteractiveGenerativeAlgorithm(
+                'view',
+                self.path,
+                Settings.path('Graphite'),
+                '{grid_mesh}', # arguments template
+                None,
+                [],
+                grid_mesh = str(self.get_file('grid_mesh',True))
+            )
+        else:
+            raise Exception(f'marchinghex_grid.view() does not recognize \'what\' value: \'{what}\'')
+    
+    def get_file(self,which_file : str, must_exist : bool = False) -> Path:
+        path = super().get_file(which_file)
+        if (not must_exist) or (must_exist and path.exists()):
+            return path
+        # so 'file' is missing
+        raise Exception(f'Missing file {str(path)}')
+    
+    # ----- Transformative algorithms (modify current folder) --------------------
+
+    def marchinghex_hexmeshing(self, keep_debug_files):
+        # note: will transform the folder type from marchinghex_grid to hex_mesh
+        parent = AbstractDataFolder.instantiate(self.path.parent) # we need the parent folder to get the surface mesh
+        assert(parent.type() == 'tetra_mesh') # the parent folder should be of tetra mesh type
+        TransformativeAlgorithm(
+            'marchinghex_hexmeshing',
+            self.path,
+            Settings.path('marchinghex') / 'marchinghex_hexmeshing',
+            '{grid_mesh} {tet_mesh} {hex_mesh}',
+            grid_mesh   = str(self.get_file('grid_mesh',        True)),
+            tet_mesh    = str(parent.get_file('tet_mesh',       True)),
+            hex_mesh    = str(self.path / hex_mesh.FILENAME['hex_mesh_MEDIT'])
+        )
+        # it may be interesting to read the last printed line to have the average Hausdorff distance between the domain and the hex-mesh
+        # the executable also writes debug files
+        for debug_filename in [
+            'dist_hex_mesh.mesh',
+            'dist_hex_sampling.geogram',
+            'dist_tet_mesh.mesh',
+            'dist_tet_sampling.geogram',
+            'mh_result.mesh'
+        ] + [x for x in Path(curdir).iterdir() if x.is_file() and x.stem.startswith('iter_')]: # and all 'iter_*' files
+            if Path(debug_filename).exists():
+                if keep_debug_files:
+                    move(debug_filename, self.path / ('marchinghex_hexmeshing.' + str(debug_filename)))
+                else:
+                    unlink(debug_filename)
 
 class labeling(AbstractDataFolder):
     """
@@ -987,7 +1078,7 @@ class hex_mesh(AbstractDataFolder):
                 mesh = str(self.get_file('hex_mesh_MEDIT',True))
             )
         else:
-            raise Exception(f'tetra_mesh.view() does not recognize \'what\' value: \'{what}\'')
+            raise Exception(f'hex_mesh.view() does not recognize \'what\' value: \'{what}\'')
     
     def get_file(self,which_file : str, must_exist : bool = False) -> Path:
         path = super().get_file(which_file)
@@ -1050,7 +1141,7 @@ class root(AbstractDataFolder):
         if what == 'print_path':
             print(str(self.path.absolute()))
         else:
-            raise Exception(f'labeling.view() does not recognize \'what\' value: \'{what}\'')
+            raise Exception(f'root.view() does not recognize \'what\' value: \'{what}\'')
         
     def get_file(self,which_file : str, must_exist : bool = False) -> Path:
         path = super().get_file(which_file)

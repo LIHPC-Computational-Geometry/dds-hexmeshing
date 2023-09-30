@@ -48,8 +48,6 @@ if args.input in cm.collections():
 input = AbstractDataFolder.instantiate(Path(args.input))
 subfolder = input.polycube_withHexEx(args.scale,args.keep_debug_files)
 
-hexmesh_folder = AbstractDataFolder.instantiate(subfolder)
-hexmesh_folder.extract_surface()
-
 if args.view_output:
+    hexmesh_folder = AbstractDataFolder.instantiate(subfolder)
     hexmesh_folder.view()
