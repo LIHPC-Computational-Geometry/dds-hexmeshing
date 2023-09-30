@@ -1165,27 +1165,22 @@ class root(AbstractDataFolder):
         raise Exception(f'Missing file {str(path)}')
 
     def recursive_update(self):
+        # for each filename, list old filenames
+        old_filenames = dict()
+        # 2023-09-30:
+        old_filenames[tet_mesh.FILENAMES.TET_MESH_MEDIT]                = [ 'tetra.mesh' ]
+        old_filenames[tet_mesh.FILENAMES.TET_MESH_VTK]                  = [ 'tet.vtk' ]
+        old_filenames[labeling.FILENAMES.VOLUME_LABELING_TXT]           = [ 'tetra_labeling.txt' ]
+        old_filenames[labeling.FILENAMES.PREPROCESSED_TET_MESH_MEDIT]   = [ 'preprocessed.tetra.mesh' ]
+        old_filenames[hex_mesh.FILENAMES.HEX_MESH_OVM]                  = [ 'hex.ovm' ]
+        # rename all occurencies of old filenames
         count = 0
         for subdir in [x for x in self.path.rglob('*') if x.is_dir()]: # recursive exploration of all folders
-            # 2023-09-30 : old filename of 'tet_mesh' (tet_mesh type)
-            if (subdir / 'tetra.mesh').exists():
-                rename_file(subdir, 'tetra.mesh', tet_mesh.FILENAMES.TET_MESH_MEDIT)
-                count += 1
-            # 2023-09-30 : old filename of 'tet_mesh_VTKv2.0' (tet_mesh type)
-            if (subdir / 'tet.vtk').exists():
-                rename_file(subdir, 'tet.vtk', tet_mesh.FILENAMES.TET_MESH_VTK)
-                count += 1
-            # 2023-09-30 : old filename of 'volume_labeling' (labeling type)
-            if (subdir / 'tetra_labeling.txt').exists():
-                rename_file(subdir, 'tetra_labeling.txt', labeling.FILENAMES.VOLUME_LABELING_TXT)
-                count += 1
-            # 2023-09-30 : old filename of 'preprocessed_tet_mesh' (labeling type)
-            if (subdir / 'preprocessed.tetra.mesh').exists():
-                rename_file(subdir, 'preprocessed.tetra.mesh', labeling.FILENAMES.PREPROCESSED_TET_MESH_MEDIT)
-                count += 1
-            if (subdir / 'hex.ovm').exists():
-                rename_file(subdir, 'hex.ovm', hex_mesh.FILENAMES.HEX_MESH_OVM)
-                count += 1
+            for new, olds in old_filenames.items(): # for each entry in old_filenames (corresponding to a new filename)
+                for old in olds : # for each old filename of new
+                    if (subdir / old).exists(): # if, inside the current subdir, there is a file with an old filename
+                        rename_file(subdir, old, new) # rename it and register the modification in the JSON file
+                        count += 1
         logging.info(f'root.recursive_update() : {count} modifications')
         
     # ----- Generative algorithms (create subfolders) --------------------
