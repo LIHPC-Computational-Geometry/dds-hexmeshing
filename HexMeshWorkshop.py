@@ -387,8 +387,6 @@ class AbstractDataFolder(ABC):
     Represents an entry of the data folder
     """
 
-    FILENAME = dict()
-
     @staticmethod
     @abstractmethod
     def is_instance(path: Path) -> bool:
@@ -411,8 +409,8 @@ class AbstractDataFolder(ABC):
     def view(self, what = None):
         print(self)
 
-    def get_file(self,which_file : str, must_exist : bool = False) -> Path:
-        return (self.path / self.FILENAME[which_file]).absolute()
+    def get_file(self, filename : str, must_exist : bool = False) -> Path:
+        return (self.path / filename).absolute()
 
     # ----- Specific functions of the abstract class --------------------
 
@@ -445,7 +443,7 @@ class AbstractDataFolder(ABC):
 # - specialize the is_instance(path) static method and write the rule saying if a given folder is an instance of your new type
 # - specialize the view() method to visualize the content of theses data folders the way you want
 # - name your default visualization and create a class variable named DEFAULT_VIEW. overwrite 'what' argument of view() if it's None
-# - enumerate hard coded filename in class variable FILENAME
+# - enumerate hard coded filenames in inner namespace FILENAMES
 # - specialize the get_file() method to detect missing files and potentially auto-compute them
 # - create specific methods to add files in your datafolder or to create subfolders
 
@@ -454,15 +452,14 @@ class step(AbstractDataFolder):
     Interface to a step folder
     """
 
-    FILENAME = {
-        'STEP': 'CAD.step' # CAD model in the STEP formet
-    }
+    class FILENAMES(SimpleNamespace):
+        STEP = 'CAD.step' # CAD model in the STEP format
 
     DEFAULT_VIEW = 'step'
 
     @staticmethod
     def is_instance(path: Path) -> bool:
-        return (path / step.FILENAME['STEP']).exists()
+        return (path / step.FILENAMES.STEP).exists()
 
     def __init__(self,path: Path, step_file: Path = None):
         # 2 modes
@@ -474,9 +471,9 @@ class step(AbstractDataFolder):
                 logging.error(str(path) + ' already exists. Overwriting not allowed')
                 exit(1)
             mkdir(path)
-            copyfile(step_file, path / self.FILENAME['STEP'])
+            copyfile(step_file, path / self.FILENAMES.STEP)
         AbstractDataFolder.__init__(self,path)
-        if not (path / self.FILENAME['STEP']).exists():
+        if not (path / self.FILENAMES.STEP).exists():
             logging.error('At the end of step.__init__(), ' + str(path) + ' does not exist')
             exit(1)
     
@@ -496,13 +493,13 @@ class step(AbstractDataFolder):
                 '{step} --no-progress', # arguments template
                 None,
                 [],
-                step = str(self.get_file('STEP',True))
+                step = str(self.get_file(self.FILENAMES.STEP,True))
             )
         else:
             raise Exception(f'step.view() does not recognize \'what\' value: \'{what}\'')
     
-    def get_file(self,which_file : str, must_exist : bool = False) -> Path:
-        path = super().get_file(which_file)
+    def get_file(self, filename : str, must_exist : bool = False) -> Path:
+        path = super().get_file(filename)
         if (not must_exist) or (must_exist and path.exists()):
             return path
         raise Exception(f'Missing file {str(path)}')
@@ -517,8 +514,8 @@ class step(AbstractDataFolder):
             '{step} -3 -format mesh -o {output_file} -setnumber Mesh.CharacteristicLengthFactor {characteristic_length_factor} -nt {nb_threads}',
             'Gmsh_{characteristic_length_factor}',
             ['output_file'],
-            step                            = str(self.get_file('STEP',True)),
-            output_file                     = tet_mesh.FILENAME['tet_mesh'],
+            step                            = str(self.get_file(self.FILENAMES.STEP,True)),
+            output_file                     = tet_mesh.FILENAMES.TET_MESH_MEDIT,
             characteristic_length_factor    = mesh_size,
             nb_threads                      = 8)
 
@@ -527,18 +524,17 @@ class tet_mesh(AbstractDataFolder):
     Interface to a tet-mesh folder
     """
 
-    FILENAME = {
-        'tet_mesh': 'tet.mesh',           # tetrahedral mesh in the GMF/MEDIT ASCII format
-        'tet_mesh_VTKv2.0' : 'tet_mesh.vtk',     # tetrahedral mesh in the VTK DataFile Version 2.0 ASCII
-        'surface_mesh': 'surface.obj',      # (triangle) surface of the tet-mesh, in the Wavefront format
-        'surface_map': 'surface_map.txt'    # association between surface triangles and tet facets (see https://github.com/LIHPC-Computational-Geometry/automatic_polycube/blob/main/app/extract_surface.cpp for the format)
-    }
+    class FILENAMES(SimpleNamespace):
+        TET_MESH_MEDIT      = 'tet.mesh'        # tetrahedral mesh in the GMF/MEDIT ASCII format
+        TET_MESH_VTK        = 'tet_mesh.vtk'    # tetrahedral mesh in the VTK DataFile Version 2.0 ASCII
+        SURFACE_MESH_OBJ    = 'surface.obj'     # (triangle) surface of the tet-mesh, in the Wavefront format
+        SURFACE_MAP_TXT     = 'surface_map.txt' # association between surface triangles and tet facets (see https://github.com/LIHPC-Computational-Geometry/automatic_polycube/blob/main/app/extract_surface.cpp for the format)
 
     DEFAULT_VIEW = 'surface_mesh'
 
     @staticmethod
     def is_instance(path: Path) -> bool:
-        return (path / tet_mesh.FILENAME['tet_mesh']).exists()
+        return (path / tet_mesh.FILENAMES.TET_MESH_MEDIT).exists()
 
     def __init__(self,path: Path):
         AbstractDataFolder.__init__(self,Path(path))
@@ -551,7 +547,7 @@ class tet_mesh(AbstractDataFolder):
         if what == None:
             what = self.DEFAULT_VIEW
         if what == 'surface_mesh':
-            assert((self.path / self.FILENAME['surface_mesh']).exists())
+            assert((self.path / self.FILENAMES.SURFACE_MESH_OBJ).exists())
             InteractiveGenerativeAlgorithm(
                 'view',
                 self.path,
@@ -559,37 +555,37 @@ class tet_mesh(AbstractDataFolder):
                 '{surface_mesh}', # arguments template
                 None,
                 [],
-                surface_mesh = str(self.get_file('surface_mesh',True))
+                surface_mesh = str(self.get_file(self.FILENAMES.SURFACE_MESH_OBJ,True))
             )
         else:
             raise Exception(f'tet_mesh.view() does not recognize \'what\' value: \'{what}\'')
     
-    def get_file(self,which_file : str, must_exist : bool = False) -> Path:
-        path = super().get_file(which_file)
+    def get_file(self, filename : str, must_exist : bool = False) -> Path:
+        path = super().get_file(filename)
         if (not must_exist) or (must_exist and path.exists()):
             return path
         # so 'file' is missing -> try to auto-compute it
-        if which_file == 'surface_mesh' or which_file == 'surface_map':
+        if filename in [self.FILENAMES.SURFACE_MESH_OBJ, self.FILENAMES.SURFACE_MAP_TXT]:
             self.extract_surface()
-            return self.get_file(which_file,True)
-        if which_file == 'tet_mesh_VTKv2.0':
+            return self.get_file(filename,True)
+        if filename == self.FILENAMES.TET_MESH_VTK:
             self.Gmsh_convert_to_VTKv2()
-            return self.get_file(which_file,True)
+            return self.get_file(filename,True)
         raise Exception(f'Missing file {str(path)}')
     
     # ----- Transformative algorithms (modify current folder) --------------------
 
     def extract_surface(self):
-        assert(not self.get_file('surface_mesh').exists())
-        assert(not self.get_file('surface_map').exists())
+        assert(not self.get_file(self.FILENAMES.SURFACE_MESH_OBJ).exists())
+        assert(not self.get_file(self.FILENAMES.SURFACE_MAP_TXT).exists())
         TransformativeAlgorithm(
             'extract_surface',
             self.path,
             Settings.path('automatic_polycube') / 'extract_surface',
             '{tet_mesh} {surface_mesh} {surface_map}',
-            tet_mesh      = str(self.get_file('tet_mesh',     True)),
-            surface_mesh    = str(self.get_file('surface_mesh'      )),
-            surface_map     = str(self.get_file('surface_map'       ))
+            tet_mesh        = str(self.get_file(self.FILENAMES.TET_MESH_MEDIT,      True)),
+            surface_mesh    = str(self.get_file(self.FILENAMES.SURFACE_MESH_OBJ         )),
+            surface_map     = str(self.get_file(self.FILENAMES.SURFACE_MAP_TXT          ))
         )
 
     def Gmsh_convert_to_VTKv2(self):
@@ -599,8 +595,8 @@ class tet_mesh(AbstractDataFolder):
             self.path,
             Settings.path('Gmsh'),
             '{input} -format vtk -o {output} -save',
-            input   = str(self.get_file('tet_mesh',         True)),
-            output  = str(self.get_file('tet_mesh_VTKv2.0'      )),
+            input   = str(self.get_file(self.FILENAMES.TET_MESH_MEDIT,  True)),
+            output  = str(self.get_file(self.FILENAMES.TET_MESH_VTK         )),
         )
     
     # ----- Generative algorithms (create subfolders) --------------------
@@ -613,8 +609,8 @@ class tet_mesh(AbstractDataFolder):
             '{surface_mesh} {labeling}',
             'naive_labeling',
             ['labeling'],
-            surface_mesh    = str(self.get_file('surface_mesh',True)),
-            labeling        = labeling.FILENAME['surface_labeling']
+            surface_mesh    = str(self.get_file(self.FILENAMES.SURFACE_MESH_OBJ,    True)),
+            labeling        = labeling.FILENAMES.SURFACE_LABELING_TXT
         )
     
     def labeling_painter(self):
@@ -625,8 +621,8 @@ class tet_mesh(AbstractDataFolder):
             '{mesh}', # arguments template
             'labeling_painter_%d',
             ['labeling'],
-            mesh        = str(self.get_file('surface_mesh',True)),
-            labeling    = labeling.FILENAME['surface_labeling']
+            mesh        = str(self.get_file(self.FILENAMES.SURFACE_MESH_OBJ,    True)),
+            labeling    = labeling.FILENAMES.SURFACE_LABELING_TXT
         )
 
     def graphcut_labeling(self):
@@ -637,8 +633,8 @@ class tet_mesh(AbstractDataFolder):
             '{mesh}', # arguments template
             'graphcut_labeling_%d',
             ['labeling'],
-            mesh        = str(self.get_file('surface_mesh',True)),
-            labeling    = labeling.FILENAME['surface_labeling']
+            mesh        = str(self.get_file(self.FILENAMES.SURFACE_MESH_OBJ,    True)),
+            labeling    = labeling.FILENAMES.SURFACE_LABELING_TXT
         )
     
     def evocube(self):
@@ -646,7 +642,7 @@ class tet_mesh(AbstractDataFolder):
         # But we dont know the output folder name given by GenerativeAlgorithm a priori (depend on the datetime) -> use a tmp output folder, then move its content into the folder created by GenerativeAlgorithm
         tmp_folder = Path(mkdtemp()) # request an os-specific tmp folder
         # evocube also wants the surface map, as 'tris_to_tets.txt', inside the output folder, but without the 'triangles' and 'tetrahedra' annotations
-        with open(self.get_file('surface_map'),'r') as infile:
+        with open(self.get_file(self.FILENAMES.SURFACE_MAP_TXT),'r') as infile:
             with open(tmp_folder / 'tris_to_tets.txt','w') as outfile: # where evocube expects the surface map
                 for line in infile.readlines():
                     outfile.write(line.split()[0] + '\n') # keep only what is before ' '
@@ -657,7 +653,7 @@ class tet_mesh(AbstractDataFolder):
             '{surface_mesh} {output_folder}',
             'evocube_%d',
             [],
-            surface_mesh    = str(self.get_file('surface_mesh',True)),
+            surface_mesh    = str(self.get_file(self.FILENAMES.SURFACE_MESH_OBJ,    True)),
             output_folder   = str(tmp_folder.absolute())
         )
         for outfile in tmp_folder.iterdir():
@@ -675,7 +671,7 @@ class tet_mesh(AbstractDataFolder):
         if (output_folder / 'labeling.txt').exists():
             move(
                 str((output_folder / 'labeling.txt').absolute()),
-                str((output_folder / labeling.FILENAME['surface_labeling']).absolute())
+                str((output_folder / labeling.FILENAMES.SURFACE_LABELING_TXT).absolute())
             )
         if (output_folder / 'labeling_init.txt').exists():
             move(
@@ -685,12 +681,12 @@ class tet_mesh(AbstractDataFolder):
         if (output_folder / 'labeling_on_tets.txt').exists():
             move(
                 str((output_folder / 'labeling_on_tets.txt').absolute()),
-                str((output_folder / labeling.FILENAME['volume_labeling']).absolute())
+                str((output_folder / labeling.FILENAMES.VOLUME_LABELING_TXT).absolute())
             )
         if (output_folder / 'fast_polycube_surf.obj').exists():
             move(
                 str((output_folder / 'fast_polycube_surf.obj').absolute()),
-                str((output_folder / labeling.FILENAME['polycube_surface_mesh']).absolute())
+                str((output_folder / labeling.FILENAMES.POLYCUBE_SURFACE_MESH_OBJ).absolute())
             )
         # remove the tris_to_tets file created before the GenerativeAlgorithm
         if (output_folder / 'tris_to_tets.txt').exists():
@@ -705,8 +701,8 @@ class tet_mesh(AbstractDataFolder):
             '{surface_mesh}',
             'automatic_polycube_%d',
             ['labeling'],
-            surface_mesh = str(self.get_file('surface_mesh',True)),
-            labeling     = labeling.FILENAME['surface_labeling']
+            surface_mesh = str(self.get_file(self.FILENAMES.SURFACE_MESH_OBJ,   True)),
+            labeling     = labeling.FILENAMES.SURFACE_LABELING_TXT
         )
     
     def HexBox(self):
@@ -717,8 +713,8 @@ class tet_mesh(AbstractDataFolder):
             '{mesh}', # arguments template
             'HexBox_%d',
             ['labeling'],
-            mesh        = str(self.get_file('surface_mesh',True)),
-            labeling    = labeling.FILENAME['surface_labeling']
+            mesh        = str(self.get_file(self.FILENAMES.SURFACE_MESH_OBJ,    True)),
+            labeling    = labeling.FILENAMES.SURFACE_LABELING_TXT
         )
 
     def AlgoHex(self):
@@ -729,8 +725,8 @@ class tet_mesh(AbstractDataFolder):
             '-i {tet_mesh} -o {hex_mesh}',
             'AlgoHex',
             ['hex_mesh'],
-            tet_mesh    = str(self.get_file('tet_mesh_VTKv2.0',True)),
-            hex_mesh    = hex_mesh.FILENAME['hex_mesh_OVM']
+            tet_mesh    = str(self.get_file(self.FILENAMES.TET_MESH_VTK,    True)),
+            hex_mesh    = hex_mesh.FILENAMES.HEX_MESH_OVM
         )
     
     def gridgenerator(self, scale):
@@ -741,8 +737,8 @@ class tet_mesh(AbstractDataFolder):
             '{input_mesh} {output_grid_mesh} {scale}',
             'marchinghex_{scale}',
             ['output_grid_mesh'],
-            input_mesh    = str(self.get_file('tet_mesh',True)),
-            output_grid_mesh    = marchinghex_grid.FILENAME['grid_mesh'],
+            input_mesh    = str(self.get_file(self.FILENAMES.TET_MESH_MEDIT,True)),
+            output_grid_mesh    = marchinghex_grid.FILENAMES.GRID_MESH_MEDIT,
             scale = scale
         )
 
@@ -758,15 +754,14 @@ class marchinghex_grid(AbstractDataFolder):
     Interface to the intermediate step of the marchinghex algorithm (regular grid)
     """
 
-    FILENAME = {
-        'grid_mesh': 'grid.mesh' # regular hex mesh of the bounding box, in the GMF/MEDIT ASCII format
-    }
+    class FILENAMES(SimpleNamespace):
+        GRID_MESH_MEDIT = 'grid.mesh' # regular hex mesh of the bounding box, in the GMF/MEDIT ASCII format
 
     DEFAULT_VIEW = 'grid'
 
     @staticmethod
     def is_instance(path: Path) -> bool:
-        return (path / marchinghex_grid.FILENAME['grid_mesh']).exists() and not  (path / hex_mesh.FILENAME['hex_mesh_MEDIT']).exists()
+        return (path / marchinghex_grid.FILENAMES.GRID_MESH_MEDIT).exists() and not  (path / hex_mesh.FILENAMES.HEX_MESH_MEDIT).exists()
 
     def __init__(self,path: Path):
         AbstractDataFolder.__init__(self,Path(path))
@@ -782,13 +777,13 @@ class marchinghex_grid(AbstractDataFolder):
                 '{grid_mesh}', # arguments template
                 None,
                 [],
-                grid_mesh = str(self.get_file('grid_mesh',True))
+                grid_mesh = str(self.get_file(self.FILENAMES.GRID_MESH_MEDIT,True))
             )
         else:
             raise Exception(f'marchinghex_grid.view() does not recognize \'what\' value: \'{what}\'')
     
-    def get_file(self,which_file : str, must_exist : bool = False) -> Path:
-        path = super().get_file(which_file)
+    def get_file(self, filename : str, must_exist : bool = False) -> Path:
+        path = super().get_file(filename)
         if (not must_exist) or (must_exist and path.exists()):
             return path
         # so 'file' is missing
@@ -805,9 +800,9 @@ class marchinghex_grid(AbstractDataFolder):
             self.path,
             Settings.path('marchinghex') / 'marchinghex_hexmeshing',
             '{grid_mesh} {tet_mesh} {hex_mesh}',
-            grid_mesh   = str(self.get_file('grid_mesh',        True)),
-            tet_mesh    = str(parent.get_file('tet_mesh',       True)),
-            hex_mesh    = str(self.path / hex_mesh.FILENAME['hex_mesh_MEDIT'])
+            grid_mesh   = str(self.get_file(self.FILENAMES.GRID_MESH_MEDIT,         True)),
+            tet_mesh    = str(parent.get_file(tet_mesh.FILENAMES.TET_MESH_MEDIT,    True)),
+            hex_mesh    = str(self.path / hex_mesh.FILENAMES.HEX_MESH_MEDIT)
         )
         # it may be interesting to read the last printed line to have the average Hausdorff distance between the domain and the hex-mesh
         # the executable also writes debug files
@@ -829,22 +824,20 @@ class labeling(AbstractDataFolder):
     Interface to a labeling folder
     """
 
-    FILENAME = {
-        'surface_labeling': 'surface_labeling.txt',                         # per-surface-triangle labels, values from 0 to 5 -> {+X,-X,+Y,-Y,+Z,-Z}
-        'volume_labeling': 'volume_labeling.txt',                           # per-tet-facets labels, same values + "-1" for "no label"
-        'polycube_surface_mesh': 'fastbndpolycube.obj',                     # polycube deformation of the surface mesh, in the Wavefront format
-        'preprocessed_tet_mesh': 'preprocessed.tetra.mesh',                 # tet-mesh with additional cells to avoid impossible configuration regarding the labeling. GMF/MEDIT ASCII format. Output of https://github.com/fprotais/preprocess_polycube
-        'flagging_from_fastbndpolycube': 'fastbndpolycube.flagging.geogram',# intermediate file outputted by fastbndpolycube, in the Geogram format
-        'remeshed_tet_mesh': 'tet.remeshed.mesh',                           # tet-mesh aiming bijectivity for the polycube. GMF/MEDIT ASCII format. Output of https://github.com/fprotais/robustPolycube
-        'remeshed_tet_mesh_labeling': 'tet.remeshed.volume_labeling.txt',   # volume labeling of remeshed_tet_mesh. Should be the same as volume_labeling.
-        'polycuboid_mesh': 'polycuboid.mesh'                                # polycuboid generated from remeshed_tet_mesh and its labeling. GMF/MEDIT ASCII format.
-    }
+    class FILENAMES(SimpleNamespace):
+        SURFACE_LABELING_TXT            = 'surface_labeling.txt'                # per-surface-triangle labels, values from 0 to 5 -> {+X,-X,+Y,-Y,+Z,-Z}
+        VOLUME_LABELING_TXT             = 'volume_labeling.txt'                 # per-tet-facets labels, same values + "-1" for "no label"
+        POLYCUBE_SURFACE_MESH_OBJ       = 'fastbndpolycube.obj'                 # polycube deformation of the surface mesh, in the Wavefront format
+        PREPROCESSED_TET_MESH_MEDIT     = 'preprocessed.tet.mesh'               # tet-mesh with additional cells to avoid impossible configuration regarding the labeling. GMF/MEDIT ASCII format. Output of https://github.com/fprotais/preprocess_polycube
+        TET_MESH_REMESHED_MEDIT         = 'tet.remeshed.mesh'                   # tet-mesh aiming bijectivity for the polycube. GMF/MEDIT ASCII format. Output of https://github.com/fprotais/robustPolycube
+        TET_MESH_REMESHED_LABELING_TXT  = 'tet.remeshed.volume_labeling.txt'    # volume labeling of remeshed_tet_mesh. Should be the same as volume_labeling.
+        POLYCUBOID_MESH_MEDIT           = 'polycuboid.mesh'                     # polycuboid generated from remeshed_tet_mesh and its labeling. GMF/MEDIT ASCII format.
 
     DEFAULT_VIEW = 'labeled_surface'
 
     @staticmethod
     def is_instance(path: Path) -> bool:
-        return (path / labeling.FILENAME['surface_labeling']).exists() # path is an instance of labeling if it has a surface_labeling.txt file
+        return (path / labeling.FILENAMES.SURFACE_LABELING_TXT).exists() # path is an instance of labeling if it has a surface_labeling.txt file
 
     def __init__(self,path: Path):
         AbstractDataFolder.__init__(self,Path(path))
@@ -865,8 +858,8 @@ class labeling(AbstractDataFolder):
                 '{surface_mesh} {surface_labeling}', # arguments template
                 None,
                 [],
-                surface_mesh        = str(parent.get_file('surface_mesh',   True)),
-                surface_labeling    = str(self.get_file('surface_labeling', True))
+                surface_mesh        = str(parent.get_file(tet_mesh.FILENAMES.SURFACE_MESH_OBJ,  True)),
+                surface_labeling    = str(self.get_file(self.FILENAMES.SURFACE_LABELING_TXT,    True))
             )
         elif what == 'fastbndpolycube':
             InteractiveGenerativeAlgorithm(
@@ -876,8 +869,8 @@ class labeling(AbstractDataFolder):
                 '{surface_mesh} {surface_labeling}', # arguments template
                 None,
                 [],
-                surface_mesh        = str(self.get_file('polycube_surface_mesh',True)), # surface polycube mesh instead of original surface mesh
-                surface_labeling    = str(self.get_file('surface_labeling',     True))
+                surface_mesh        = str(self.get_file(self.FILENAMES.POLYCUBE_SURFACE_MESH_OBJ,   True)), # surface polycube mesh instead of original surface mesh
+                surface_labeling    = str(self.get_file(self.FILENAMES.SURFACE_LABELING_TXT,        True))
             )
         elif what == 'preprocessed_polycube':
             InteractiveGenerativeAlgorithm(
@@ -887,28 +880,28 @@ class labeling(AbstractDataFolder):
                 '{mesh}', # arguments template
                 None,
                 [],
-                mesh = str(self.get_file('preprocessed_tet_mesh',True))
+                mesh = str(self.get_file(self.FILENAMES.PREPROCESSED_TET_MESH_MEDIT,    True))
             )
         else:
             raise Exception(f'labeling.view() does not recognize \'what\' value: \'{what}\'')
     
-    def get_file(self,which_file : str, must_exist : bool = False) -> Path:
-        path = super().get_file(which_file)
+    def get_file(self, filename : str, must_exist : bool = False) -> Path:
+        path = super().get_file(filename)
         if (not must_exist) or (must_exist and path.exists()):
             return path
         # so 'file' is missing -> try to auto-compute it
-        if which_file == 'volume_labeling':
+        if filename == self.FILENAMES.VOLUME_LABELING_TXT:
             self.volume_labeling()
-            return self.get_file(which_file,True)
-        elif which_file == 'polycube_surface_mesh':
+            return self.get_file(filename,True)
+        elif filename == self.FILENAMES.POLYCUBE_SURFACE_MESH_OBJ:
             self.fastbndpolycube()
-            return self.get_file(which_file,True)
-        elif which_file == 'preprocessed_tet_mesh':
+            return self.get_file(filename,True)
+        elif filename == self.FILENAMES.PREPROCESSED_TET_MESH_MEDIT:
             self.preprocess_polycube()
-            return self.get_file(which_file,True)
-        elif which_file in ['remeshed_tet_mesh', 'remeshed_tet_mesh_labeling', 'polycuboid_mesh']:
+            return self.get_file(filename,True)
+        elif filename in [self.FILENAMES.TET_MESH_REMESHED_MEDIT, self.FILENAMES.TET_MESH_REMESHED_LABELING_TXT, self.FILENAMES.POLYCUBOID_MESH_MEDIT]:
             self.rb_generate_deformation()
-            return self.get_file(which_file,True)
+            return self.get_file(filename,True)
         raise Exception(f'Missing file {str(path)}')
         
     # ----- Transformative algorithms (modify current folder) --------------------
@@ -921,12 +914,12 @@ class labeling(AbstractDataFolder):
             self.path,
             Settings.path('automatic_polycube') / 'volume_labeling', 
             '{surface_labeling} {surface_map} {tetra_labeling}',
-            surface_labeling    = str(self.get_file('surface_labeling', True)),
-            surface_map         = str(parent.get_file('surface_map',    True)),
-            tetra_labeling      = str(self.get_file('volume_labeling'       ))
+            surface_labeling    = str(self.get_file(self.FILENAMES.SURFACE_LABELING_TXT,    True)),
+            surface_map         = str(parent.get_file(tet_mesh.FILENAMES.SURFACE_MAP_TXT,   True)),
+            tetra_labeling      = str(self.get_file(self.FILENAMES.VOLUME_LABELING_TXT          ))
         )
 
-    def fastbndpolycube(self):
+    def fastbndpolycube(self, keep_debug_files = False):
         parent = AbstractDataFolder.instantiate(self.path.parent) # we need the parent folder to get the surface mesh
         assert(parent.type() == 'tet_mesh') # the parent folder should be of tet_mesh type
         TransformativeAlgorithm(
@@ -934,13 +927,16 @@ class labeling(AbstractDataFolder):
             self.path,
             Settings.path('fastbndpolycube'),
             '{surface_mesh} {surface_labeling} {polycube_mesh}',
-            surface_mesh        = str(parent.get_file('surface_mesh',       True)),
-            surface_labeling    = str(self.get_file('surface_labeling',     True)),
-            polycube_mesh       = str(self.get_file('polycube_surface_mesh'     ))
+            surface_mesh        = str(parent.get_file(tet_mesh.FILENAMES.SURFACE_MESH_OBJ,      True)),
+            surface_labeling    = str(self.get_file(self.FILENAMES.SURFACE_LABELING_TXT,        True)),
+            polycube_mesh       = str(self.get_file(self.FILENAMES.POLYCUBE_SURFACE_MESH_OBJ        ))
         )
         # the fastbndpolycube executable also writes a 'flagging.geogram' file, in the current folder
         if Path('flagging.geogram').exists():
-            move('flagging.geogram', self.path / self.FILENAME['flagging_from_fastbndpolycube'])
+            if keep_debug_files:
+                move('flagging.geogram', self.path / 'fastbndpolycube.flagging.geogram')
+            else:
+                unlink('flagging.geogram')
 
     def preprocess_polycube(self):
         """
@@ -956,10 +952,10 @@ class labeling(AbstractDataFolder):
             'preprocess_polycube',
             self.path,
             Settings.path('preprocess_polycube'),
-            '{init_tet_mesh}  {preprocessed_tet_mesh} {volume_labeling}',
-            init_tet_mesh         = str(parent.get_file('tet_mesh',           True)),
-            preprocessed_tet_mesh = str(self.get_file('preprocessed_tet_mesh'     )),
-            volume_labeling         = str(self.get_file('volume_labeling',      True))
+            '{init_tet_mesh} {preprocessed_tet_mesh} {volume_labeling}',
+            init_tet_mesh         = str(parent.get_file(tet_mesh.FILENAMES.TET_MESH_MEDIT,      True)),
+            preprocessed_tet_mesh = str(self.get_file(self.FILENAMES.PREPROCESSED_TET_MESH_MEDIT    )),
+            volume_labeling         = str(self.get_file(self.FILENAMES.VOLUME_LABELING_TXT,     True))
         )
 
     def polycube_withHexEx(self, scale, keep_debug_files = False):
@@ -972,16 +968,16 @@ class labeling(AbstractDataFolder):
             '{tet_mesh} {volume_labeling} {hex_mesh} {scale}',
             'polycube_withHexEx_{scale}',
             ['hex_mesh'],
-            tet_mesh        = str(parent.get_file('tet_mesh',           True)),
-            volume_labeling = str(self.get_file('volume_labeling',      True)),
-            hex_mesh        = hex_mesh.FILENAME['hex_mesh_MEDIT'],
+            tet_mesh        = str(parent.get_file(tet_mesh.FILENAMES.TET_MESH_MEDIT,    True)),
+            volume_labeling = str(self.get_file(self.FILENAMES.VOLUME_LABELING_TXT,     True)),
+            hex_mesh        = hex_mesh.FILENAMES.HEX_MESH_MEDIT,
             scale           = scale # scaling factor applied before libHexEx. higher = more hexahedra
         )
         # the executable also writes 2 debug .geogram files
         for debug_filename in ['Param.geogram', 'Polycube.geogram']:
             if Path(debug_filename).exists():
                 if keep_debug_files:
-                    move(debug_filename, self.path / ('polycube_withHexEx.' + str(debug_filename)))
+                    move(debug_filename, self.path / ('polycube_withHexEx.' + debug_filename))
                 else:
                     unlink(debug_filename)
         return subfolder
@@ -990,9 +986,9 @@ class labeling(AbstractDataFolder):
         """
         https://github.com/fprotais/robustPolycube#rb_generate_deformation
         """
-        if( self.get_file('remeshed_tet_mesh').exists() and 
-            self.get_file('remeshed_tet_mesh_labeling').exists() and 
-            self.get_file('polycuboid_mesh').exists() ):
+        if( self.get_file(self.FILENAMES.TET_MESH_REMESHED_MEDIT).exists() and 
+            self.get_file(self.FILENAMES.TET_MESH_REMESHED_LABELING_TXT).exists() and 
+            self.get_file(self.FILENAMES.POLYCUBOID_MESH_MEDIT).exists() ):
             # output files already exist, no need to re-run
             return
         parent = AbstractDataFolder.instantiate(self.path.parent) # we need the parent folder to get the surface map
@@ -1002,11 +998,11 @@ class labeling(AbstractDataFolder):
             self.path,
             Settings.path('robustPolycube') / 'rb_generate_deformation',
             '{tet_mesh} {volume_labeling} {tet_remeshed} {tet_remeshed_labeling} {polycuboid}',
-            tet_mesh                = str(parent.get_file('tet_mesh',               True)),
-            volume_labeling         = str(self.get_file('volume_labeling',          True)),
-            tet_remeshed            = str(self.get_file('remeshed_tet_mesh'             )),
-            tet_remeshed_labeling   = str(self.get_file('remeshed_tet_mesh_labeling'    )),
-            polycuboid              = str(self.get_file('polycuboid_mesh'               ))
+            tet_mesh                = str(parent.get_file(tet_mesh.FILENAMES.TET_MESH_MEDIT,        True)),
+            volume_labeling         = str(self.get_file(self.FILENAMES.VOLUME_LABELING_TXT,         True)),
+            tet_remeshed            = str(self.get_file(self.FILENAMES.TET_MESH_REMESHED_MEDIT          )),
+            tet_remeshed_labeling   = str(self.get_file(self.FILENAMES.TET_MESH_REMESHED_LABELING_TXT   )),
+            polycuboid              = str(self.get_file(self.FILENAMES.POLYCUBOID_MESH_MEDIT            ))
         )
         # the executable also writes debug .geogram files
         for debug_filename in [
@@ -1020,7 +1016,7 @@ class labeling(AbstractDataFolder):
         ]:
             if Path(debug_filename).exists():
                 if keep_debug_files:
-                    move(debug_filename, self.path / ('rb_generate_deformation.' + str(debug_filename)))
+                    move(debug_filename, self.path / ('rb_generate_deformation.' + debug_filename))
                 else:
                     unlink(debug_filename)
     
@@ -1035,11 +1031,11 @@ class labeling(AbstractDataFolder):
             '{tet_remeshed} {tet_remeshed_labeling} {polycuboid} {element_sizing} {hex_mesh}',
             'robustPolycube_{element_sizing}',
             ['hex_mesh'],
-            tet_remeshed            = str(self.get_file('remeshed_tet_mesh',            True)),
-            tet_remeshed_labeling   = str(self.get_file('remeshed_tet_mesh_labeling',   True)),
-            polycuboid              = str(self.get_file('polycuboid_mesh',              True)),
+            tet_remeshed            = str(self.get_file(self.FILENAMES.TET_MESH_REMESHED_MEDIT,         True)),
+            tet_remeshed_labeling   = str(self.get_file(self.FILENAMES.TET_MESH_REMESHED_LABELING_TXT,  True)),
+            polycuboid              = str(self.get_file(self.FILENAMES.POLYCUBOID_MESH_MEDIT,           True)),
             element_sizing          = element_sizing, # ratio compared to tet_remeshed edge size. smaller = more hexahedra
-            hex_mesh                = hex_mesh.FILENAME['hex_mesh_MEDIT']
+            hex_mesh                = hex_mesh.FILENAMES.HEX_MESH_MEDIT
         )
         # the executable also writes debug .geogram files and a .lua script
         for debug_filename in [
@@ -1074,16 +1070,15 @@ class hex_mesh(AbstractDataFolder):
     Interface to a hex mesh data subfolder
     """
 
-    FILENAME = {
-        'hex_mesh_MEDIT': 'hex.mesh', # hexahedral mesh, GMF/MEDIT ASCII format
-        'hex_mesh_OVM': 'hex.ovm',    # hexahedral mesh, OpenVolumeMesh format
-    }
+    class FILENAMES(SimpleNamespace):
+        HEX_MESH_MEDIT  = 'hex.mesh'        # hexahedral mesh, GMF/MEDIT ASCII format
+        HEX_MESH_OVM    = 'hex_mesh.ovm'    # hexahedral mesh, OpenVolumeMesh format
 
     DEFAULT_VIEW = 'hex_mesh'
 
     @staticmethod
     def is_instance(path: Path) -> bool:
-        return (path / hex_mesh.FILENAME['hex_mesh_MEDIT']).exists() or (path / hex_mesh.FILENAME['hex_mesh_OVM']).exists()
+        return (path / hex_mesh.FILENAMES.HEX_MESH_MEDIT).exists() or (path / hex_mesh.FILENAMES.HEX_MESH_OVM).exists()
 
     def __init__(self,path: Path):
         AbstractDataFolder.__init__(self,Path(path))
@@ -1102,19 +1097,19 @@ class hex_mesh(AbstractDataFolder):
                 '{mesh}', # arguments template
                 None,
                 [],
-                mesh = str(self.get_file('hex_mesh_MEDIT',True))
+                mesh = str(self.get_file(self.FILENAMES.HEX_MESH_MEDIT, True))
             )
         else:
             raise Exception(f'hex_mesh.view() does not recognize \'what\' value: \'{what}\'')
     
-    def get_file(self,which_file : str, must_exist : bool = False) -> Path:
-        path = super().get_file(which_file)
+    def get_file(self, filename : str, must_exist : bool = False) -> Path:
+        path = super().get_file(filename)
         if (not must_exist) or (must_exist and path.exists()):
             return path
         # so 'file' is missing -> try to auto-compute it
-        if which_file == 'hex_mesh_MEDIT' and (self.path / self.FILENAME['hex_mesh_OVM']).exists() :
+        if filename == self.FILENAMES.HEX_MESH_MEDIT:
             self.OVM_to_MEDIT()
-            return self.get_file(which_file,True)
+            return self.get_file(filename,True)
         raise Exception(f'Missing file {str(path)}')
 
     # ----- Transformative algorithms (modify current folder) --------------------
@@ -1125,8 +1120,8 @@ class hex_mesh(AbstractDataFolder):
             self.path,
             Settings.path('ovm.io'),
             '{input} {output}',
-            input   = str(self.get_file('hex_mesh_OVM',     True)),
-            output  = str(self.get_file('hex_mesh_MEDIT'        )),
+            input   = str(self.get_file(self.FILENAMES.HEX_MESH_OVM,    True)),
+            output  = str(self.get_file(self.FILENAMES.HEX_MESH_MEDIT       )),
         )
 
 class root(AbstractDataFolder):
@@ -1134,15 +1129,14 @@ class root(AbstractDataFolder):
     Interface to the root folder of the database
     """
 
-    FILENAME = {
-        'collections': 'collections.json' # store (nested) lists of subfolders, for batch execution
-    }
+    class FILENAMES(SimpleNamespace):
+        COLLECTIONS = 'collections.json' # store (nested) lists of subfolders, for batch execution. JSON format
 
     DEFAULT_VIEW = 'print_path'
 
     @staticmethod
     def is_instance(path: Path) -> bool:
-        return (path / root.FILENAME['collections']).exists()
+        return (path / root.FILENAMES.COLLECTIONS).exists()
     
     def __init__(self,path: Path = Settings.path('data_folder')):
         assert(path == Settings.path('data_folder')) # only accept instanciation of the folder given by the settings file. 2nd argument required by abstract class
@@ -1151,7 +1145,7 @@ class root(AbstractDataFolder):
             # create the data folder
             mkdir(path) # TODO manage failure case
             # write empty collections file
-            with open(path / root.FILENAME['collections'],'w') as file:
+            with open(path / root.FILENAMES.COLLECTIONS,'w') as file:
                 dump(dict(), file, sort_keys=True, indent=4)
         self.collections_manager = CollectionsManager(path)
         AbstractDataFolder.__init__(self,path)
@@ -1164,8 +1158,8 @@ class root(AbstractDataFolder):
         else:
             raise Exception(f'root.view() does not recognize \'what\' value: \'{what}\'')
         
-    def get_file(self,which_file : str, must_exist : bool = False) -> Path:
-        path = super().get_file(which_file)
+    def get_file(self, filename : str, must_exist : bool = False) -> Path:
+        path = super().get_file(filename)
         if (not must_exist) or (must_exist and path.exists()):
             return path
         raise Exception(f'Missing file {str(path)}')
@@ -1175,19 +1169,22 @@ class root(AbstractDataFolder):
         for subdir in [x for x in self.path.rglob('*') if x.is_dir()]: # recursive exploration of all folders
             # 2023-09-30 : old filename of 'tet_mesh' (tet_mesh type)
             if (subdir / 'tetra.mesh').exists():
-                rename_file(subdir, 'tetra.mesh', tet_mesh.FILENAME['tet_mesh'])
+                rename_file(subdir, 'tetra.mesh', tet_mesh.FILENAMES.TET_MESH_MEDIT)
                 count += 1
             # 2023-09-30 : old filename of 'tet_mesh_VTKv2.0' (tet_mesh type)
             if (subdir / 'tet.vtk').exists():
-                rename_file(subdir, 'tet.vtk', tet_mesh.FILENAME['tet_mesh_VTKv2.0'])
+                rename_file(subdir, 'tet.vtk', tet_mesh.FILENAMES.TET_MESH_VTK)
                 count += 1
             # 2023-09-30 : old filename of 'volume_labeling' (labeling type)
             if (subdir / 'tetra_labeling.txt').exists():
-                rename_file(subdir, 'tetra_labeling.txt', labeling.FILENAME['volume_labeling'])
+                rename_file(subdir, 'tetra_labeling.txt', labeling.FILENAMES.VOLUME_LABELING_TXT)
                 count += 1
             # 2023-09-30 : old filename of 'preprocessed_tet_mesh' (labeling type)
             if (subdir / 'preprocessed.tetra.mesh').exists():
-                rename_file(subdir, 'preprocessed.tetra.mesh', labeling.FILENAME['preprocessed_tet_mesh'])
+                rename_file(subdir, 'preprocessed.tetra.mesh', labeling.FILENAMES.PREPROCESSED_TET_MESH_MEDIT)
+                count += 1
+            if (subdir / 'hex.ovm').exists():
+                rename_file(subdir, 'hex.ovm', hex_mesh.FILENAMES.HEX_MESH_OVM)
                 count += 1
         logging.info(f'root.recursive_update() : {count} modifications')
         
