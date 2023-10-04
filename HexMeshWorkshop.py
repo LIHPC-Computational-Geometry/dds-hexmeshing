@@ -589,7 +589,6 @@ class tet_mesh(AbstractDataFolder):
         )
 
     def Gmsh_convert_to_VTKv2(self):
-        assert(self.get_file('surface_mesh').exists())
         TransformativeAlgorithm(
             'Gmsh_convert_to_VTKv2',
             self.path,
@@ -722,11 +721,12 @@ class tet_mesh(AbstractDataFolder):
             'AlgoHex',
             self.path,
             Settings.path('AlgoHex'),
-            '-i {tet_mesh} -o {hex_mesh}',
+            '-i {tet_mesh} -o {hex_mesh} --igm-out-path {IGM}',
             'AlgoHex',
-            ['hex_mesh'],
+            ['hex_mesh','IGM'],
             tet_mesh    = str(self.get_file(self.FILENAMES.TET_MESH_VTK,    True)),
-            hex_mesh    = hex_mesh.FILENAMES.HEX_MESH_OVM
+            hex_mesh    = hex_mesh.FILENAMES.HEX_MESH_OVM,
+            IGM = 'IGM.txt' # integer grid map
         )
     
     def gridgenerator(self, scale):

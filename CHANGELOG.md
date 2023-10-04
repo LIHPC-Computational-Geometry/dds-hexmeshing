@@ -10,6 +10,16 @@ Unless stated otherwise, this file mentions Python scripts located in `scripts/`
 
 ## [Unreleased]
 
+## [0.4.1] - 2023-10-04
+
+### Changed
+
+- `AlgoHex` exports the integer grid map
+
+### Fixed
+
+- `Gmsh_convert_to_VTKv2()` method (needed for `AlgoHex`) resulted in an assertion error
+
 ## [0.4.0] - 2023-09-30
 
 ### Added
