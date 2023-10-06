@@ -438,6 +438,18 @@ class AbstractDataFolder(ABC):
             raise Exception(f'Forbidden instanciation because {path.absolute()} is not inside the current data folder {str(data_folder)} (see {Settings.FILENAME})')
         return (AbstractDataFolder.type_inference(path))(path)
     
+    def get_closest_parent_of_type(self, type_str : str):
+        while(1):
+            parent = None
+            try:
+                parent = AbstractDataFolder.instantiate(self.path.parent)
+                if parent.type() == type_str:
+                    return parent
+            except Exception:
+                # TODO special management of 'multiple classes recognize the folder XXX'
+                Exception('get_closest_parent_of_type() found an invalid parent folder before the requested folder type')
+            return parent.get_closest_parent_of_type(type_str) # recursive exploration
+            
 # Checklist for creating a subclass = a new kind of data folder
 # - for almost all cases, __init__(self,path) just need to call AbstractDataFolder.__init__(self,path)
 # - specialize the is_instance(path) static method and write the rule saying if a given folder is an instance of your new type
@@ -1123,6 +1135,50 @@ class hex_mesh(AbstractDataFolder):
             input   = str(self.get_file(self.FILENAMES.HEX_MESH_OVM,    True)),
             output  = str(self.get_file(self.FILENAMES.HEX_MESH_MEDIT       )),
         )
+    
+    # ----- Generative algorithms (create subfolders) --------------------
+
+    def global_padding(self, keep_debug_files = False):
+        """
+        Use the rb_perform_postprocessing exectuable of [robustPolycube](https://github.com/fprotais/robustPolycube#rb_perform_postprocessing)
+        """
+        # current folder is of type 'hex_mesh'
+        # parent folder can be of type 'labeling' or 'tet_mesh', depending on the hex-meshing algorithm used
+        # but we need the tet-mesh -> go through parents until a 'tet_mesh' folder is found
+        tet_mesh_folder = self.get_closest_parent_of_type('tet_mesh')
+        subfolder = GenerativeAlgorithm(
+            'global_padding',
+            self.path,
+            Settings.path('robustPolycube') / 'rb_perform_postprocessing',
+            '{tet_mesh} {hex_mesh} {improved_hex_mesh}',
+            'global_padding',
+            ['improved_hex_mesh'],
+            tet_mesh            = str(tet_mesh_folder.get_file(tet_mesh.FILENAMES.TET_MESH_MEDIT,   True)),
+            hex_mesh            = str(self.get_file(self.FILENAMES.HEX_MESH_MEDIT,                  True)),
+            improved_hex_mesh   = hex_mesh.FILENAMES.HEX_MESH_MEDIT
+        )
+        # the executable also writes debug .geogram files and a .lua script
+        for debug_filename in [
+            'debug_volume_0.geogram',
+            'debug_input_hexmesh_1.geogram',
+            'debug_surface_2.geogram',
+            'debug_pillowed_3.geogram',
+            'debug_number_of_componant_4.geogram',
+            'debug_det_iter_0__5.geogram',
+            'debug_det_iter_1__6.geogram',
+            'debug_det_iter_2__7.geogram',
+            'debug_det_iter_3__8.geogram',
+            'debug_det_iter_4__9.geogram',
+            'debug_det_iter_5__10.geogram',
+            'debug_smoothed_11.geogram',
+            'view.lua'
+        ]:
+            if Path(debug_filename).exists():
+                if keep_debug_files:
+                    move(debug_filename, subfolder / ('rb_perform_postprocessing.' + str(debug_filename)))
+                else:
+                    unlink(debug_filename)
+        return subfolder
 
 class root(AbstractDataFolder):
     """

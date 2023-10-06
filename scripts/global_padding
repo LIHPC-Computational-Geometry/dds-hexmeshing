@@ -1,0 +1,40 @@
+#!/usr/bin/python
+
+from pathlib import Path
+from argparse import ArgumentParser
+
+from sys import path
+path.append('../') # required for relative import without package
+from HexMeshWorkshop import *
+
+parser = ArgumentParser(
+    prog='global_padding',
+    description='Add a pillowing layer to a hexmesh & smooth')
+
+parser.add_argument(
+    '-i', '--input',
+    dest='input',
+    metavar='PATH',
+    help='path to the input folder (type hex_mesh)',
+    required=True)
+
+parser.add_argument(
+    '--view',
+    action='store_true',
+    dest='view_output',
+    help='visualize the output at the end')
+
+args = parser.parse_args()
+
+cm = CollectionsManager(Settings.path('data_folder'))
+
+if args.input in cm.collections():
+    print('input is a colleciton -> batch mode')
+    exit(0)
+
+input = AbstractDataFolder.instantiate(Path(args.input))
+subfolder = input.global_padding()
+
+if args.view_output:
+    postprocessed_hexmesh_folder = AbstractDataFolder.instantiate(subfolder)
+    postprocessed_hexmesh_folder.view()

@@ -10,6 +10,10 @@ Unless stated otherwise, this file mentions Python scripts located in `scripts/`
 
 ## [Unreleased]
 
+## Added
+
+- `global_padding` : post-process a hexahedral mesh by inserting a pillowing layer on the surface (executable from [fprotais/robustPolycube](https://github.com/fprotais/robustPolycube))
+
 ## [0.4.1] - 2023-10-04
 
 ### Changed
