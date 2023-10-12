@@ -1,22 +1,226 @@
-# HexMeshWorkshop
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="img/logo_white.png">
+    <source media="(prefers-color-scheme: light)" srcset="img/logo_black.png">
+    <img alt="HexMeshWorkshop logo" src="img/logo_black.png">
+  </picture>
+</p>
 
 High-level interface for hex-meshing algorithms.
 
 Instead of having:
-- a local data folder for each algorithm,
-- to remember the command line interface of each algorithm,
-- to include other algorithms in an algorithm's repo to compare them,
+- a local data folder in each code repo (and a total mess inside each of them),
+- to remember the command line interface of each executable (please, don't learn them by heart),
+- to include other algorithms in your repo to compare them (adding dependencies and slipping towards enormous repos),
 
-this project aims at keeping each algorithm in a minimal module, and offering to the user an object-oriented API like:
+this project make it possible to keep each algorithm small and independant, and offering to the user an object-oriented API on data folders like:
 
-- "Import the [MAMBO](https://gitlab.com/franck.ledoux/mambo) dataset" &rarr; `./import_MAMBO`
-- "Tetrahedral mesh generation of {3D shape} with [GMSH](http://gmsh.info/)" &rarr; WIP
-- "Tetrahedral mesh generation of {3D shape} with [NETGEN](https://sourceforge.net/projects/netgen-mesher/)" &rarr; WIP
-- "Labeling optimization on {3D mesh} with [GraphCuts](https://github.com/mlivesu/GraphCuts)" &rarr; WIP
-- "Labeling optimization on {3D mesh} with [Evocube](https://github.com/LIHPC-Computational-Geometry/evocube)" &rarr; WIP
-- "Hex-mesh extraction from {labeling} with [libHexEx](https://www.graphics.rwth-aachen.de/software/libHexEx/)" &rarr; WIP
-- "Hex-mesh extraction from {labeling} with [robustPolycube](https://github.com/fprotais/robustPolycube)" &rarr; WIP
+<!-- import_MAMBO -->
 
-It will only include the simplest algorithms and a viewer.
+<details>
+<summary>
+    Auto-download the <a href="https://gitlab.com/franck.ledoux/mambo">MAMBO</a> dataset:<br/>
+    &emsp;<code>./import_MAMBO</code>
+</summary>
 
-It replaces `shared-polycube-pipeline`, which was less flexible, available at commit [9c49b0a](https://github.com/LIHPC-Computational-Geometry/HexMeshWorkshop/tree/9c49b0a860a45d5ead9662dc8f259ca68b7718cb).
+```diff
+  📂~/data
++   📁B0
++   📁B1
++   ...
++   📁S45
+```
+
+</details>
+
+<!-- Gmsh -->
+
+<details>
+<summary>
+    Tetrahedrization of M7 with <a href="http://gmsh.info/">Gmsh</a>:<br/>
+    &emsp;<code>./Gmsh -i ~/data/M7 --mesh-size 0.2</code>
+</summary>
+
+<table>
+<tr><td>
+
+```diff
+  📂~/data
+    📂M7
++     📂Gmsh_0.2
++       📄tet.mesh
++       📄surface.obj
+```
+
+</td><td><img src="img/Gmsh_coarse.png" style="height: 10em" alt="coarse mesh of the M7 model"/></td></tr>
+</table>
+
+</details>
+
+<!-- Gmsh, finer mesh -->
+
+<details>
+<summary>
+    Hmm, I need a finer mesh...</a><br/>
+    &emsp;<code>./Gmsh -i ~/data/M7 --mesh-size 0.05</code>
+</summary>
+
+<table>
+<tr><td>
+
+```diff
+  📂~/data
+    📂M7
+      📁Gmsh_0.2
++     📂Gmsh_0.05
++       📄tet.mesh
++       📄surface.obj
+```
+
+</td><td><img src="img/Gmsh_fine.png" style="height: 10em" alt="fine mesh of the M7 model"/></td></tr>
+</table>
+
+</details>
+
+<!-- naive_labeling -->
+
+<details> 
+<summary>
+    Alright. I wonder what the naive labeling looks like.</a><br/>
+    &emsp;<code>./naive_labeling -i ~/data/M7/Gmsh_0.05</code>
+</summary>
+
+<table>
+<tr><td>
+
+```diff
+  📂~/data
+    📂M7
+      📁Gmsh_0.2
+      📂Gmsh_0.05
++       📂naive_labeling
++         📄surface_labeling.txt
+        📄tet.mesh
+        📄surface.obj
+```
+
+</td><td><img src="img/naive_labeling.png" style="height: 10em" alt="naive labeling computed on the tetrahedral mesh"/></td></tr>
+</table>
+
+</details>
+
+<!-- labeling_painter -->
+
+<details> 
+<summary>
+    Okay, it's not valid. Let me tweak the labeling by hand.</a><br/>
+    &emsp;<em>Sure:</em> <code>./labeling_painter -i ~/data/M7/Gmsh_0.05</code>
+</summary>
+
+<table>
+<tr><td>
+
+```diff
+  📂~/data
+    📂M7
+      📁Gmsh_0.2
+      📂Gmsh_0.05
+        📁naive_labeling
++       📂labeling_painter
++         📄surface_labeling.txt
+        📄tet.mesh
+        📄surface.obj
+```
+
+</td><td><img src="img/labeling_painter.png" style="height: 10em" alt="a labeling obtained with labeling_painter"/></td></tr>
+</table>
+
+</details>
+
+</details>
+
+<!-- polycube_withHexEx -->
+
+<details> 
+<summary>
+    Ho-ho! Can you extract a hex-mesh with <a href="https://www.graphics.rwth-aachen.de/software/libHexEx/">libHexEx</a>?<br/>
+    &emsp;<em>Indeed I can:</em> <code>./polycube_withHexEx -i ~/data/M7/Gmsh_0.05/labeling_painter</code>
+</summary>
+
+<table>
+<tr><td>
+
+```diff
+  📂~/data
+    📂M7
+      📁Gmsh_0.2
+      📂Gmsh_0.05
+        📁naive_labeling
+        📂labeling_painter
++         📂polycube_withHexEx_1.0
++           📄hex.mesh
+          📄surface_labeling.txt
+        📄tet.mesh
+        📄surface.obj
+```
+
+</td><td><img src="img/polycube_withHexEx.png" style="height: 10em" alt="hexmesh obtained with polycube_withHexEx"/></td></tr>
+</table>
+
+</details>
+
+<!-- global_padding -->
+
+<details> 
+<summary>
+    Fantastic!! Can you also apply a global padding? 🥺<br/>
+    &emsp;<em>You know I'm just a Python script, right?</em><br/>
+    &emsp;<code>./global_padding -i ~/data/M7/Gmsh_0.05/labeling_painter/polycube_withHexEx_1.0</code>
+</summary>
+
+<table>
+<tr><td>
+
+```diff
+  📂~/data
+    📂M7
+      📁Gmsh_0.2
+      📂Gmsh_0.05
+        📁naive_labeling
+        📂labeling_painter
+          📂polycube_withHexEx_1.0
++           📂global_padding
++             📄hex.mesh
+            📄hex.mesh
+          📄surface_labeling.txt
+        📄tet.mesh
+        📄surface.obj
+```
+
+</td><td><img src="img/global_padding.png" style="height: 10em" alt="hexmesh post-processed with a global padding"/></td></tr>
+</table>
+
+</details><br/>
+
+File format conversions required by some algorithms are automatic.
+
+Overview of the data subfolder types (boxes) and the wrapped algorithms (arrows):
+
+```mermaid
+graph LR
+    step([step])
+    tet_mesh([tet_mesh])
+    hex_mesh([hex_mesh])
+    step -- Gmsh --> tet_mesh
+    tet_mesh -- naive_labeling --> labeling
+    tet_mesh -- labeling_painter --> labeling
+    tet_mesh -- graphcut_labeling --> labeling
+    tet_mesh -- evocube --> labeling
+    tet_mesh -- automatic_polycube --> labeling
+    tet_mesh -- HexBox --> hex_mesh
+    tet_mesh -- AlgoHex --> hex_mesh
+    tet_mesh -- marchinghex --> hex_mesh
+    labeling -- polycube_withHexEx --> hex_mesh
+    labeling -- robustPolycube --> hex_mesh
+    hex_mesh -- global_padding --> hex_mesh
+```
