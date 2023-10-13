@@ -1,7 +1,7 @@
 {
     "paths": {
         "data_folder": "~/testdata/",
-        "automatic_polycube": "~/code/automatic_polycube/build/Linux64-gcc-dynamic-Debug/bin/",
+        "automatic_polycube": "~/code/automatic_polycube/build_Release/bin/",
         "Mayo": "~/.local/bin/mayo",
         "Graphite": "~/.local/bin/graphite",
         "Gmsh": "~/.local/Gmsh/gmsh-4.11.1-Linux64/bin/gmsh",
