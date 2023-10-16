@@ -3,9 +3,7 @@
 from pathlib import Path
 from argparse import ArgumentParser
 
-from sys import path
-path.append('../') # required for relative import without package
-from HexMeshWorkshop import *
+from data_folder_types import *
 
 parser = ArgumentParser(
     prog='naive_labeling',

@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 
-from sys import path
-path.append('../') # required for relative import without package
-from HexMeshWorkshop import *
+from settings import *
+from collection_manager import *
 
 # TODO move to a root data folder method
 
