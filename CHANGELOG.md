@@ -14,7 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- `cli/recursive_enumeration` is now `cli/enumerate_children`
+- `cli/recursive_enumeration` is now `cli/enumerate_children`. Recursivity is off by default and can be turned on with `--recursive`. Folder types can be filtered with the `--type` argument.
 
 ## [0.4.1] - 2023-10-04
 

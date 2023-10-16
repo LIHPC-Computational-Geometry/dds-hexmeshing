@@ -9,7 +9,20 @@ parser = ArgumentParser(
     prog='recursive_enumeration',
     description='Parse all subfolders of the current data folder and print their type')
 
+parser.add_argument(
+    '--type',
+    dest='type',
+    metavar='STRING',
+    help='enumerate only subfolders of a specific type',
+    required=False)
+
+parser.add_argument(
+    '--recursive',
+    action='store_true',
+    dest='recursive',
+    help='recursively enumerate children of subfolders')
+
 args = parser.parse_args()
 
 root_folder = root()
-root_folder.enumerate_children(False)
+root_folder.enumerate_children(args.type,args.recursive)

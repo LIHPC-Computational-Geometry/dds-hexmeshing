@@ -79,13 +79,7 @@ class AbstractDataFolder(ABC):
                 Exception('get_closest_parent_of_type() found an invalid parent folder before the requested folder type')
             return parent.get_closest_parent_of_type(type_str) # recursive exploration
         
-    def enumerate_children(self, recursive=True, depth=0):
-        if depth != 0:
-            # print left margin
-            for _ in range(depth-1):
-                print('\t',end='')
-            # print the folder name
-            print(self.path.name + ' (' + self.type() + ')')
+    def enumerate_children(self, type_filter = None, recursive=True, depth=0):
         # instanciate subfolders and call enumerate_children() recursively
         for subfolder in [x for x in sorted(self.path.iterdir()) if x.is_dir()]:
             instanciated_subfolder = None
@@ -93,11 +87,18 @@ class AbstractDataFolder(ABC):
                 instanciated_subfolder = AbstractDataFolder.instantiate(subfolder)
             except Exception:
                 pass # ignore exception raised when type inference failed
-            for _ in range(depth):
-                print('\t',end='')
-            print(f'{subfolder.name} ({"?" if instanciated_subfolder == None else instanciated_subfolder.type()})')
+            type_str = "?" if instanciated_subfolder == None else instanciated_subfolder.type()
+            if type_filter == None or type_str == type_filter:
+                if type_filter == None:
+                    # if no type filter, left margin according to depth, print folder name & type
+                    for _ in range(depth):
+                        print('\t',end='')
+                    print(f'{subfolder.name} ({type_str})')
+                else:
+                    print(subfolder)  # if a type filter is applied, no left margin, print full path and don't print type
+            # else : do not print this subfolder because type-filtered. but still explore its children
             if recursive and instanciated_subfolder != None:
-                instanciated_subfolder.enumerate_children(True,depth+1)
+                instanciated_subfolder.enumerate_children(type_filter,True,depth+1)
             
 # Checklist for creating a subclass = a new kind of data folder
 # - for almost all cases, __init__(self,path) just need to call AbstractDataFolder.__init__(self,path)
