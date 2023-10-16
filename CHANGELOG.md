@@ -8,9 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## Added
+### Added
 
 - `cli/global_padding` : post-process a hexahedral mesh by inserting a pillowing layer on the surface (executable from [fprotais/robustPolycube](https://github.com/fprotais/robustPolycube))
+
+### Changed
+
+- `cli/recursive_enumeration` is now `cli/enumerate_children`
 
 ## [0.4.1] - 2023-10-04
 

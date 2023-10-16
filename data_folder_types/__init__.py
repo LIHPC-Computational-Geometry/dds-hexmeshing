@@ -78,6 +78,26 @@ class AbstractDataFolder(ABC):
                 # TODO special management of 'multiple classes recognize the folder XXX'
                 Exception('get_closest_parent_of_type() found an invalid parent folder before the requested folder type')
             return parent.get_closest_parent_of_type(type_str) # recursive exploration
+        
+    def enumerate_children(self, recursive=True, depth=0):
+        if depth != 0:
+            # print left margin
+            for _ in range(depth-1):
+                print('\t',end='')
+            # print the folder name
+            print(self.path.name + ' (' + self.type() + ')')
+        # instanciate subfolders and call enumerate_children() recursively
+        for subfolder in [x for x in sorted(self.path.iterdir()) if x.is_dir()]:
+            instanciated_subfolder = None
+            try:
+                instanciated_subfolder = AbstractDataFolder.instantiate(subfolder)
+            except Exception:
+                pass # ignore exception raised when type inference failed
+            for _ in range(depth):
+                print('\t',end='')
+            print(f'{subfolder.name} ({"?" if instanciated_subfolder == None else instanciated_subfolder.type()})')
+            if recursive and instanciated_subfolder != None:
+                instanciated_subfolder.enumerate_children(True,depth+1)
             
 # Checklist for creating a subclass = a new kind of data folder
 # - for almost all cases, __init__(self,path) just need to call AbstractDataFolder.__init__(self,path)
