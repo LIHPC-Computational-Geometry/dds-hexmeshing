@@ -187,10 +187,11 @@ class tet_mesh(AbstractDataFolder):
     """
 
     class FILENAMES(SimpleNamespace):
-        TET_MESH_MEDIT      = 'tet.mesh'        # tetrahedral mesh in the GMF/MEDIT ASCII format
-        TET_MESH_VTK        = 'tet_mesh.vtk'    # tetrahedral mesh in the VTK DataFile Version 2.0 ASCII
-        SURFACE_MESH_OBJ    = 'surface.obj'     # (triangle) surface of the tet-mesh, in the Wavefront format
-        SURFACE_MAP_TXT     = 'surface_map.txt' # association between surface triangles and tet facets (see https://github.com/LIHPC-Computational-Geometry/automatic_polycube/blob/main/app/extract_surface.cpp for the format)
+        TET_MESH_MEDIT      = 'tet.mesh'            # tetrahedral mesh in the GMF/MEDIT ASCII format
+        TET_MESH_VTK        = 'tet_mesh.vtk'        # tetrahedral mesh in the VTK DataFile Version 2.0 ASCII
+        SURFACE_MESH_OBJ    = 'surface.obj'         # (triangle) surface of the tet-mesh, in the Wavefront format
+        SURFACE_MAP_TXT     = 'surface_map.txt'     # association between surface triangles and tet facets (see https://github.com/LIHPC-Computational-Geometry/automatic_polycube/blob/main/app/extract_surface.cpp for the format)
+        TET_MESH_STATS_JSON = 'tet_mesh.stats.json' # mesh stats (min/max/avg/sd of mesh metrics) computed on TET_MESH_MEDIT, as JSON file
 
     DEFAULT_VIEW = 'surface_mesh'
 
@@ -233,6 +234,9 @@ class tet_mesh(AbstractDataFolder):
         if filename == self.FILENAMES.TET_MESH_VTK:
             self.Gmsh_convert_to_VTKv2()
             return self.get_file(filename,True)
+        if filename == self.FILENAMES.TET_MESH_STATS_JSON:
+            if self.mesh_stats():
+                return self.get_file(filename,True)
         raise Exception(f'Missing file {path}')
     
     # ----- Transformative algorithms (modify current folder) --------------------
@@ -259,6 +263,23 @@ class tet_mesh(AbstractDataFolder):
             input   = str(self.get_file(self.FILENAMES.TET_MESH_MEDIT,  True)),
             output  = str(self.get_file(self.FILENAMES.TET_MESH_VTK         )),
         )
+
+    def mesh_stats(self) -> bool:
+        TransformativeAlgorithm(
+            'mesh_stats',
+            self.path,
+            Settings.path('automatic_polycube') / 'mesh_stats',
+            '{mesh}',
+            mesh = str(self.get_file(self.FILENAMES.TET_MESH_MEDIT,  True)),
+        )
+        # TODO check if the return code is 0
+        if (self.path / 'mesh_stats.stdout.txt').exists():
+            # stdout should be a valid JSON file
+            # use rename_file() to keep track of the operation in info.json
+            rename_file(self.path,'mesh_stats.stdout.txt',self.FILENAMES.TET_MESH_STATS_JSON)
+            return True
+        else:
+            return False # unable to generate mesh stats file
     
     # ----- Generative algorithms (create subfolders) --------------------
 

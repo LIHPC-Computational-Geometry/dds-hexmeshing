@@ -1,0 +1,28 @@
+#!/usr/bin/env python
+
+from pathlib import Path
+from argparse import ArgumentParser
+
+from data_folder_types import *
+
+parser = ArgumentParser(
+    prog='mesh_stats',
+    description='Compute stats over a tetrahedral mesh')
+
+parser.add_argument(
+    '-i', '--input',
+    dest='input',
+    metavar='PATH',
+    help='path to the input folder (type tet_mesh)',
+    required=True)
+
+args = parser.parse_args()
+
+cm = CollectionsManager(Settings.path('data_folder'))
+
+if args.input in cm.collections():
+    print('input is a colleciton -> batch mode')
+    exit(0)
+
+input = AbstractDataFolder.instantiate(Path(args.input))
+input.mesh_stats()
