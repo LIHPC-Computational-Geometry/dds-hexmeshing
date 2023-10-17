@@ -18,12 +18,12 @@ def GenerativeAlgorithm(name: str, input_folder, executable: Path, executable_ar
     name_template = ParametricString(name_template)
     for parameter in name_template.get_parameters():
         if parameter not in executable_arugments.get_parameters():
-            raise Exception("'" + parameter + "' is not a parameter of the executable, so it cannot be a part of the subfolder filename")
+            raise Exception(f"'{parameter}' is not a parameter of the executable, so it cannot be a part of the subfolder filename")
     for parameter in inside_subfolder:
         if parameter not in executable_arugments.get_parameters():
-            raise Exception("'" + parameter + "' is not a parameter of the executable, so it cannot specified as inside the subfolder")
+            raise Exception(f"'{parameter}' is not a parameter of the executable, so it cannot specified as inside the subfolder")
         if parameter in name_template.get_parameters():
-            raise Exception("'" + parameter + "' is specified as inside the subfolder, so it cannot be a part of the name of the subfolder")
+            raise Exception("'{parameter}' is specified as inside the subfolder, so it cannot be a part of the name of the subfolder")
     start_datetime = time.localtime()
     start_datetime_iso = time.strftime('%Y-%m-%dT%H:%M:%SZ', start_datetime)
     # ISO 8601 cannot be used in the subfolder filename, because ':' is forbidden on Windows
@@ -32,7 +32,7 @@ def GenerativeAlgorithm(name: str, input_folder, executable: Path, executable_ar
     subfolder_name = name_template.assemble(False,**kwargs).replace('%d',start_datetime_filesystem)
     # Check there is no subfolder with this name
     if (input_folder / subfolder_name).exists():
-        raise Exception("Already a subfolder named '{}'".format(subfolder_name))
+        raise Exception(f"Already a subfolder named '{subfolder_name}'")
     # Create the subfolder
     mkdir(input_folder / subfolder_name)
     # add subfolder name as prefix for subset of kwargs, given by inside_subfolder
@@ -41,7 +41,7 @@ def GenerativeAlgorithm(name: str, input_folder, executable: Path, executable_ar
             kwargs[k] = str((input_folder / subfolder_name / v).absolute())
     # Assemble command string
     # TODO check if the executable exists
-    command = str(executable.absolute()) + " " + executable_arugments.assemble(False,**kwargs)
+    command = str(executable.absolute()) + ' ' + executable_arugments.assemble(False,**kwargs)
     # Write parameters value in a dict (will be dumped as JSON)
     info_file = dict()
     info_file[start_datetime_iso] = {
@@ -69,9 +69,9 @@ def GenerativeAlgorithm(name: str, input_folder, executable: Path, executable_ar
         f.close()
         info_file[start_datetime_iso]['stderr'] = filename
     # store return code and duration
-    info_file[start_datetime_iso]["return_code"] = completed_process.returncode
+    info_file[start_datetime_iso]['return_code'] = completed_process.returncode
     duration = chrono_stop - chrono_start
-    info_file[start_datetime_iso]["duration"] = [duration, simple_human_readable_duration(duration)]
+    info_file[start_datetime_iso]['duration'] = [duration, simple_human_readable_duration(duration)]
     # write JSON file
     with open(input_folder / subfolder_name / 'info.json','w') as file:
             dump(info_file, file, sort_keys=True, indent=4)
@@ -92,31 +92,31 @@ def InteractiveGenerativeAlgorithm(name: str, input_folder, executable: Path, ex
         name_template = ParametricString(name_template)
         for parameter in name_template.get_parameters():
             if parameter not in executable_arugments.get_parameters():
-                raise Exception("'" + parameter + "' is not a parameter of the executable, so it cannot be a part of the subfolder filename")
+                raise Exception(f"'{parameter}' is not a parameter of the executable, so it cannot be a part of the subfolder filename")
         for parameter in inside_subfolder:
             # if parameter not in executable_arugments.get_parameters(): -> not checked for an interactive algorithm
             if parameter in name_template.get_parameters():
-                raise Exception("'" + parameter + "' is specified as inside the subfolder, so it cannot be a part of the name of the subfolder")
+                raise Exception("'{parameter}' is specified as inside the subfolder, so it cannot be a part of the name of the subfolder")
         # Assemble name of to-be-created subfolder
         subfolder_name = name_template.assemble(False,**kwargs).replace('%d',start_datetime_filesystem)
         # Check there is no subfolder with this name
         if (input_folder / subfolder_name).exists():
-            raise Exception("Already a subfolder named '{}'".format(subfolder_name))
+            raise Exception(f"Already a subfolder named '{subfolder_name}'")
         # Create the subfolder
         mkdir(input_folder / subfolder_name)
         # add subfolder name as prefix for subset of kwargs, given by inside_subfolder
         # also print help message about expected output files location
-        print(f'You must save the output file(s) as:')
+        print('You must save the output file(s) as:')
         for k,v in kwargs.items():
             if k in inside_subfolder:
                 kwargs[k] = str((input_folder / subfolder_name / v).absolute())
                 print(kwargs[k])
-        print(f'then close the window to stop the timer.')
+        print('then close the window to stop the timer.')
     # else: name_template is None, no output will be stored
 
     # Assemble command string
     # TODO check if the executable exists
-    command = str(executable.absolute()) + " " + executable_arugments.assemble(False,**kwargs) # False because kwargs can be bigger than executable_arugments.get_parameters() for an interactive algorithm
+    command = str(executable.absolute()) + ' ' + executable_arugments.assemble(False,**kwargs) # False because kwargs can be bigger than executable_arugments.get_parameters() for an interactive algorithm
 
     info_file = dict()
     if name_template != None:
@@ -149,9 +149,9 @@ def InteractiveGenerativeAlgorithm(name: str, input_folder, executable: Path, ex
             f.close()
             info_file[start_datetime_iso]['stderr'] = filename
         # store return code and duration
-        info_file[start_datetime_iso]["return_code"] = completed_process.returncode
+        info_file[start_datetime_iso]['return_code'] = completed_process.returncode
         duration = chrono_stop - chrono_start
-        info_file[start_datetime_iso]["duration"] = [duration, simple_human_readable_duration(duration)]
+        info_file[start_datetime_iso]['duration'] = [duration, simple_human_readable_duration(duration)]
         # write JSON file
         with open(input_folder / subfolder_name / 'info.json','w') as file:
                 dump(info_file, file, sort_keys=True, indent=4)
@@ -168,11 +168,11 @@ def TransformativeAlgorithm(name: str, input_folder, executable: Path, executabl
     executable_arugments = ParametricString(executable_arugments)
     # Assemble command string
     # TODO check if the executable exists
-    command = str(executable.absolute()) + " " + executable_arugments.assemble(False,**kwargs)
+    command = str(executable.absolute()) + ' ' + executable_arugments.assemble(False,**kwargs)
     # Read JSON file
     info_file = dict()
     if not (input_folder / 'info.json').exists():
-        logging.warning('Cannot find info.json in ' + str(input_folder))
+        logging.warning(f'Cannot find info.json in {input_folder}')
     else:
         info_file = load(open(input_folder / 'info.json'))
         assert (len(info_file) != 0)
@@ -209,9 +209,9 @@ def TransformativeAlgorithm(name: str, input_folder, executable: Path, executabl
         f.close()
         info_file[start_datetime_iso]['stderr'] = filename
     # store return code and duration
-    info_file[start_datetime_iso]["return_code"] = completed_process.returncode
+    info_file[start_datetime_iso]['return_code'] = completed_process.returncode
     duration = chrono_stop - chrono_start
-    info_file[start_datetime_iso]["duration"] = [duration, simple_human_readable_duration(duration)]
+    info_file[start_datetime_iso]['duration'] = [duration, simple_human_readable_duration(duration)]
     # write JSON file
     with open(input_folder / 'info.json','w') as file:
         dump(info_file, file, sort_keys=True, indent=4)

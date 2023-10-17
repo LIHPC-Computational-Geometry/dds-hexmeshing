@@ -24,7 +24,7 @@ class AbstractDataFolder(ABC):
     @abstractmethod #prevent user from instanciating a AbstractDataFolder
     def __init__(self, path: Path):
         if not path.exists():
-            logging.error(str(path) + ' does not exist')
+            logging.error(f'{path} does not exist')
             exit(1)
         self.path = path
 
@@ -32,7 +32,7 @@ class AbstractDataFolder(ABC):
         return self.__class__.__name__
     
     def __str__(self) -> str:
-        return '{{type={}, path={}}}'.format(self.type(),str(self.path))
+        return f'{{type={self.type()}, path={self.path}}}'
     
     @abstractmethod
     def view(self, what = None):
@@ -50,9 +50,9 @@ class AbstractDataFolder(ABC):
             if subclass.is_instance(path):
                 infered_types.append(subclass) # current subclass recognize path
         if len(infered_types) == 0:
-            raise Exception('No known class recognize the folder ' + str(path.absolute()))
+            raise Exception(f'No known class recognize the folder {path}')
         elif len(infered_types) > 1: # if multiple AbstractDataFolder subclasses recognize path
-            raise Exception('Multiple classes recognize the folder ' + str(path.absolute()) + ' : ' + str([x.__name__ for x in infered_types]))
+            raise Exception(f'Multiple classes recognize the folder {path} : {[x.__name__ for x in infered_types]}')
         else:
             return infered_types[0]
 
@@ -87,7 +87,7 @@ class AbstractDataFolder(ABC):
                 instanciated_subfolder = AbstractDataFolder.instantiate(subfolder)
             except Exception:
                 pass # ignore exception raised when type inference failed
-            type_str = "?" if instanciated_subfolder == None else instanciated_subfolder.type()
+            type_str = '?' if instanciated_subfolder == None else instanciated_subfolder.type()
             if type_filter == None or type_str == type_filter:
                 if type_filter == None:
                     # if no type filter, left margin according to depth, print folder name & type
@@ -130,13 +130,13 @@ class step(AbstractDataFolder):
         path = Path(path)
         if(step_file!=None):
             if path.exists():
-                logging.error(str(path) + ' already exists. Overwriting not allowed')
+                logging.error(f'{path} already exists. Overwriting not allowed')
                 exit(1)
             mkdir(path)
             copyfile(step_file, path / self.FILENAMES.STEP)
         AbstractDataFolder.__init__(self,path)
         if not (path / self.FILENAMES.STEP).exists():
-            logging.error('At the end of step.__init__(), ' + str(path) + ' does not exist')
+            logging.error(f'At the end of step.__init__(), {path} does not exist')
             exit(1)
     
     def view(self, what = None):
@@ -158,13 +158,13 @@ class step(AbstractDataFolder):
                 step = str(self.get_file(self.FILENAMES.STEP,True))
             )
         else:
-            raise Exception(f'step.view() does not recognize \'what\' value: \'{what}\'')
+            raise Exception(f"step.view() does not recognize 'what' value: '{what}'")
     
     def get_file(self, filename : str, must_exist : bool = False) -> Path:
         path = super().get_file(filename)
         if (not must_exist) or (must_exist and path.exists()):
             return path
-        raise Exception(f'Missing file {str(path)}')
+        raise Exception(f'Missing file {path}')
         
     # ----- Generative algorithms (create subfolders) --------------------
 
@@ -220,7 +220,7 @@ class tet_mesh(AbstractDataFolder):
                 surface_mesh = str(self.get_file(self.FILENAMES.SURFACE_MESH_OBJ,True))
             )
         else:
-            raise Exception(f'tet_mesh.view() does not recognize \'what\' value: \'{what}\'')
+            raise Exception(f"tet_mesh.view() does not recognize 'what' value: '{what}'")
     
     def get_file(self, filename : str, must_exist : bool = False) -> Path:
         path = super().get_file(filename)
@@ -233,7 +233,7 @@ class tet_mesh(AbstractDataFolder):
         if filename == self.FILENAMES.TET_MESH_VTK:
             self.Gmsh_convert_to_VTKv2()
             return self.get_file(filename,True)
-        raise Exception(f'Missing file {str(path)}')
+        raise Exception(f'Missing file {path}')
     
     # ----- Transformative algorithms (modify current folder) --------------------
 
@@ -442,14 +442,14 @@ class marchinghex_grid(AbstractDataFolder):
                 grid_mesh = str(self.get_file(self.FILENAMES.GRID_MESH_MEDIT,True))
             )
         else:
-            raise Exception(f'marchinghex_grid.view() does not recognize \'what\' value: \'{what}\'')
+            raise Exception(f"marchinghex_grid.view() does not recognize 'what' value: '{what}'")
     
     def get_file(self, filename : str, must_exist : bool = False) -> Path:
         path = super().get_file(filename)
         if (not must_exist) or (must_exist and path.exists()):
             return path
         # so 'file' is missing
-        raise Exception(f'Missing file {str(path)}')
+        raise Exception(f'Missing file {path}')
     
     # ----- Transformative algorithms (modify current folder) --------------------
 
@@ -477,7 +477,7 @@ class marchinghex_grid(AbstractDataFolder):
         ] + [x for x in Path(curdir).iterdir() if x.is_file() and x.stem.startswith('iter_')]: # and all 'iter_*' files
             if Path(debug_filename).exists():
                 if keep_debug_files:
-                    move(debug_filename, self.path / ('marchinghex_hexmeshing.' + str(debug_filename)))
+                    move(debug_filename, self.path / f'marchinghex_hexmeshing.{debug_filename}')
                 else:
                     unlink(debug_filename)
 
@@ -545,7 +545,7 @@ class labeling(AbstractDataFolder):
                 mesh = str(self.get_file(self.FILENAMES.PREPROCESSED_TET_MESH_MEDIT,    True))
             )
         else:
-            raise Exception(f'labeling.view() does not recognize \'what\' value: \'{what}\'')
+            raise Exception(f"labeling.view() does not recognize 'what' value: '{what}'")
     
     def get_file(self, filename : str, must_exist : bool = False) -> Path:
         path = super().get_file(filename)
@@ -564,7 +564,7 @@ class labeling(AbstractDataFolder):
         elif filename in [self.FILENAMES.TET_MESH_REMESHED_MEDIT, self.FILENAMES.TET_MESH_REMESHED_LABELING_TXT, self.FILENAMES.POLYCUBOID_MESH_MEDIT]:
             self.rb_generate_deformation()
             return self.get_file(filename,True)
-        raise Exception(f'Missing file {str(path)}')
+        raise Exception(f'Missing file {path}')
         
     # ----- Transformative algorithms (modify current folder) --------------------
         
@@ -639,7 +639,7 @@ class labeling(AbstractDataFolder):
         for debug_filename in ['Param.geogram', 'Polycube.geogram']:
             if Path(debug_filename).exists():
                 if keep_debug_files:
-                    move(debug_filename, self.path / ('polycube_withHexEx.' + debug_filename))
+                    move(debug_filename, self.path / f'polycube_withHexEx.{debug_filename}')
                 else:
                     unlink(debug_filename)
         return subfolder
@@ -678,7 +678,7 @@ class labeling(AbstractDataFolder):
         ]:
             if Path(debug_filename).exists():
                 if keep_debug_files:
-                    move(debug_filename, self.path / ('rb_generate_deformation.' + debug_filename))
+                    move(debug_filename, self.path / f'rb_generate_deformation.{debug_filename}')
                 else:
                     unlink(debug_filename)
     
@@ -722,7 +722,7 @@ class labeling(AbstractDataFolder):
         ]:
             if Path(debug_filename).exists():
                 if keep_debug_files:
-                    move(debug_filename, subfolder / ('rb_generate_quantization.' + str(debug_filename)))
+                    move(debug_filename, subfolder / f'rb_generate_quantization.{debug_filename}')
                 else:
                     unlink(debug_filename)
         return subfolder
@@ -762,7 +762,7 @@ class hex_mesh(AbstractDataFolder):
                 mesh = str(self.get_file(self.FILENAMES.HEX_MESH_MEDIT, True))
             )
         else:
-            raise Exception(f'hex_mesh.view() does not recognize \'what\' value: \'{what}\'')
+            raise Exception(f"hex_mesh.view() does not recognize 'what' value: '{what}'")
     
     def get_file(self, filename : str, must_exist : bool = False) -> Path:
         path = super().get_file(filename)
@@ -772,7 +772,7 @@ class hex_mesh(AbstractDataFolder):
         if filename == self.FILENAMES.HEX_MESH_MEDIT:
             self.OVM_to_MEDIT()
             return self.get_file(filename,True)
-        raise Exception(f'Missing file {str(path)}')
+        raise Exception(f'Missing file {path}')
 
     # ----- Transformative algorithms (modify current folder) --------------------
 
@@ -825,7 +825,7 @@ class hex_mesh(AbstractDataFolder):
         ]:
             if Path(debug_filename).exists():
                 if keep_debug_files:
-                    move(debug_filename, subfolder / ('rb_perform_postprocessing.' + str(debug_filename)))
+                    move(debug_filename, subfolder / f'rb_perform_postprocessing.{debug_filename}')
                 else:
                     unlink(debug_filename)
         return subfolder
@@ -847,7 +847,7 @@ class root(AbstractDataFolder):
     def __init__(self,path: Path = Settings.path('data_folder')):
         assert(path == Settings.path('data_folder')) # only accept instanciation of the folder given by the settings file. 2nd argument required by abstract class
         if not path.exists(): # if the data folder does not exist
-            logging.warning(f'Data folder {str(path)} does not exist and will be created')
+            logging.warning(f'Data folder {path} does not exist and will be created')
             # create the data folder
             mkdir(path) # TODO manage failure case
             # write empty collections file
@@ -862,13 +862,13 @@ class root(AbstractDataFolder):
         if what == 'print_path':
             print(str(self.path.absolute()))
         else:
-            raise Exception(f'root.view() does not recognize \'what\' value: \'{what}\'')
+            raise Exception(f"root.view() does not recognize 'what' value: '{what}'")
         
     def get_file(self, filename : str, must_exist : bool = False) -> Path:
         path = super().get_file(filename)
         if (not must_exist) or (must_exist and path.exists()):
             return path
-        raise Exception(f'Missing file {str(path)}')
+        raise Exception(f'Missing file {path}')
 
     def recursive_update(self):
         # for each filename, list old filenames
@@ -894,8 +894,8 @@ class root(AbstractDataFolder):
     def import_MAMBO(self,path_to_MAMBO : str = None):
         tmp_dir_used = True
         if path_to_MAMBO==None:
-            if not UserInput.ask("No input was given, so the MAMBO dataset will be downloaded, are you sure you want to continue ?"):
-                logging.info("Operation cancelled")
+            if not UserInput.ask('No input was given, so the MAMBO dataset will be downloaded, are you sure you want to continue ?'):
+                logging.info('Operation cancelled')
                 exit(0)
             url = 'https://gitlab.com/franck.ledoux/mambo/-/archive/master/mambo-master.zip'
             tmp_folder = Path(mkdtemp()) # request an os-specific tmp folder
@@ -908,12 +908,12 @@ class root(AbstractDataFolder):
         else:
             tmp_dir_used = False
             path_to_MAMBO = Path(path_to_MAMBO).absolute()
-            logging.info('MAMBO will be imported from folder ' + str(path_to_MAMBO))
+            logging.info('MAMBO will be imported from folder {path_to_MAMBO}')
             if not path_to_MAMBO.exists():
-                logging.fatal(str(path_to_MAMBO) + ' does not exist')
+                logging.fatal('{path_to_MAMBO} does not exist')
                 exit(1)
             if not path_to_MAMBO.is_dir():
-                logging.fatal(str(path_to_MAMBO) + ' is not a folder')
+                logging.fatal('{path_to_MAMBO} is not a folder')
                 exit(1)
         for subfolder in [x for x in path_to_MAMBO.iterdir() if x.is_dir()]:
             if subfolder.name in ['Scripts', '.git']:

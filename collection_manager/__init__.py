@@ -19,7 +19,7 @@ class CollectionsManager():
     def append_to_collection(self,collection_name,element: str):
         # element is either an existing collection, of a path (relative to self.datafolder) to a folder
         if (element not in self.json.keys()) & ((self.datafolder / element).exists()==False):
-            raise Exception(element + ' is neither an existing collection nor an existing subfolder\nExisting collections : {}'.format(self.json.keys()))
+            raise Exception(f'{element} is neither an existing collection nor an existing subfolder\nExisting collections : {self.json.keys()}')
         if collection_name not in self.json.keys():
             self.json[collection_name] = [] # empty list
         self.json[collection_name].append(element)

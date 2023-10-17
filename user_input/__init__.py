@@ -23,7 +23,7 @@ class UserInput():
             self.memorized_answer = True
         elif user_choice == 'never':
             self.memorized_answer = False
-        return ((user_choice == "y") | (user_choice == "yes") | (user_choice == "always"))
+        return ((user_choice == 'y') | (user_choice == 'yes') | (user_choice == 'always'))
 
     def forget_memorized_answer(self):
         self.memorized_answer = None
@@ -36,4 +36,4 @@ class UserInput():
         user_choice = ''
         while user_choice not in ['y','yes','n','no']:
             user_choice = input(question + ' [yes/no] ').lower()
-        return ((user_choice[0] == "y"))
+        return ((user_choice[0] == 'y'))
