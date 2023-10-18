@@ -3,7 +3,8 @@
     <source media="(prefers-color-scheme: dark)" srcset="img/logo_white.png">
     <source media="(prefers-color-scheme: light)" srcset="img/logo_black.png">
     <img alt="HexMeshWorkshop logo" src="img/logo_black.png">
-  </picture>
+  </picture><br/>
+  <a href="https://github.com/LIHPC-Computational-Geometry/HexMeshWorkshop/blob/main/CHANGELOG.md">🔄 Changelog</a> • <a href="https://github.com/LIHPC-Computational-Geometry/HexMeshWorkshop/wiki/User-documentation">📖 User documentation</a> • <a href="https://github.com/LIHPC-Computational-Geometry/HexMeshWorkshop/wiki/Developer-documentation">🧑‍💻 Developer documentation</a>
 </p>
 
 High-level interface for hex-meshing algorithms.
