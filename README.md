@@ -52,7 +52,7 @@ this project make it possible to keep each algorithm small and independant, and 
 +       📄surface.obj
 ```
 
-</td><td><img src="img/Gmsh_coarse.png" style="height: 10em" alt="coarse mesh of the M7 model"/></td></tr>
+</td><td><img src="img/Gmsh_coarse.png" style="height: 20em" alt="coarse mesh of the M7 model"/></td></tr>
 </table>
 
 </details>
@@ -77,7 +77,7 @@ this project make it possible to keep each algorithm small and independant, and 
 +       📄surface.obj
 ```
 
-</td><td><img src="img/Gmsh_fine.png" style="height: 10em" alt="fine mesh of the M7 model"/></td></tr>
+</td><td><img src="img/Gmsh_fine.png" style="height: 20em" alt="fine mesh of the M7 model"/></td></tr>
 </table>
 
 </details>
@@ -104,7 +104,7 @@ this project make it possible to keep each algorithm small and independant, and 
         📄surface.obj
 ```
 
-</td><td><img src="img/naive_labeling.png" style="height: 10em" alt="naive labeling computed on the tetrahedral mesh"/></td></tr>
+</td><td><img src="img/naive_labeling.png" style="height: 20em" alt="naive labeling computed on the tetrahedral mesh"/></td></tr>
 </table>
 
 </details>
@@ -132,7 +132,7 @@ this project make it possible to keep each algorithm small and independant, and 
         📄surface.obj
 ```
 
-</td><td><img src="img/labeling_painter.png" style="height: 10em" alt="a labeling obtained with labeling_painter"/></td></tr>
+</td><td><img src="img/labeling_painter.png" style="height: 20em" alt="a labeling obtained with labeling_painter"/></td></tr>
 </table>
 
 </details>
@@ -164,7 +164,7 @@ this project make it possible to keep each algorithm small and independant, and 
         📄surface.obj
 ```
 
-</td><td><img src="img/polycube_withHexEx.png" style="height: 10em" alt="hexmesh obtained with polycube_withHexEx"/></td></tr>
+</td><td><img src="img/polycube_withHexEx.png" style="height: 20em" alt="hexmesh obtained with polycube_withHexEx"/></td></tr>
 </table>
 
 </details>
@@ -197,7 +197,7 @@ this project make it possible to keep each algorithm small and independant, and 
         📄surface.obj
 ```
 
-</td><td><img src="img/global_padding.png" style="height: 10em" alt="hexmesh post-processed with a global padding"/></td></tr>
+</td><td><img src="img/global_padding.png" style="height: 20em" alt="hexmesh post-processed with a global padding"/></td></tr>
 </table>
 
 </details><br/>
