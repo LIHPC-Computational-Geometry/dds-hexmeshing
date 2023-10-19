@@ -201,6 +201,7 @@ class tet_mesh(AbstractDataFolder):
 
     def __init__(self,path: Path):
         AbstractDataFolder.__init__(self,Path(path))
+        self.mesh_stats_dict = None
     
     def view(self, what = None):
         """
@@ -238,6 +239,13 @@ class tet_mesh(AbstractDataFolder):
             if self.mesh_stats():
                 return self.get_file(filename,True)
         raise Exception(f'Missing file {path}')
+    
+    # ----- Access data from files --------------------
+
+    def get_mesh_stats_dict(self) -> dict:
+        if(self.mesh_stats_dict == None): # if the stats are not already cached
+            self.mesh_stats_dict = load(open(self.get_file(self.FILENAMES.TET_MESH_STATS_JSON,True))) # compute if missing and load the JSON file
+        return self.mesh_stats_dict
     
     # ----- Transformative algorithms (modify current folder) --------------------
 

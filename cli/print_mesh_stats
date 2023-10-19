@@ -7,7 +7,7 @@ from data_folder_types import *
 
 parser = ArgumentParser(
     prog='mesh_stats',
-    description='Compute stats over a tetrahedral mesh')
+    description='Print mesh stats (over vertices, facets, etc) of a tetrahedral mesh')
 
 parser.add_argument(
     '-i', '--input',
@@ -18,11 +18,6 @@ parser.add_argument(
 
 args = parser.parse_args()
 
-cm = CollectionsManager(Settings.path('data_folder'))
-
-if args.input in cm.collections():
-    print('input is a colleciton -> batch mode')
-    exit(0)
-
 input = AbstractDataFolder.instantiate(Path(args.input))
-input.mesh_stats()
+mesh_stats_dict = input.get_mesh_stats_dict()
+print(mesh_stats_dict)
