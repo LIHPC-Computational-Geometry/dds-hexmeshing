@@ -614,7 +614,7 @@ class labeling(AbstractDataFolder):
     def write_geogram(self):
         parent_tet_mesh = self.get_closest_parent_of_type('tet_mesh')
         TransformativeAlgorithm(
-            'volume_labeling',
+            'write_geogram',
             self.path,
             Settings.path('automatic_polycube') / 'labeling_viewer', # use labeling_viewer to generate a .geogram file
             '{surface_mesh} {surface_labeling} {output_geogram}',
