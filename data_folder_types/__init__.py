@@ -579,10 +579,11 @@ class labeling(AbstractDataFolder):
                 'view',
                 self.path,
                 Settings.path('Graphite'),
-                '{mesh}', # arguments template
+                '{mesh} {lua_script}', # arguments template
                 None,
                 [],
-                mesh = str(self.get_file(self.FILENAMES.SURFACE_LABELING_MESH_GEOGRAM,    True))
+                mesh = str(self.get_file(self.FILENAMES.SURFACE_LABELING_MESH_GEOGRAM,    True)),
+                lua_script = '../glue_code/graphite_labeling.lua' # expect the current working directory to be cli/
             )
         else:
             raise Exception(f"labeling.view() does not recognize 'what' value: '{what}'")
