@@ -1,3 +1,3 @@
 #!/usr/bin/zsh
 
-python -i -c "from sys import path; path.append('../'); from HexMeshWorkshop import *;"
+python -i -c "from data_folder_types import *"
