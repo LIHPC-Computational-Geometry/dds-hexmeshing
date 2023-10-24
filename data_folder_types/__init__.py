@@ -523,6 +523,7 @@ class labeling(AbstractDataFolder):
         TET_MESH_REMESHED_MEDIT         = 'tet.remeshed.mesh'                   # tet-mesh aiming bijectivity for the polycube. GMF/MEDIT ASCII format. Output of https://github.com/fprotais/robustPolycube
         TET_MESH_REMESHED_LABELING_TXT  = 'tet.remeshed.volume_labeling.txt'    # volume labeling of remeshed_tet_mesh. Should be the same as volume_labeling.
         POLYCUBOID_MESH_MEDIT           = 'polycuboid.mesh'                     # polycuboid generated from remeshed_tet_mesh and its labeling. GMF/MEDIT ASCII format.
+        SURFACE_LABELING_MESH_GEOGRAM   = 'labeled_surface.geogram'             # surface triangle mesh in the Geogram format with the surface labeling as facet attribute
 
     DEFAULT_VIEW = 'labeled_surface'
 
@@ -573,6 +574,16 @@ class labeling(AbstractDataFolder):
                 [],
                 mesh = str(self.get_file(self.FILENAMES.PREPROCESSED_TET_MESH_MEDIT,    True))
             )
+        elif what == 'geogram':
+            InteractiveGenerativeAlgorithm(
+                'view',
+                self.path,
+                Settings.path('Graphite'),
+                '{mesh}', # arguments template
+                None,
+                [],
+                mesh = str(self.get_file(self.FILENAMES.SURFACE_LABELING_MESH_GEOGRAM,    True))
+            )
         else:
             raise Exception(f"labeling.view() does not recognize 'what' value: '{what}'")
     
@@ -593,9 +604,24 @@ class labeling(AbstractDataFolder):
         elif filename in [self.FILENAMES.TET_MESH_REMESHED_MEDIT, self.FILENAMES.TET_MESH_REMESHED_LABELING_TXT, self.FILENAMES.POLYCUBOID_MESH_MEDIT]:
             self.rb_generate_deformation()
             return self.get_file(filename,True)
+        elif filename == self.FILENAMES.SURFACE_LABELING_MESH_GEOGRAM:
+            self.write_geogram()
+            return self.get_file(filename,True)
         raise Exception(f'Missing file {path}')
         
     # ----- Transformative algorithms (modify current folder) --------------------
+
+    def write_geogram(self):
+        parent_tet_mesh = self.get_closest_parent_of_type('tet_mesh')
+        TransformativeAlgorithm(
+            'volume_labeling',
+            self.path,
+            Settings.path('automatic_polycube') / 'labeling_viewer', # use labeling_viewer to generate a .geogram file
+            '{surface_mesh} {surface_labeling} {output_geogram}',
+            surface_mesh        = str(parent_tet_mesh.get_file(tet_mesh.FILENAMES.SURFACE_MESH_OBJ,     True)),
+            surface_labeling    = str(self.get_file(self.FILENAMES.SURFACE_LABELING_TXT,                True)),
+            output_geogram      = str(self.get_file(self.FILENAMES.SURFACE_LABELING_MESH_GEOGRAM            ))
+        )
         
     def volume_labeling(self):
         parent = AbstractDataFolder.instantiate(self.path.parent) # we need the parent folder to get the surface map
