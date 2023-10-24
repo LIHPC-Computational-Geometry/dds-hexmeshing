@@ -79,15 +79,17 @@ class AbstractDataFolder(ABC):
                 Exception('get_closest_parent_of_type() found an invalid parent folder before the requested folder type')
             return parent.get_closest_parent_of_type(type_str) # recursive exploration
         
-    def list_children(self) -> list:
-        children = list() # list of tuples : subfolder name & type
+    def list_children(self, recursive=True) -> list:
+        children = list() # list of tuples : subfolder path & type
         for subfolder in [x for x in sorted(self.path.iterdir()) if x.is_dir()]:
             instanciated_subfolder = None
             try:
                 instanciated_subfolder = AbstractDataFolder.instantiate(subfolder)
             except Exception:
                 pass # ignore exception raised when type inference failed
-            children.append((subfolder.name,'?' if instanciated_subfolder == None else instanciated_subfolder.type()))
+            children.append((subfolder,'?' if instanciated_subfolder == None else instanciated_subfolder.type()))
+            if recursive and instanciated_subfolder != None:
+                children.extend(instanciated_subfolder.list_children(True))
         return children
         
     def enumerate_children(self, type_filter = None, recursive=True, depth=0):
