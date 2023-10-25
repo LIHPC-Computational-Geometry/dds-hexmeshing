@@ -99,14 +99,16 @@ class AbstractDataFolder(ABC):
         return children
         
     def print_children(self, type_filter = [], recursive=False, parent_tree=None, cached_data_folder_path = Settings.path('data_folder')):
-        # TODO fix output when recusive and a type_filter is set
-        path_str = lambda path : path.name if recursive else str(path.relative_to(cached_data_folder_path)) # folder name or relative path according to recursivity
+        path_str = lambda path : path.name if (type_filter != [] and not recursive) else str(path.relative_to(cached_data_folder_path)) # folder name or relative path according to recursivity
         formatted_text = lambda path, type_str: f'[orange1]{path_str(path)}[/] [bright_black]{type_str}[/]' if type_str == '?' \
                                                     else f'{path_str(path)} [bright_black]{type_str}[/]' # defaut formatting, and formatting in case of an unknown folder type
-        tree = parent_tree if parent_tree != None else Tree(str(self.path))
+        tree = parent_tree if parent_tree != None else Tree(str(self.path),hide_root=True)
         subtree = None
         for path,type_str in self.list_children([],False): # type filtering & recursion needed to be managed outside list_children()
-            if type_filter == [] or type_str in type_filter:
+            if type_filter != [] and type_str in type_filter and recursive:
+                tree.add(formatted_text(path,type_str))
+                subtree = tree
+            elif type_filter == [] or type_str in type_filter:
                 subtree = tree.add(formatted_text(path,type_str)) # add a branch to the parent tree
             if recursive and type_str != '?':
                 AbstractDataFolder.instantiate(path).print_children(type_filter,True,subtree,cached_data_folder_path)
