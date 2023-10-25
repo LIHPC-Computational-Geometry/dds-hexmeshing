@@ -83,19 +83,32 @@ class AbstractDataFolder(ABC):
                 Exception('get_closest_parent_of_type() found an invalid parent folder before the requested folder type')
             return parent.get_closest_parent_of_type(type_str) # recursive exploration
         
-    def list_children(self, type_filter = [], recursive=True) -> list:
+    def list_children(self, type_filter = [], algo_filter = [], recursive=True) -> list:
         children = list() # list of tuples : subfolder path & type
         for subfolder in [x for x in sorted(self.path.iterdir()) if x.is_dir()]:
             instanciated_subfolder = None
+            algo_str = '?'
+            # the generative algo name could be retreived after instanciation, with get_info_dict()
+            # BUT an info.json file may exist while the folder is not recognized (no type)
+            # -> read info.json before instantiate()
+            if (subfolder / 'info.json').exists():
+                with open(subfolder / 'info.json') as info_json_file:
+                    info_dict = load(info_json_file)
+                    for algo_info in info_dict.values():
+                        if 'GenerativeAlgorithm' in algo_info:
+                            algo_str = algo_info['GenerativeAlgorithm']
+                        elif 'InteractiveGenerativeAlgorithm' in algo_info:
+                            algo_str = algo_info['InteractiveGenerativeAlgorithm']
             try:
                 instanciated_subfolder = AbstractDataFolder.instantiate(subfolder)
             except Exception:
                 pass # ignore exception raised when type inference failed
             type_str = '?' if instanciated_subfolder == None else instanciated_subfolder.type()
-            if type_filter == [] or type_str in type_filter: # no type filter
+            if (type_filter == [] or type_str in type_filter) and \
+               (algo_filter == [] or algo_str in algo_filter):
                 children.append((subfolder,type_str))
             if recursive and instanciated_subfolder != None:
-                children.extend(instanciated_subfolder.list_children(type_filter,True))
+                children.extend(instanciated_subfolder.list_children(type_filter,algo_filter,True))
         return children
         
     def print_children(self, type_filter = [], recursive=False, parent_tree=None, cached_data_folder_path = Settings.path('data_folder')):
