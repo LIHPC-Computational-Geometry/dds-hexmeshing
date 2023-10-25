@@ -96,12 +96,14 @@ class AbstractDataFolder(ABC):
         return children
         
     def print_children(self, type_filter = [], recursive=False, depth=0):
-        for path,type_str in self.list_children(type_filter if not recursive else [],False):
+        data_folder_path = Settings.path('data_folder')
+        for path,type_str in self.list_children([],False): # type filtering & recursion needed to be managed outside list_children()
             if type_filter == []: # if no type filter, left margin according to depth
                 for _ in range(depth):
                     print('\t',end='')
-            if not recursive or type_str in type_filter: # if not recusive, filter is already applied in list_children()
-                print(f'{path} (type {type_str})')
+            if type_filter == [] or type_str in type_filter:
+                path_str = path.name if recursive else str(path.relative_to(data_folder_path))
+                print(f'{path_str} (type {type_str})')
             if recursive and type_str != '?':
                 AbstractDataFolder.instantiate(path).print_children(type_filter,True,depth+1)
             
