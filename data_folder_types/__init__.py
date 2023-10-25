@@ -5,6 +5,8 @@ from os import mkdir, unlink, curdir
 from shutil import copyfile, move, rmtree, unpack_archive
 from tempfile import mkdtemp
 from urllib import request
+from rich.table import Table
+from rich.console import Console
 
 from settings import *
 from algorithms import *
@@ -114,6 +116,9 @@ class AbstractDataFolder(ABC):
             return load(info_json_file)
         
     def print_history(self):
+        table = Table()
+        table.add_column("Datetime", style="cyan")
+        table.add_column("Name")
         for datetime, algo_info in self.get_info_dict().items(): # for each top-level entry in info.json
             datetime = datetime.replace('T',' ')[0:-1] # use a space separator between date and time (instead of 'T') & remove trailing 'Z'
             algo_name = '?'
@@ -123,7 +128,9 @@ class AbstractDataFolder(ABC):
                 algo_name = algo_info['InteractiveGenerativeAlgorithm']
             elif 'TransformativeAlgorithm' in algo_info:
                 algo_name = algo_info['TransformativeAlgorithm']
-            print(f'{datetime} {algo_name}')
+            table.add_row(datetime,algo_name)
+        console = Console()
+        console.print(table)
             
 # Checklist for creating a subclass = a new kind of data folder
 # - for almost all cases, __init__(self,path) just need to call AbstractDataFolder.__init__(self,path)
