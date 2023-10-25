@@ -106,6 +106,12 @@ class AbstractDataFolder(ABC):
                 print(f'{path_str} (type {type_str})')
             if recursive and type_str != '?':
                 AbstractDataFolder.instantiate(path).print_children(type_filter,True,depth+1)
+
+    def get_info_dict(self) -> dict:
+        if not (self.path / 'info.json').exists():
+            return dict() # empty dict
+        with open(self.path / 'info.json') as info_json_file:
+            return load(info_json_file)
             
 # Checklist for creating a subclass = a new kind of data folder
 # - for almost all cases, __init__(self,path) just need to call AbstractDataFolder.__init__(self,path)
