@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `cli/global_padding` : post-process a hexahedral mesh by inserting a pillowing layer on the surface (executable from [fprotais/robustPolycube](https://github.com/fprotais/robustPolycube))
 - `cli/print_mesh_stats` : print stats over a tetrahedral mesh (min/max/avg/sd of vertex coordinates, edge length, facet area, cell volume), computed and stored into a JSON file
+- `cli/print_history` : print the date and name of algorithms applied for the input folder
 
 ### Changed
 

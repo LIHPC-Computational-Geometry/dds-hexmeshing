@@ -112,6 +112,17 @@ class AbstractDataFolder(ABC):
             return dict() # empty dict
         with open(self.path / 'info.json') as info_json_file:
             return load(info_json_file)
+        
+    def print_history(self):
+        for datetime_iso, algo_info in self.get_info_dict().items(): # for each top-level entry in info.json
+            algo_name = '?'
+            if 'GenerativeAlgorithm' in algo_info:
+                algo_name = algo_info['GenerativeAlgorithm']
+            elif 'InteractiveGenerativeAlgorithm' in algo_info:
+                algo_name = algo_info['InteractiveGenerativeAlgorithm']
+            elif 'TransformativeAlgorithm' in algo_info:
+                algo_name = algo_info['TransformativeAlgorithm']
+            print(f'{datetime_iso} {algo_name}')
             
 # Checklist for creating a subclass = a new kind of data folder
 # - for almost all cases, __init__(self,path) just need to call AbstractDataFolder.__init__(self,path)
