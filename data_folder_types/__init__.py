@@ -61,9 +61,10 @@ class AbstractDataFolder(ABC):
         """
         Instanciate an AbstractDataFolder subclass by infering the type of the given data folder
         """
+        path = Path(path) # ensure we can call pathlib methods on path
         data_folder = Settings.path('data_folder')
         assert(data_folder.is_dir())
-        if not Path.relative_to(path,data_folder):
+        if not path.is_relative_to(data_folder): # new in Python 3.9, depreciated since 3.12 https://docs.python.org/3/library/pathlib.html#pathlib.PurePath.is_relative_to
             raise Exception(f'Forbidden instanciation because {path.absolute()} is not inside the current data folder {str(data_folder)} (see {Settings.FILENAME})')
         return (AbstractDataFolder.type_inference(path))(path)
     
