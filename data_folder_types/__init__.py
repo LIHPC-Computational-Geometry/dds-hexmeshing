@@ -94,26 +94,15 @@ class AbstractDataFolder(ABC):
                 children.extend(instanciated_subfolder.list_children(type_filter,True))
         return children
         
-    def enumerate_children(self, type_filter = None, recursive=True, depth=0):
-        # instanciate subfolders and call enumerate_children() recursively
-        for subfolder in [x for x in sorted(self.path.iterdir()) if x.is_dir()]:
-            instanciated_subfolder = None
-            try:
-                instanciated_subfolder = AbstractDataFolder.instantiate(subfolder)
-            except Exception:
-                pass # ignore exception raised when type inference failed
-            type_str = '?' if instanciated_subfolder == None else instanciated_subfolder.type()
-            if type_filter == None or type_str == type_filter:
-                if type_filter == None:
-                    # if no type filter, left margin according to depth, print folder name & type
-                    for _ in range(depth):
-                        print('\t',end='')
-                    print(f'{subfolder.name} ({type_str})')
-                else:
-                    print(subfolder)  # if a type filter is applied, no left margin, print full path and don't print type
-            # else : do not print this subfolder because type-filtered. but still explore its children
-            if recursive and instanciated_subfolder != None:
-                instanciated_subfolder.enumerate_children(type_filter,True,depth+1)
+    def print_children(self, type_filter = [], recursive=False, depth=0):
+        for path,type_str in self.list_children(type_filter if not recursive else [],False):
+            if type_filter == []: # if no type filter, left margin according to depth
+                for _ in range(depth):
+                    print('\t',end='')
+            if not recursive or type_str in type_filter: # if not recusive, filter is already applied in list_children()
+                print(f'{path} (type {type_str})')
+            if recursive and type_str != '?':
+                AbstractDataFolder.instantiate(path).print_children(type_filter,True,depth+1)
             
 # Checklist for creating a subclass = a new kind of data folder
 # - for almost all cases, __init__(self,path) just need to call AbstractDataFolder.__init__(self,path)
