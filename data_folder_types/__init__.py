@@ -7,6 +7,7 @@ from tempfile import mkdtemp
 from urllib import request
 from rich.table import Table
 from rich.console import Console
+from rich.tree import Tree
 
 from settings import *
 from algorithms import *
@@ -97,17 +98,22 @@ class AbstractDataFolder(ABC):
                 children.extend(instanciated_subfolder.list_children(type_filter,True))
         return children
         
-    def print_children(self, type_filter = [], recursive=False, depth=0):
+    def print_children(self, type_filter = [], recursive=False, parent_tree=None):
+        # TODO fix output when recusive and a type_filter is set
         data_folder_path = Settings.path('data_folder')
+        path_str = lambda path : path.name if recursive else str(path.relative_to(data_folder_path)) # folder name or relative path according to recursivity
+        formatted_text = lambda path, type_str: f'[orange1]{path_str(path)}[/] [bright_black]{type_str}[/]' if type_str == '?' \
+                                                    else f'{path_str(path)} [bright_black]{type_str}[/]' # defaut formatting, and formatting in case of an unknown folder type
+        tree = parent_tree if parent_tree != None else Tree(str(self.path))
+        subtree = None
         for path,type_str in self.list_children([],False): # type filtering & recursion needed to be managed outside list_children()
-            if type_filter == []: # if no type filter, left margin according to depth
-                for _ in range(depth):
-                    print('\t',end='')
             if type_filter == [] or type_str in type_filter:
-                path_str = path.name if recursive else str(path.relative_to(data_folder_path))
-                print(f'{path_str} (type {type_str})')
+                subtree = tree.add(formatted_text(path,type_str)) # add a branch to the parent tree
             if recursive and type_str != '?':
-                AbstractDataFolder.instantiate(path).print_children(type_filter,True,depth+1)
+                AbstractDataFolder.instantiate(path).print_children(type_filter,True,subtree)
+        if parent_tree == None: # if we are in the top-level function call
+            console = Console()
+            console.print(tree)
 
     def get_info_dict(self) -> dict:
         if not (self.path / 'info.json').exists():
