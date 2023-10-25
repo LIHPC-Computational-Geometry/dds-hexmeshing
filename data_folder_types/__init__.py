@@ -71,6 +71,22 @@ class AbstractDataFolder(ABC):
             raise Exception(f'Forbidden instanciation because {path.absolute()} is not inside the current data folder {str(data_folder)} (see {Settings.FILENAME})')
         return (AbstractDataFolder.type_inference(path))(path)
     
+    @staticmethod
+    def get_generative_algorithm(path: Path) -> str:
+        algo_str = ''
+        # the generative algo name could be retreived after instanciation, with get_info_dict()
+        # BUT an info.json file may exist while the folder is not recognized (no type)
+        # -> read info.json before instantiate()
+        if (path / 'info.json').exists():
+            with open(path / 'info.json') as info_json_file:
+                info_dict = load(info_json_file)
+                for algo_info in info_dict.values():
+                    if 'GenerativeAlgorithm' in algo_info:
+                        algo_str = algo_info['GenerativeAlgorithm']
+                    elif 'InteractiveGenerativeAlgorithm' in algo_info:
+                        algo_str = algo_info['InteractiveGenerativeAlgorithm']
+        return algo_str
+    
     def get_closest_parent_of_type(self, type_str : str):
         while(1):
             parent = None
@@ -87,18 +103,8 @@ class AbstractDataFolder(ABC):
         children = list() # list of tuples : subfolder path & type
         for subfolder in [x for x in sorted(self.path.iterdir()) if x.is_dir()]:
             instanciated_subfolder = None
-            algo_str = '?'
-            # the generative algo name could be retreived after instanciation, with get_info_dict()
-            # BUT an info.json file may exist while the folder is not recognized (no type)
-            # -> read info.json before instantiate()
-            if (subfolder / 'info.json').exists():
-                with open(subfolder / 'info.json') as info_json_file:
-                    info_dict = load(info_json_file)
-                    for algo_info in info_dict.values():
-                        if 'GenerativeAlgorithm' in algo_info:
-                            algo_str = algo_info['GenerativeAlgorithm']
-                        elif 'InteractiveGenerativeAlgorithm' in algo_info:
-                            algo_str = algo_info['InteractiveGenerativeAlgorithm']
+            algo_str = AbstractDataFolder.get_generative_algorithm(subfolder)
+            algo_str = '?' if algo_str == None else algo_str
             try:
                 instanciated_subfolder = AbstractDataFolder.instantiate(subfolder)
             except Exception:
@@ -111,20 +117,26 @@ class AbstractDataFolder(ABC):
                 children.extend(instanciated_subfolder.list_children(type_filter,algo_filter,True))
         return children
         
-    def print_children(self, type_filter = [], recursive=False, parent_tree=None, cached_data_folder_path = Settings.path('data_folder')):
-        path_str = lambda path : path.name if ((type_filter != []) ^ recursive) else str(path.relative_to(cached_data_folder_path)) # folder name or relative path
+    def print_children(self, type_filter = [], algo_filter = [], recursive=False, parent_tree=None, cached_data_folder_path = Settings.path('data_folder')):
+        path_str = lambda path : path.name if ((type_filter != [] or algo_filter != []) ^ recursive) else str(path.relative_to(cached_data_folder_path)) # folder name or relative path
         formatted_text = lambda path, type_str: f'[orange1]{path_str(path)}[/] [bright_black]{type_str}[/]' if type_str == '?' \
                                                     else f'{path_str(path)} [bright_black]{type_str}[/]' # defaut formatting, and formatting in case of an unknown folder type
         tree = parent_tree if parent_tree != None else Tree('',hide_root=True)
         subtree = None
-        for path,type_str in self.list_children([],False): # type filtering & recursion needed to be managed outside list_children()
-            if type_filter != [] and type_str in type_filter :
-                tree.add(formatted_text(path,type_str))
-                subtree = tree # for recursive calls, add elements to 'tree' and not to the just-added branch -> print a list (hide root is on)
-            elif type_filter == [] or type_str in type_filter:
-                subtree = tree.add(formatted_text(path,type_str)) # add a branch to 'tree'. for recursive calls, add elements to the just-added branch
+        for path,type_str in self.list_children([],[],False): # type filtering & recursion needed to be managed outside list_children()
+            algo_str = AbstractDataFolder.get_generative_algorithm(path) # TODO avoid 2nd call? (already one in list_children())
+            algo_str = '?' if algo_str == None else algo_str
+            # filter: should this path be printed?
+            if (type_filter == [] or type_str in type_filter) and \
+               (algo_filter == [] or algo_str in algo_filter):
+                # kind of display: list/tree
+                if type_filter != [] or algo_filter != []:
+                    tree.add(formatted_text(path,type_str))
+                    subtree = tree # for recursive calls, add elements to 'tree' and not to the just-added branch -> print a list (hide root is on)
+                else:
+                    subtree = tree.add(formatted_text(path,type_str)) # add a branch to 'tree'. for recursive calls, add elements to the just-added branch
             if recursive and type_str != '?':
-                AbstractDataFolder.instantiate(path).print_children(type_filter,True,subtree,cached_data_folder_path)
+                AbstractDataFolder.instantiate(path).print_children(type_filter,algo_filter,True,subtree,cached_data_folder_path)
             # else : recusivity is off, or 'path' cannot be instanciated
         if parent_tree == None: # if we are in the top-level function call
             console = Console()
