@@ -114,7 +114,8 @@ class AbstractDataFolder(ABC):
             return load(info_json_file)
         
     def print_history(self):
-        for datetime_iso, algo_info in self.get_info_dict().items(): # for each top-level entry in info.json
+        for datetime, algo_info in self.get_info_dict().items(): # for each top-level entry in info.json
+            datetime = datetime.replace('T',' ')[0:-1] # use a space separator between date and time (instead of 'T') & remove trailing 'Z'
             algo_name = '?'
             if 'GenerativeAlgorithm' in algo_info:
                 algo_name = algo_info['GenerativeAlgorithm']
@@ -122,7 +123,7 @@ class AbstractDataFolder(ABC):
                 algo_name = algo_info['InteractiveGenerativeAlgorithm']
             elif 'TransformativeAlgorithm' in algo_info:
                 algo_name = algo_info['TransformativeAlgorithm']
-            print(f'{datetime_iso} {algo_name}')
+            print(f'{datetime} {algo_name}')
             
 # Checklist for creating a subclass = a new kind of data folder
 # - for almost all cases, __init__(self,path) just need to call AbstractDataFolder.__init__(self,path)
