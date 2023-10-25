@@ -10,6 +10,13 @@ parser = ArgumentParser(
     description='Parse subfolders of the current data folder and print their type')
 
 parser.add_argument(
+    '-i', '--input',
+    dest='input',
+    metavar='PATH',
+    help='path to the input data folder',
+    required=False)
+
+parser.add_argument(
     '--type',
     dest='type',
     metavar='STRING',
@@ -24,5 +31,6 @@ parser.add_argument(
 
 args = parser.parse_args()
 
-root_folder = root()
-root_folder.print_children([] if args.type == None else [args.type],args.recursive)
+
+input_folder = root() if args.input == None else AbstractDataFolder.instantiate(args.input)
+input_folder.print_children([] if args.type == None else [args.type],args.recursive)
