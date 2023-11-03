@@ -74,6 +74,44 @@ CAD_models_updated_since = [
 # B40
 # B41
 
+def import_single_folder(input_path: Path, output_path: Path):
+    if output_path.name in CAD_models_updated_since:
+        logging.info(f'{output_path.name} rename to {output_path.name}_v2022')
+        output_path = output_path.parent / (output_path.name + '_v2022')
+    if output_path.exists():
+        logging.error(f'The output folder {output_path} already exists. Overwriting not allowed.')
+    else:
+        # copy the STEP file
+        mkdir(output_path)
+        console.print(f'[bright_black]importing[/] [default]{input_path.name}...[/]', end='')
+        copyfile(input_path / 'input.step', output_path / step.FILENAMES.STEP)
+        # copy the tetrahedral mesh
+        tet_mesh_data_subfolder = output_path / 'Gmsh_0.2'
+        mkdir(tet_mesh_data_subfolder)
+        copyfile(input_path / 'tetra.mesh',         tet_mesh_data_subfolder / tet_mesh.FILENAMES.TET_MESH_MEDIT)
+        copyfile(input_path / 'boundary.obj',       tet_mesh_data_subfolder / tet_mesh.FILENAMES.SURFACE_MESH_OBJ)
+        copyfile(input_path / 'tris_to_tets.txt',   tet_mesh_data_subfolder / tet_mesh.FILENAMES.SURFACE_MAP_TXT)
+        for i in range(4):
+            copyfile(input_path / f'fig1_{i}.png', tet_mesh_data_subfolder / f'evocube_fig_{i}.png') # copy figures
+        # copy the labeling
+        labeling_data_subfolder = tet_mesh_data_subfolder / 'evocube_20220412'
+        mkdir(labeling_data_subfolder)
+        copyfile(input_path / 'labeling.txt',           labeling_data_subfolder / labeling.FILENAMES.SURFACE_LABELING_TXT)
+        copyfile(input_path / 'labeling_init.txt',      labeling_data_subfolder / 'initial_surface_labeling.txt')
+        copyfile(input_path / 'labeling_on_tets.txt',   labeling_data_subfolder / labeling.FILENAMES.VOLUME_LABELING_TXT)
+        copyfile(input_path / 'logs.json',              labeling_data_subfolder / 'evocube.logs.json')
+        copyfile(input_path / 'fast_polycube_surf.obj', labeling_data_subfolder / labeling.FILENAMES.POLYCUBE_SURFACE_MESH_OBJ) # fast floating-point surface of the polycube
+        copyfile(input_path / 'polycube_surf_int.obj',  labeling_data_subfolder / 'fastbndpolycube_int.obj')                    # fast integer surface of the polycube (?? I didn't found integer coordinates)
+        copyfile(input_path / 'polycube_tets_int.mesh', labeling_data_subfolder / 'fastbndpolycube_int.mesh')                   # volume mesh of the precedent mesh
+        for i in range(4):
+            copyfile(input_path / f'fig4_{i}.png', labeling_data_subfolder / f'evocube_fig_{i}_labeling.png') # copy labeling figures
+            copyfile(input_path / f'fig0_{i}.png', labeling_data_subfolder / f'evocube_fig_{i}_polycube.png') # copy polycube figures
+        # copy the hexahedral mesh
+        hex_mesh_data_subfolder = labeling_data_subfolder / 'polycube_withHexEx_1.3'
+        mkdir(hex_mesh_data_subfolder)
+        copyfile(input_path / 'hexes.mesh', hex_mesh_data_subfolder / hex_mesh.FILENAMES.HEX_MESH_MEDIT)
+        console.print('[green]Done[/]')
+
 input_folder = Path(args.input)
 console = Console()
 
@@ -87,37 +125,4 @@ if not (input_folder / 'medium_mambo').exists():
 else:
     # for each medium_mambo entry in the Evocube results
     for medium_mambo_entry in [x for x in (input_folder / 'medium_mambo').iterdir() if x.is_dir()]:
-        CAD_data_subfolder = root_folder.path / medium_mambo_entry.name
-        if (CAD_data_subfolder).exists():
-            logging.error(f'Already a folder {medium_mambo_entry.name} in {root_folder.path}. Overwriting not allowed.')
-        else:
-            # copy the STEP file
-            mkdir(CAD_data_subfolder)
-            console.print(f'[bright_black]importing[/] [default]{medium_mambo_entry.name}...[/]', end='')
-            copyfile(medium_mambo_entry / 'input.step', CAD_data_subfolder / step.FILENAMES.STEP)
-            # copy the tetrahedral mesh
-            tet_mesh_data_subfolder = CAD_data_subfolder / 'Gmsh_0.2'
-            mkdir(tet_mesh_data_subfolder)
-            copyfile(medium_mambo_entry / 'tetra.mesh',         tet_mesh_data_subfolder / tet_mesh.FILENAMES.TET_MESH_MEDIT)
-            copyfile(medium_mambo_entry / 'boundary.obj',       tet_mesh_data_subfolder / tet_mesh.FILENAMES.SURFACE_MESH_OBJ)
-            copyfile(medium_mambo_entry / 'tris_to_tets.txt',   tet_mesh_data_subfolder / tet_mesh.FILENAMES.SURFACE_MAP_TXT)
-            for i in range(4):
-                copyfile(medium_mambo_entry / f'fig1_{i}.png', tet_mesh_data_subfolder / f'evocube_fig_{i}.png') # copy figures
-            # copy the labeling
-            labeling_data_subfolder = tet_mesh_data_subfolder / 'evocube_20220412'
-            mkdir(labeling_data_subfolder)
-            copyfile(medium_mambo_entry / 'labeling.txt',           labeling_data_subfolder / labeling.FILENAMES.SURFACE_LABELING_TXT)
-            copyfile(medium_mambo_entry / 'labeling_init.txt',      labeling_data_subfolder / 'initial_surface_labeling.txt')
-            copyfile(medium_mambo_entry / 'labeling_on_tets.txt',   labeling_data_subfolder / labeling.FILENAMES.VOLUME_LABELING_TXT)
-            copyfile(medium_mambo_entry / 'logs.json',              labeling_data_subfolder / 'evocube.logs.json')
-            copyfile(medium_mambo_entry / 'fast_polycube_surf.obj', labeling_data_subfolder / labeling.FILENAMES.POLYCUBE_SURFACE_MESH_OBJ) # fast floating-point surface of the polycube
-            copyfile(medium_mambo_entry / 'polycube_surf_int.obj',  labeling_data_subfolder / 'fastbndpolycube_int.obj')                    # fast integer surface of the polycube (?? I didn't found integer coordinates)
-            copyfile(medium_mambo_entry / 'polycube_tets_int.mesh', labeling_data_subfolder / 'fastbndpolycube_int.mesh')                   # volume mesh of the precedent mesh
-            for i in range(4):
-                copyfile(medium_mambo_entry / f'fig4_{i}.png', labeling_data_subfolder / f'evocube_fig_{i}_labeling.png') # copy labeling figures
-                copyfile(medium_mambo_entry / f'fig0_{i}.png', labeling_data_subfolder / f'evocube_fig_{i}_polycube.png') # copy polycube figures
-            # copy the hexahedral mesh
-            hex_mesh_data_subfolder = labeling_data_subfolder / 'polycube_withHexEx_1.3'
-            mkdir(hex_mesh_data_subfolder)
-            copyfile(medium_mambo_entry / 'hexes.mesh', hex_mesh_data_subfolder / hex_mesh.FILENAMES.HEX_MESH_MEDIT)
-            console.print('[green]Done[/]')
+        import_single_folder(medium_mambo_entry, root_folder.path / medium_mambo_entry.name)
