@@ -4,11 +4,12 @@
 # https://github.com/LIHPC-Computational-Geometry/evocube/blob/master/app/init_from_folder.cpp
 # 
 # 3 CAD datasets                                                     
-# - ABC subset       -----------[Gmsh]------------>  Tetrahedral mesh  --[evolabel]->  Labeling  --[polycube_withHexEx]->  Hexahedral mesh
-# - MAMBO            CharacteristicLengthFactor=0.2*                                                    scale=1.3
-# - OctreeMeshing          see step_to_tet.py
+# - ABC subset (.step)       -----------[Gmsh]------------>  Tetrahedral mesh  --[evolabel]->  Labeling  --[polycube_withHexEx]->  Hexahedral mesh
+# - MAMBO (.step)            CharacteristicLengthFactor=0.2*                                                    scale=1.3
+# - OctreeMeshing (.obj)           see step_to_tet.py
+#                          if input.obj: volume mesh with TetGen
 #
-# lastest Evocube version now uses a CharacteristicLengthFactor of 0.05
+# *lastest Evocube version now uses a CharacteristicLengthFactor of 0.05
 from argparse import ArgumentParser
 
 from data_folder_types import *
@@ -74,6 +75,8 @@ CAD_models_updated_since = [
 # B40
 # B41
 
+console = Console()
+
 def import_single_folder(input_path: Path, output_path: Path):
     if output_path.name in CAD_models_updated_since:
         logging.info(f'{output_path.name} rename to {output_path.name}_v2022')
@@ -81,18 +84,32 @@ def import_single_folder(input_path: Path, output_path: Path):
     if output_path.exists():
         logging.error(f'The output folder {output_path} already exists. Overwriting not allowed.')
     else:
-        # copy the STEP file
-        mkdir(output_path)
-        console.print(f'[bright_black]importing[/] [default]{input_path.name}...[/]', end='')
-        copyfile(input_path / 'input.step', output_path / step.FILENAMES.STEP)
+        tet_mesh_data_subfolder = None
+        console.print(f'[bright_black]importing [default]{input_path.name}[bright_black]... [/]', end='')
+        if (input_path / 'input.step').exists(): # case of an Evocube output where the input was a STEP file
+            # copy the STEP file
+            mkdir(output_path)
+            copyfile(input_path / 'input.step', output_path / step.FILENAMES.STEP)
+            if not (input_path / 'tetra.mesh').exists(): # needed because abca_00005202, abca_00006259, abca_00006260, abca_00009082 don't have a tet mesh
+                console.print('[orange_red1]Incomplete[/]')
+                logging.warning(f'{input_path} has no tetra.mesh. Skipped')
+                return
+            tet_mesh_data_subfolder = output_path / 'Gmsh_0.2'
+            mkdir(tet_mesh_data_subfolder)
+        else : # case of an Evocube output where the input was a mesh (no STEP file)
+            # no step data folder at the root, directly a tet_mesh data folder
+            tet_mesh_data_subfolder = output_path.parent / (output_path.name + '__TetGen') # indicate in the folder name it's a mesh processed by TetGen
+            mkdir(tet_mesh_data_subfolder)
+            if (input_path / 'input.obj').exists():
+                copyfile(input_path / 'input.obj', tet_mesh_data_subfolder / 'input.obj')
         # copy the tetrahedral mesh
-        tet_mesh_data_subfolder = output_path / 'Gmsh_0.2'
-        mkdir(tet_mesh_data_subfolder)
         copyfile(input_path / 'tetra.mesh',         tet_mesh_data_subfolder / tet_mesh.FILENAMES.TET_MESH_MEDIT)
         copyfile(input_path / 'boundary.obj',       tet_mesh_data_subfolder / tet_mesh.FILENAMES.SURFACE_MESH_OBJ)
         copyfile(input_path / 'tris_to_tets.txt',   tet_mesh_data_subfolder / tet_mesh.FILENAMES.SURFACE_MAP_TXT)
         for i in range(4):
             copyfile(input_path / f'fig1_{i}.png', tet_mesh_data_subfolder / f'evocube_fig_{i}.png') # copy figures
+        if (input_path / 'screenshot.png').exists():
+            copyfile(input_path / 'screenshot.png',   tet_mesh_data_subfolder / 'evocube_screenshot.png') # some folder also have a screenshot.png (only OM_cad it look like)
         # copy the labeling
         labeling_data_subfolder = tet_mesh_data_subfolder / 'evocube_20220412'
         mkdir(labeling_data_subfolder)
@@ -113,16 +130,47 @@ def import_single_folder(input_path: Path, output_path: Path):
         console.print('[green]Done[/]')
 
 input_folder = Path(args.input)
-console = Console()
 
 if not input_folder.exists():
     raise Exception(f'{input_folder} does not exist')
 
-# medium_mambo subfolder
+# TODO create collections:
+# - Evocube_12_Avril_CAD_ABC
+# - Evocube_12_Avril_CAD_MAMBO
+# - Evocube_12_Avril_CAD
+# - Evocube_12_Avril_tet_meshes_ABC
+# - Evocube_12_Avril_tet_meshes_MAMBO
+# - Evocube_12_Avril_tet_meshes_OM_CAD
+# - Evocube_12_Avril_tet_meshes_OM_smooth
+# - Evocube_12_Avril_tet_meshes_OM
+# - Evocube_12_Avril_tet_meshes
+# - Evocube_12_Avril_labelings_ABC
+# - Evocube_12_Avril_labelings_MAMBO
+# - Evocube_12_Avril_labelings_OM_CAD
+# - Evocube_12_Avril_labelings_OM_smooth
+# - Evocube_12_Avril_labelings_OM
+# - Evocube_12_Avril_labelings
+# - Evocube_12_Avril_hex_meshes_ABC
+# - Evocube_12_Avril_hex_meshes_MAMBO
+# - Evocube_12_Avril_hex_meshes_OM_CAD
+# - Evocube_12_Avril_hex_meshes_OM_smooth
+# - Evocube_12_Avril_hex_meshes_OM
+# - Evocube_12_Avril_hex_meshes
 
-if not (input_folder / 'medium_mambo').exists():
-    logging.error(f'`medium_mambo` subfolder not found in {input_folder}')
-else:
-    # for each medium_mambo entry in the Evocube results
-    for medium_mambo_entry in [x for x in (input_folder / 'medium_mambo').iterdir() if x.is_dir()]:
-        import_single_folder(medium_mambo_entry, root_folder.path / medium_mambo_entry.name)
+for input_dataset_group in ['abc','basic_mambo','simple_mambo','medium_mambo']:
+    if not (input_folder / input_dataset_group).exists():
+        logging.error(f'\'{input_dataset_group}\' subfolder not found in {input_folder}')
+    else:
+        console.rule(input_dataset_group,style='default')
+        for entry in [x for x in (input_folder / input_dataset_group).iterdir() if x.is_dir()]:
+            output_3D_model_name = entry.name
+            if input_dataset_group == 'abc':
+                assert(len(output_3D_model_name) == 13)
+                chunk_number = output_3D_model_name[5:9]
+                model_number = output_3D_model_name[9:]
+                # Instead of the 'abca_XXXXXXXX' folder name used inside the DATASET_12_Avril
+                # we will use 'ABC_XXXX_XXXX' in HexMeshWorkshop
+                output_3D_model_name = f'ABC_{chunk_number}_{model_number}'
+            elif entry.name.endswith('_input_tri'): # it seems like every OM_smooth entry has a superfluous '_input_tri' suffix
+                output_3D_model_name = output_3D_model_name[:-10]
+            import_single_folder(entry, root_folder.path / output_3D_model_name)
