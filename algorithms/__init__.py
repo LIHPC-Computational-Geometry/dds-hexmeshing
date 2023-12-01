@@ -1,6 +1,6 @@
 from pathlib import Path
 import time
-import subprocess
+import subprocess_tee
 from os import mkdir
 from shutil import move
 from json import load, dump
@@ -9,7 +9,7 @@ import logging
 from parametric_string import *
 from simple_human_readable_duration import *
 
-def GenerativeAlgorithm(name: str, input_folder, executable: Path, executable_arugments: str, name_template: str, inside_subfolder: list, **kwargs):
+def GenerativeAlgorithm(name: str, input_folder, executable: Path, executable_arugments: str, tree : bool, name_template: str, inside_subfolder: list, **kwargs):
     """
     Define and execute a generative algorithm, that is an algorithm on a data folder which creates a subfolder.
     Wrap an executable and manage command line assembly from parameters, chrono, stdout/stderr files and write a JSON file will all the info.
@@ -53,18 +53,18 @@ def GenerativeAlgorithm(name: str, input_folder, executable: Path, executable_ar
         info_file[start_datetime_iso]['parameters'][k] = v
     # Start chrono, call executable and store stdout/stderr
     chrono_start = time.monotonic()
-    completed_process = subprocess.run(command, shell=True, capture_output=True)
+    completed_process = subprocess_tee.run(command, shell=True, capture_output=True, tee=tree)
     chrono_stop = time.monotonic()
     # write stdout and stderr
-    if completed_process.stdout != b'': # if the subprocess wrote something in standard output
+    if completed_process.stdout != '': # if the subprocess wrote something in standard output
         filename = name + '.stdout.txt'
-        f = open(input_folder / subfolder_name / filename,'xb')# x = create new file, b = binary mode
+        f = open(input_folder / subfolder_name / filename,'x')# x = create new file
         f.write(completed_process.stdout)
         f.close()
         info_file[start_datetime_iso]['stdout'] = filename
-    if completed_process.stderr != b'': # if the subprocess wrote something in standard error
+    if completed_process.stderr != '': # if the subprocess wrote something in standard error
         filename =  name + '.stderr.txt'
-        f = open(input_folder / subfolder_name / filename,'xb')
+        f = open(input_folder / subfolder_name / filename,'x')
         f.write(completed_process.stderr)
         f.close()
         info_file[start_datetime_iso]['stderr'] = filename
@@ -78,7 +78,7 @@ def GenerativeAlgorithm(name: str, input_folder, executable: Path, executable_ar
     #self.completed_process.check_returncode()# will raise a CalledProcessError if non-zero
     return input_folder / subfolder_name
 
-def InteractiveGenerativeAlgorithm(name: str, input_folder, executable: Path, executable_arugments: str, name_template: str = None, inside_subfolder: list = [], **kwargs):
+def InteractiveGenerativeAlgorithm(name: str, input_folder, executable: Path, executable_arugments: str, tree : bool, name_template: str = None, inside_subfolder: list = [], **kwargs):
     """
     Define and execute an interactive generative algorithm, that is an interactive algorithm on a data folder which creates a subfolder (optional).
     Wrap an executable and manage command line assembly from parameters.
@@ -131,20 +131,20 @@ def InteractiveGenerativeAlgorithm(name: str, input_folder, executable: Path, ex
 
     # Start chrono, call executable and store stdout/stderr
     chrono_start = time.monotonic()
-    completed_process = subprocess.run(command, shell=True, capture_output=(name_template != None))
+    completed_process = subprocess_tee.run(command, shell=True, capture_output=(name_template != None), tee=tree)
     chrono_stop = time.monotonic()
 
     if name_template != None:
         # write stdout and stderr
-        if completed_process.stdout != b'': # if the subprocess wrote something in standard output
+        if completed_process.stdout != '': # if the subprocess wrote something in standard output
             filename = name + '.stdout.txt'
-            f = open(input_folder / subfolder_name / filename,'xb')# x = create new file, b = binary mode
+            f = open(input_folder / subfolder_name / filename,'x')# x = create new file
             f.write(completed_process.stdout)
             f.close()
             info_file[start_datetime_iso]['stdout'] = filename
-        if completed_process.stderr != b'': # if the subprocess wrote something in standard error
+        if completed_process.stderr != '': # if the subprocess wrote something in standard error
             filename =  name + '.stderr.txt'
-            f = open(input_folder / subfolder_name / filename,'xb')
+            f = open(input_folder / subfolder_name / filename,'x')
             f.write(completed_process.stderr)
             f.close()
             info_file[start_datetime_iso]['stderr'] = filename
@@ -160,7 +160,7 @@ def InteractiveGenerativeAlgorithm(name: str, input_folder, executable: Path, ex
     else:
         return None # no subfolder created
 
-def TransformativeAlgorithm(name: str, input_folder, executable: Path, executable_arugments: str, **kwargs):
+def TransformativeAlgorithm(name: str, input_folder, executable: Path, executable_arugments: str, tree : bool, **kwargs):
     """
     Define and execute a transformative algorithm, that is an algorithm modifying a data folder without creating a subfolder.
     Wrap an executable and manage command line assembly from parameters, chrono, stdout/stderr files and write a JSON file will all the info.
@@ -193,18 +193,18 @@ def TransformativeAlgorithm(name: str, input_folder, executable: Path, executabl
         info_file[start_datetime_iso]['parameters'][k] = v
     # Start chrono, call executable and store stdout/stderr
     chrono_start = time.monotonic()
-    completed_process = subprocess.run(command, shell=True, capture_output=True)
+    completed_process = subprocess_tee.run(command, shell=True, capture_output=True, tee=tree)
     chrono_stop = time.monotonic()
     # write stdout and stderr
-    if completed_process.stdout != b'': # if the subprocess wrote something in standard output
+    if completed_process.stdout != '': # if the subprocess wrote something in standard output
         filename = name + '.stdout.txt'
-        f = open(input_folder / filename,'xb')# x = create new file, b = binary mode
+        f = open(input_folder / filename,'x')# x = create new file
         f.write(completed_process.stdout)
         f.close()
         info_file[start_datetime_iso]['stdout'] = filename
-    if completed_process.stderr != b'': # if the subprocess wrote something in standard error
+    if completed_process.stderr != '': # if the subprocess wrote something in standard error
         filename =  name + '.stderr.txt'
-        f = open(input_folder / filename,'xb')
+        f = open(input_folder / filename,'x')
         f.write(completed_process.stderr)
         f.close()
         info_file[start_datetime_iso]['stderr'] = filename

@@ -218,6 +218,7 @@ class step(AbstractDataFolder):
                 self.path,
                 Settings.path('Mayo'),
                 '{step} --no-progress', # arguments template
+                True,
                 None,
                 [],
                 step = str(self.get_file(self.FILENAMES.STEP,True))
@@ -239,6 +240,7 @@ class step(AbstractDataFolder):
             self.path,
             Settings.path('Gmsh'),
             '{step} -3 -format mesh -o {output_file} -setnumber Mesh.CharacteristicLengthFactor {characteristic_length_factor} -nt {nb_threads}',
+            True,
             'Gmsh_{characteristic_length_factor}',
             ['output_file'],
             step                            = str(self.get_file(self.FILENAMES.STEP,True)),
@@ -282,6 +284,7 @@ class tet_mesh(AbstractDataFolder):
                 self.path,
                 Settings.path('Graphite'),
                 '{surface_mesh}', # arguments template
+                True,
                 None,
                 [],
                 surface_mesh = str(self.get_file(self.FILENAMES.SURFACE_MESH_OBJ,True))
@@ -322,6 +325,7 @@ class tet_mesh(AbstractDataFolder):
             self.path,
             Settings.path('automatic_polycube') / 'extract_surface',
             '{tet_mesh} {surface_mesh} {surface_map}',
+            True,
             tet_mesh        = str(self.get_file(self.FILENAMES.TET_MESH_MEDIT,      True)),
             surface_mesh    = str(self.get_file(self.FILENAMES.SURFACE_MESH_OBJ         )),
             surface_map     = str(self.get_file(self.FILENAMES.SURFACE_MAP_TXT          ))
@@ -333,6 +337,7 @@ class tet_mesh(AbstractDataFolder):
             self.path,
             Settings.path('Gmsh'),
             '{input} -format vtk -o {output} -save',
+            True,
             input   = str(self.get_file(self.FILENAMES.TET_MESH_MEDIT,  True)),
             output  = str(self.get_file(self.FILENAMES.TET_MESH_VTK         )),
         )
@@ -343,6 +348,7 @@ class tet_mesh(AbstractDataFolder):
             self.path,
             Settings.path('automatic_polycube') / 'mesh_stats',
             '{mesh}',
+            False, # disable tee mode
             mesh = str(self.get_file(self.FILENAMES.TET_MESH_MEDIT,  True)),
         )
         # TODO check if the return code is 0
@@ -362,6 +368,7 @@ class tet_mesh(AbstractDataFolder):
             self.path,
             Settings.path('automatic_polycube') / 'naive_labeling',
             '{surface_mesh} {labeling}',
+            True,
             'naive_labeling',
             ['labeling'],
             surface_mesh    = str(self.get_file(self.FILENAMES.SURFACE_MESH_OBJ,    True)),
@@ -374,6 +381,7 @@ class tet_mesh(AbstractDataFolder):
             self.path,
             Settings.path('automatic_polycube') / 'labeling_painter', 
             '{mesh}', # arguments template
+            True,
             'labeling_painter_%d',
             ['labeling'],
             mesh        = str(self.get_file(self.FILENAMES.SURFACE_MESH_OBJ,    True)),
@@ -386,6 +394,7 @@ class tet_mesh(AbstractDataFolder):
             self.path,
             Settings.path('automatic_polycube') / 'graphcut_labeling', 
             '{mesh}', # arguments template
+            True,
             'graphcut_labeling_%d',
             ['labeling'],
             mesh        = str(self.get_file(self.FILENAMES.SURFACE_MESH_OBJ,    True)),
@@ -406,6 +415,7 @@ class tet_mesh(AbstractDataFolder):
             self.path,
             Settings.path('evocube'),
             '{surface_mesh} {output_folder}',
+            True,
             'evocube_%d',
             [],
             surface_mesh    = str(self.get_file(self.FILENAMES.SURFACE_MESH_OBJ,    True)),
@@ -454,6 +464,7 @@ class tet_mesh(AbstractDataFolder):
             self.path,
             Settings.path('automatic_polycube') / 'automatic_polycube',
             '{surface_mesh}',
+            True,
             'automatic_polycube_%d',
             ['labeling'],
             surface_mesh = str(self.get_file(self.FILENAMES.SURFACE_MESH_OBJ,   True)),
@@ -466,6 +477,7 @@ class tet_mesh(AbstractDataFolder):
             self.path,
             Settings.path('HexBox'), 
             '{mesh}', # arguments template
+            True,
             'HexBox_%d',
             ['labeling'],
             mesh        = str(self.get_file(self.FILENAMES.SURFACE_MESH_OBJ,    True)),
@@ -478,6 +490,7 @@ class tet_mesh(AbstractDataFolder):
             self.path,
             Settings.path('AlgoHex'),
             '-i {tet_mesh} -o {hex_mesh} --igm-out-path {IGM}',
+            True,
             'AlgoHex',
             ['hex_mesh','IGM'],
             tet_mesh    = str(self.get_file(self.FILENAMES.TET_MESH_VTK,    True)),
@@ -491,6 +504,7 @@ class tet_mesh(AbstractDataFolder):
             self.path,
             Settings.path('marchinghex') / 'gridgenerator',
             '{input_mesh} {output_grid_mesh} {scale}',
+            True,
             'marchinghex_{scale}',
             ['output_grid_mesh'],
             input_mesh    = str(self.get_file(self.FILENAMES.TET_MESH_MEDIT,True)),
@@ -531,6 +545,7 @@ class marchinghex_grid(AbstractDataFolder):
                 self.path,
                 Settings.path('Graphite'),
                 '{grid_mesh}', # arguments template
+                True,
                 None,
                 [],
                 grid_mesh = str(self.get_file(self.FILENAMES.GRID_MESH_MEDIT,True))
@@ -556,6 +571,7 @@ class marchinghex_grid(AbstractDataFolder):
             self.path,
             Settings.path('marchinghex') / 'marchinghex_hexmeshing',
             '{grid_mesh} {tet_mesh} {hex_mesh}',
+            True,
             grid_mesh   = str(self.get_file(self.FILENAMES.GRID_MESH_MEDIT,         True)),
             tet_mesh    = str(parent.get_file(tet_mesh.FILENAMES.TET_MESH_MEDIT,    True)),
             hex_mesh    = str(self.path / hex_mesh.FILENAMES.HEX_MESH_MEDIT)
@@ -614,6 +630,7 @@ class labeling(AbstractDataFolder):
                 self.path,
                 Settings.path('automatic_polycube') / 'labeling_viewer',
                 '{surface_mesh} {surface_labeling}', # arguments template
+                True,
                 None,
                 [],
                 surface_mesh        = str(parent.get_file(tet_mesh.FILENAMES.SURFACE_MESH_OBJ,  True)),
@@ -625,6 +642,7 @@ class labeling(AbstractDataFolder):
                 self.path,
                 Settings.path('automatic_polycube') / 'labeling_viewer', 
                 '{surface_mesh} {surface_labeling}', # arguments template
+                True,
                 None,
                 [],
                 surface_mesh        = str(self.get_file(self.FILENAMES.POLYCUBE_SURFACE_MESH_OBJ,   True)), # surface polycube mesh instead of original surface mesh
@@ -636,6 +654,7 @@ class labeling(AbstractDataFolder):
                 self.path,
                 Settings.path('Graphite'),
                 '{mesh}', # arguments template
+                True,
                 None,
                 [],
                 mesh = str(self.get_file(self.FILENAMES.PREPROCESSED_TET_MESH_MEDIT,    True))
@@ -646,6 +665,7 @@ class labeling(AbstractDataFolder):
                 self.path,
                 Settings.path('Graphite'),
                 '{mesh} {lua_script}', # arguments template
+                True,
                 None,
                 [],
                 mesh = str(self.get_file(self.FILENAMES.SURFACE_LABELING_MESH_GEOGRAM,    True)),
@@ -691,6 +711,7 @@ class labeling(AbstractDataFolder):
             self.path,
             Settings.path('automatic_polycube') / 'labeling_viewer', # use labeling_viewer to generate a .geogram file
             '{surface_mesh} {surface_labeling} {output_geogram}',
+            True,
             surface_mesh        = str(surface_mesh_path),
             surface_labeling    = str(self.get_file(self.FILENAMES.SURFACE_LABELING_TXT,                True)),
             output_geogram      = str(self.get_file(output_filename                                         ))
@@ -702,7 +723,8 @@ class labeling(AbstractDataFolder):
         TransformativeAlgorithm(
             'volume_labeling',
             self.path,
-            Settings.path('automatic_polycube') / 'volume_labeling', 
+            Settings.path('automatic_polycube') / 'volume_labeling',
+            True,
             '{surface_labeling} {surface_map} {tetra_labeling}',
             surface_labeling    = str(self.get_file(self.FILENAMES.SURFACE_LABELING_TXT,    True)),
             surface_map         = str(parent.get_file(tet_mesh.FILENAMES.SURFACE_MAP_TXT,   True)),
@@ -717,6 +739,7 @@ class labeling(AbstractDataFolder):
             self.path,
             Settings.path('fastbndpolycube'),
             '{surface_mesh} {surface_labeling} {polycube_mesh}',
+            True,
             surface_mesh        = str(parent.get_file(tet_mesh.FILENAMES.SURFACE_MESH_OBJ,      True)),
             surface_labeling    = str(self.get_file(self.FILENAMES.SURFACE_LABELING_TXT,        True)),
             polycube_mesh       = str(self.get_file(self.FILENAMES.POLYCUBE_SURFACE_MESH_OBJ        ))
@@ -743,6 +766,7 @@ class labeling(AbstractDataFolder):
             self.path,
             Settings.path('preprocess_polycube'),
             '{init_tet_mesh} {preprocessed_tet_mesh} {volume_labeling}',
+            True,
             init_tet_mesh         = str(parent.get_file(tet_mesh.FILENAMES.TET_MESH_MEDIT,      True)),
             preprocessed_tet_mesh = str(self.get_file(self.FILENAMES.PREPROCESSED_TET_MESH_MEDIT    )),
             volume_labeling         = str(self.get_file(self.FILENAMES.VOLUME_LABELING_TXT,     True))
@@ -756,6 +780,7 @@ class labeling(AbstractDataFolder):
             self.path,
             Settings.path('polycube_withHexEx'),
             '{tet_mesh} {volume_labeling} {hex_mesh} {scale}',
+            True,
             'polycube_withHexEx_{scale}',
             ['hex_mesh'],
             tet_mesh        = str(parent.get_file(tet_mesh.FILENAMES.TET_MESH_MEDIT,    True)),
@@ -788,6 +813,7 @@ class labeling(AbstractDataFolder):
             self.path,
             Settings.path('robustPolycube') / 'rb_generate_deformation',
             '{tet_mesh} {volume_labeling} {tet_remeshed} {tet_remeshed_labeling} {polycuboid}',
+            True,
             tet_mesh                = str(parent.get_file(tet_mesh.FILENAMES.TET_MESH_MEDIT,        True)),
             volume_labeling         = str(self.get_file(self.FILENAMES.VOLUME_LABELING_TXT,         True)),
             tet_remeshed            = str(self.get_file(self.FILENAMES.TET_MESH_REMESHED_MEDIT          )),
@@ -819,6 +845,7 @@ class labeling(AbstractDataFolder):
             self.path,
             Settings.path('robustPolycube') / 'rb_generate_quantization',
             '{tet_remeshed} {tet_remeshed_labeling} {polycuboid} {element_sizing} {hex_mesh}',
+            True,
             'robustPolycube_{element_sizing}',
             ['hex_mesh'],
             tet_remeshed            = str(self.get_file(self.FILENAMES.TET_MESH_REMESHED_MEDIT,         True)),
@@ -885,6 +912,7 @@ class hex_mesh(AbstractDataFolder):
                 self.path,
                 Settings.path('automatic_polycube') / 'hex_mesh_viewer',
                 '{mesh}', # arguments template
+                True,
                 None,
                 [],
                 mesh = str(self.get_file(self.FILENAMES.HEX_MESH_MEDIT, True))
@@ -910,6 +938,7 @@ class hex_mesh(AbstractDataFolder):
             self.path,
             Settings.path('ovm.io'),
             '{input} {output}',
+            True,
             input   = str(self.get_file(self.FILENAMES.HEX_MESH_OVM,    True)),
             output  = str(self.get_file(self.FILENAMES.HEX_MESH_MEDIT       )),
         )
@@ -929,6 +958,7 @@ class hex_mesh(AbstractDataFolder):
             self.path,
             Settings.path('robustPolycube') / 'rb_perform_postprocessing',
             '{tet_mesh} {hex_mesh} {improved_hex_mesh}',
+            True,
             'global_padding',
             ['improved_hex_mesh'],
             tet_mesh            = str(tet_mesh_folder.get_file(tet_mesh.FILENAMES.TET_MESH_MEDIT,   True)),

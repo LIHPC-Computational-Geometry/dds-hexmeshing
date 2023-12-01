@@ -9,6 +9,7 @@ dependencies = [
     "gmsh>=4.11.1",
     "rich>=13.6.0",
     "ipython>=8.16.1",
+    "subprocess_tee>=0.4.1",
 ]
 readme = "README.md"
 requires-python = ">= 3.10"
