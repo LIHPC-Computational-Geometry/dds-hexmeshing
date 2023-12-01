@@ -2,6 +2,7 @@
 
 from pathlib import Path
 from argparse import ArgumentParser
+from rich.pretty import pprint
 
 from data_folder_types import *
 
@@ -20,4 +21,4 @@ args = parser.parse_args()
 
 input = AbstractDataFolder.instantiate(Path(args.input))
 mesh_stats_dict = input.get_mesh_stats_dict()
-print(mesh_stats_dict)
+pprint(mesh_stats_dict)
