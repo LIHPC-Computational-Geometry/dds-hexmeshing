@@ -13,10 +13,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `cli/global_padding` : post-process a hexahedral mesh by inserting a pillowing layer on the surface (executable from [fprotais/robustPolycube](https://github.com/fprotais/robustPolycube))
 - `cli/print_mesh_stats` : print stats over a tetrahedral mesh (min/max/avg/sd of vertex coordinates, edge length, facet area, cell volume), computed and stored into a JSON file
 - `cli/print_history` : print the date and name of algorithms applied for the input folder
+- `python/import_Evocube_results.py` : parse the output data folder of Evocube to import CAD models, tet meshes, labelings and hex meshes.
 
 ### Changed
 
-- `cli/recursive_enumeration` is now `cli/print_children`. Recursivity is off by default and can be turned on with `--recursive`. Folder types can be filtered with the `--type` argument.
+- Instead of only redirecting the standard output to text files, wrapped executables also prints them thanks to [subprocess_tee](https://github.com/pycontribs/subprocess-tee)
+- Petty printing of the output of `cli/mesh_stats`
+- `cli/recursive_enumeration` is now `cli/print_children`. It prints the subfolders, with their type, of the input folder. Recursivity is off by default and can be turned on with `--recursive`. Folder types can be filtered with the `--type` argument.
 
 ## [0.4.1] - 2023-10-04
 
