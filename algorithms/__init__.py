@@ -20,8 +20,6 @@ def GenerativeAlgorithm(name: str, input_folder, executable: Path, executable_ar
         if parameter not in executable_arugments.get_parameters():
             raise Exception(f"'{parameter}' is not a parameter of the executable, so it cannot be a part of the subfolder filename")
     for parameter in inside_subfolder:
-        if parameter not in executable_arugments.get_parameters():
-            raise Exception(f"'{parameter}' is not a parameter of the executable, so it cannot specified as inside the subfolder")
         if parameter in name_template.get_parameters():
             raise Exception("'{parameter}' is specified as inside the subfolder, so it cannot be a part of the name of the subfolder")
     start_datetime = time.localtime()

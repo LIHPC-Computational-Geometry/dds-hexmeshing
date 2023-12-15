@@ -16,7 +16,13 @@ parser.add_argument(
     help='path to the input folder',
     required=True)
 
+parser.add_argument(
+    '--gui',
+    action='store_true',
+    dest='gui',
+    help='launch the graphical user interface')
+
 args = parser.parse_args()
 
 input = AbstractDataFolder.instantiate(Path(args.input))
-input.automatic_polycube()
+input.automatic_polycube(args.gui)

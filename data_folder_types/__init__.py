@@ -458,18 +458,31 @@ class tet_mesh(AbstractDataFolder):
             unlink(output_folder / 'tris_to_tets.txt')
         return output_folder
 
-    def automatic_polycube(self):
-        InteractiveGenerativeAlgorithm(
-            'automatic_polycube',
-            self.path,
-            Settings.path('automatic_polycube') / 'automatic_polycube',
-            '{surface_mesh}',
-            True,
-            'automatic_polycube_%d',
-            ['labeling'],
-            surface_mesh = str(self.get_file(self.FILENAMES.SURFACE_MESH_OBJ,   True)),
-            labeling     = labeling.FILENAMES.SURFACE_LABELING_TXT
-        )
+    def automatic_polycube(self, gui: bool):
+        if gui:
+            InteractiveGenerativeAlgorithm(
+                'automatic_polycube',
+                self.path,
+                Settings.path('automatic_polycube') / 'automatic_polycube',
+                '{surface_mesh} gui=true',
+                True,
+                'automatic_polycube_%d',
+                ['labeling'],
+                surface_mesh = str(self.get_file(self.FILENAMES.SURFACE_MESH_OBJ,   True)),
+                labeling     = labeling.FILENAMES.SURFACE_LABELING_TXT
+            )
+        else:
+            GenerativeAlgorithm(
+                'automatic_polycube',
+                self.path,
+                Settings.path('automatic_polycube') / 'automatic_polycube',
+                '{surface_mesh} {labeling} gui=false',
+                True,
+                'automatic_polycube_%d',
+                ['labeling'],
+                surface_mesh = str(self.get_file(self.FILENAMES.SURFACE_MESH_OBJ,   True)),
+                labeling     = labeling.FILENAMES.SURFACE_LABELING_TXT
+            )
     
     def HexBox(self):
         InteractiveGenerativeAlgorithm(
