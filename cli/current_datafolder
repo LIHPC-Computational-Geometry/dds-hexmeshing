@@ -1,5 +1,5 @@
 #!/usr/bin/env python
 
-from settings import *
+from modules.settings import *
 
 print(str(Settings.path('data_folder')))

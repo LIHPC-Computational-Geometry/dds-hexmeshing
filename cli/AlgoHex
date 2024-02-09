@@ -3,7 +3,7 @@
 from pathlib import Path
 from argparse import ArgumentParser
 
-from data_folder_types import *
+from modules.data_folder_types import *
 
 parser = ArgumentParser(
     prog='AlgoHex',

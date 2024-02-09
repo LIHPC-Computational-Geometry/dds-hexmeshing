@@ -10,7 +10,7 @@ class Settings(SimpleNamespace):
     Interface to the settings file
     """
 
-    FILENAME = '../settings.json' # path relative to the scripts/ folder
+    FILENAME = '../settings.json' # path relative to the top-level executed script (in cli/ or in python/)
 
     def open_as_dict() -> dict():
         settings = dict()

@@ -3,7 +3,7 @@
 from argparse import ArgumentParser
 from pathlib import Path
 
-from data_folder_types import *
+from modules.data_folder_types import *
 
 parser = ArgumentParser(
     prog='print_history',

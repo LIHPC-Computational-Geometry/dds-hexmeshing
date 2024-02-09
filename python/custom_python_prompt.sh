@@ -1,3 +1,3 @@
 #!/usr/bin/zsh
 
-python -i -c "from data_folder_types import *"
+python -i -c "from modules.data_folder_types import *"

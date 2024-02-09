@@ -12,7 +12,7 @@
 # *lastest Evocube version now uses a CharacteristicLengthFactor of 0.05
 from argparse import ArgumentParser
 
-from data_folder_types import *
+from modules.data_folder_types import *
 
 parser = ArgumentParser(
     prog='import_Evocube_results',

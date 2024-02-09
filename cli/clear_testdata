@@ -4,7 +4,7 @@ from pathlib import Path
 from shutil import rmtree
 from os import remove
 
-from data_folder_types import *
+from modules.data_folder_types import *
 
 testdata_folder = Path.expanduser(Path('~/testdata'))
 for file in testdata_folder.iterdir():

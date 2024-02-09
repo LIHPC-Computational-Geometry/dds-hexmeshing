@@ -9,10 +9,10 @@ from rich.table import Table
 from rich.console import Console
 from rich.tree import Tree
 
-from settings import *
-from algorithms import *
-from collection_manager import *
-from user_input import *
+from modules.settings import *
+from modules.algorithms import *
+from modules.collection_manager import *
+from modules.user_input import *
 
 class AbstractDataFolder(ABC):
     """

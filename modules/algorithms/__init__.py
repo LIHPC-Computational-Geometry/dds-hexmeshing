@@ -6,8 +6,8 @@ from shutil import move
 from json import load, dump
 import logging
 
-from parametric_string import *
-from simple_human_readable_duration import *
+from modules.parametric_string import *
+from modules.simple_human_readable_duration import *
 
 def GenerativeAlgorithm(name: str, input_folder, executable: Path, executable_arugments: str, tree : bool, name_template: str, inside_subfolder: list, **kwargs):
     """
