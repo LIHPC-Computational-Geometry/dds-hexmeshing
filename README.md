@@ -209,20 +209,20 @@ Overview of the data subfolder types (boxes) and the wrapped algorithms (arrows)
 
 ```mermaid
 graph LR
-    step([<a href='https://github.com/LIHPC-Computational-Geometry/HexMeshWorkshop/wiki/User-documentation#step'>step</a>])
-    tet_mesh([<a href='https://github.com/LIHPC-Computational-Geometry/HexMeshWorkshop/wiki/User-documentation#tet_mesh'>tet_mesh</a>])
-    labeling([<a href='https://github.com/LIHPC-Computational-Geometry/HexMeshWorkshop/wiki/User-documentation#labeling'>labeling</a>])
-    hex_mesh([<a href='https://github.com/LIHPC-Computational-Geometry/HexMeshWorkshop/wiki/User-documentation#hex_mesh'>hex_mesh</a>])
-    step -- <a href='https://github.com/LIHPC-Computational-Geometry/HexMeshWorkshop/wiki/User-documentation#gmsh'>Gmsh</a> --> tet_mesh
-    tet_mesh -- <a href='https://github.com/LIHPC-Computational-Geometry/HexMeshWorkshop/wiki/User-documentation#naive_labeling'>naive_labeling</a> --> labeling
-    tet_mesh -- <a href='https://github.com/LIHPC-Computational-Geometry/HexMeshWorkshop/wiki/User-documentation#labeling_painter'>labeling_painter</a> --> labeling
-    tet_mesh -- <a href='https://github.com/LIHPC-Computational-Geometry/HexMeshWorkshop/wiki/User-documentation#graphcut_labeling'>graphcut_labeling</a> --> labeling
-    tet_mesh -- <a href='https://github.com/LIHPC-Computational-Geometry/HexMeshWorkshop/wiki/User-documentation#evocube'>evocube</a> --> labeling
-    tet_mesh -- <a href='https://github.com/LIHPC-Computational-Geometry/HexMeshWorkshop/wiki/User-documentation#automatic_polycube'>automatic_polycube</a> --> labeling
-    tet_mesh -- <a href='https://github.com/LIHPC-Computational-Geometry/HexMeshWorkshop/wiki/User-documentation#HexBox'>HexBox</a> --> hex_mesh
-    tet_mesh -- <a href='https://github.com/LIHPC-Computational-Geometry/HexMeshWorkshop/wiki/User-documentation#AlgoHex'>AlgoHex</a> --> hex_mesh
-    tet_mesh -- <a href='https://github.com/LIHPC-Computational-Geometry/HexMeshWorkshop/wiki/User-documentation#marchinghex'>marchinghex</a> --> hex_mesh
-    labeling -- <a href='https://github.com/LIHPC-Computational-Geometry/HexMeshWorkshop/wiki/User-documentation#polycube_withHexEx'>polycube_withHexEx</a> --> hex_mesh
-    labeling -- <a href='https://github.com/LIHPC-Computational-Geometry/HexMeshWorkshop/wiki/User-documentation#robustPolycube'>robustPolycube</a> --> hex_mesh
-    hex_mesh -- <a href='https://github.com/LIHPC-Computational-Geometry/HexMeshWorkshop/wiki/User-documentation#global_padding'>global_padding</a> --> hex_mesh
+    step(step)
+    tet_mesh(tet_mesh)
+    labeling(labeling)
+    hex_mesh(hex_mesh)
+    step -- Gmsh --> tet_mesh
+    tet_mesh -- naive_labeling --> labeling
+    tet_mesh -- labeling_painter --> labeling
+    tet_mesh -- graphcut_labeling --> labeling
+    tet_mesh -- evocube --> labeling
+    tet_mesh -- automatic_polycube --> labeling
+    tet_mesh -- HexBox --> hex_mesh
+    tet_mesh -- AlgoHex --> hex_mesh
+    tet_mesh -- marchinghex --> hex_mesh
+    labeling -- polycube_withHexEx --> hex_mesh
+    labeling -- robustPolycube --> hex_mesh
+    hex_mesh -- global_padding --> hex_mesh
 ```
