@@ -14,6 +14,7 @@ class UserInput():
 
         'never' = no for all
         """
+        # TODO use questionary
         if self.memorized_answer!=None:
             return self.memorized_answer
         user_choice = ''
@@ -28,12 +29,4 @@ class UserInput():
     def forget_memorized_answer(self):
         self.memorized_answer = None
 
-    # @classmethod 
-    def ask(question):
-        """
-        Ask a confirmation to the user without allowing to memorize the answer
-        """
-        user_choice = ''
-        while user_choice not in ['y','yes','n','no']:
-            user_choice = input(question + ' [yes/no] ').lower()
-        return ((user_choice[0] == 'y'))
+    # Note : use questionary directly if we don't need to memorize a previous answer

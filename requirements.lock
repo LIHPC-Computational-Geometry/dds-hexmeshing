@@ -24,10 +24,11 @@ mdurl==0.1.2
 parso==0.8.3
 pexpect==4.8.0
 pickleshare==0.7.5
-prompt-toolkit==3.0.39
+prompt-toolkit==3.0.36
 ptyprocess==0.7.0
 pure-eval==0.2.2
 pygments==2.16.1
+questionary==2.0.1
 rich==13.6.0
 six==1.16.0
 stack-data==0.6.3

@@ -5,6 +5,7 @@ from shutil import rmtree
 from os import remove, mkdir
 from json import dump
 from argparse import ArgumentParser
+import questionary
 from sys import path
 path.append(str(Path(__file__).parent.parent.absolute()))
 
@@ -38,10 +39,12 @@ elif args.action == 'clear':
     if testdata_folder != Settings.path('data_folder'):
         print('cannot clear data folder, because it is not ~/testdata')
         exit(1)
-    # TODO ask for confirmation
-    # effective clear
-    for file in testdata_folder.iterdir():
-        rmtree(file) if file.is_dir() else remove(file)
+    answser = questionary.confirm("Are you sure you want to delete all the content of ~/testdata/ ?").ask()
+    assert(type(answser) == bool)
+    if answser:
+        # effective clear
+        for file in testdata_folder.iterdir():
+            rmtree(file) if file.is_dir() else remove(file)
 elif args.action == 'switch_to':
     # load all settings
     settings = Settings.open_as_dict()
