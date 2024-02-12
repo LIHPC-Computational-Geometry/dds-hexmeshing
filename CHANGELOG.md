@@ -2,9 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- `from_cli/datafolder` : print, clear or change the current data folder
+
+### Removed
+
+- `from_cli/current_datafolder` (now a part of `from_cli/datafolder`)
+- `from_cli/clear_testdata` (now a part of `from_cli/datafolder`)
 
 ## [0.5.0] - 2024-02-12
 

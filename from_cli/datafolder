@@ -1,0 +1,63 @@
+#!/usr/bin/env python
+
+from pathlib import Path
+from shutil import rmtree
+from os import remove, mkdir
+from json import dump
+from argparse import ArgumentParser
+from sys import path
+path.append(str(Path(__file__).parent.parent.absolute()))
+
+from modules.data_folder_types import *
+from modules.settings import *
+
+parser = ArgumentParser(
+    prog='datafolder',
+    description='Management of the current data folder')
+
+parser.add_argument(
+    'action',
+    choices=['print','clear','switch_to'])
+
+parser.add_argument(
+    'path_to_new_datafolder',
+    nargs='?',
+    default=None)
+
+args = parser.parse_args()
+
+if ( (args.path_to_new_datafolder != None) != (args.action == 'switch_to') ):
+    print("'path_to_new_datafolder' should only be provided in for the 'switch_to' action")
+    exit(1)
+
+if args.action == 'print':
+    print(str(Settings.path('data_folder')))
+elif args.action == 'clear':
+    # make sure the user asked to clear ~/testdata, and not an important data folder
+    testdata_folder = Path.expanduser(Path('~/testdata'))
+    if testdata_folder != Settings.path('data_folder'):
+        print('cannot clear data folder, because it is not ~/testdata')
+        exit(1)
+    # TODO ask for confirmation
+    # effective clear
+    for file in testdata_folder.iterdir():
+        rmtree(file) if file.is_dir() else remove(file)
+elif args.action == 'switch_to':
+    # load all settings
+    settings = Settings.open_as_dict()
+    # retreive path given by user
+    new_path = Path(args.path_to_new_datafolder).absolute()
+    # create the folder is it doesn't exist
+    if not new_path.exists():
+        mkdir(str(new_path))
+    # inverse of Path.expanduser() : replace $HOME by '~'
+    try:
+        new_path = '~' / new_path.relative_to(Path.home())
+    except ValueError:
+        # `new_path` isn't under ~
+        pass
+    # edit "paths" / "data_folder"
+    settings['paths']['data_folder'] = str(new_path)
+    # overwrite settings.json
+    with open(Settings.FILENAME,'w') as settings_file:
+        dump(settings,settings_file,indent = 4)
