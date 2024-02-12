@@ -3,6 +3,8 @@
 from pathlib import Path
 from shutil import rmtree
 from os import remove
+from sys import path
+path.append(str(Path(__file__).parent.parent.absolute()))
 
 from modules.data_folder_types import *
 

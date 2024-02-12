@@ -8,6 +8,8 @@ from urllib import request
 from rich.table import Table
 from rich.console import Console
 from rich.tree import Tree
+from sys import path
+path.append(str(Path(__file__).parent.parent.absolute()))
 
 from modules.settings import *
 from modules.algorithms import *
@@ -737,8 +739,8 @@ class labeling(AbstractDataFolder):
             'volume_labeling',
             self.path,
             Settings.path('automatic_polycube') / 'volume_labeling',
-            True,
             '{surface_labeling} {surface_map} {tetra_labeling}',
+            True,
             surface_labeling    = str(self.get_file(self.FILENAMES.SURFACE_LABELING_TXT,    True)),
             surface_map         = str(parent.get_file(tet_mesh.FILENAMES.SURFACE_MAP_TXT,   True)),
             tetra_labeling      = str(self.get_file(self.FILENAMES.VOLUME_LABELING_TXT          ))

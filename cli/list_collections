@@ -2,6 +2,8 @@
 
 from modules.settings import *
 from modules.collection_manager import *
+from sys import path
+path.append(str(Path(__file__).parent.parent.absolute()))
 
 # TODO move to a root data folder method
 

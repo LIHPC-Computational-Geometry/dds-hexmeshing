@@ -5,11 +5,13 @@ from os import mkdir
 from shutil import move
 from json import load, dump
 import logging
+from sys import path
+path.append(str(Path(__file__).parent.parent.absolute()))
 
 from modules.parametric_string import *
 from modules.simple_human_readable_duration import *
 
-def GenerativeAlgorithm(name: str, input_folder, executable: Path, executable_arugments: str, tree : bool, name_template: str, inside_subfolder: list, **kwargs):
+def GenerativeAlgorithm(name: str, input_folder, executable: Path, executable_arugments: str, tee : bool, name_template: str, inside_subfolder: list, **kwargs):
     """
     Define and execute a generative algorithm, that is an algorithm on a data folder which creates a subfolder.
     Wrap an executable and manage command line assembly from parameters, chrono, stdout/stderr files and write a JSON file will all the info.
@@ -51,7 +53,7 @@ def GenerativeAlgorithm(name: str, input_folder, executable: Path, executable_ar
         info_file[start_datetime_iso]['parameters'][k] = v
     # Start chrono, call executable and store stdout/stderr
     chrono_start = time.monotonic()
-    completed_process = subprocess_tee.run(command, shell=True, capture_output=True, tee=tree)
+    completed_process = subprocess_tee.run(command, shell=True, capture_output=True, tee=tee)
     chrono_stop = time.monotonic()
     # write stdout and stderr
     if completed_process.stdout != '': # if the subprocess wrote something in standard output
@@ -76,7 +78,7 @@ def GenerativeAlgorithm(name: str, input_folder, executable: Path, executable_ar
     #self.completed_process.check_returncode()# will raise a CalledProcessError if non-zero
     return input_folder / subfolder_name
 
-def InteractiveGenerativeAlgorithm(name: str, input_folder, executable: Path, executable_arugments: str, tree : bool, name_template: str = None, inside_subfolder: list = [], **kwargs):
+def InteractiveGenerativeAlgorithm(name: str, input_folder, executable: Path, executable_arugments: str, tee : bool, name_template: str = None, inside_subfolder: list = [], **kwargs):
     """
     Define and execute an interactive generative algorithm, that is an interactive algorithm on a data folder which creates a subfolder (optional).
     Wrap an executable and manage command line assembly from parameters.
@@ -129,7 +131,7 @@ def InteractiveGenerativeAlgorithm(name: str, input_folder, executable: Path, ex
 
     # Start chrono, call executable and store stdout/stderr
     chrono_start = time.monotonic()
-    completed_process = subprocess_tee.run(command, shell=True, capture_output=(name_template != None), tee=tree)
+    completed_process = subprocess_tee.run(command, shell=True, capture_output=(name_template != None), tee=tee)
     chrono_stop = time.monotonic()
 
     if name_template != None:
@@ -158,7 +160,7 @@ def InteractiveGenerativeAlgorithm(name: str, input_folder, executable: Path, ex
     else:
         return None # no subfolder created
 
-def TransformativeAlgorithm(name: str, input_folder, executable: Path, executable_arugments: str, tree : bool, **kwargs):
+def TransformativeAlgorithm(name: str, input_folder, executable: Path, executable_arugments: str, tee : bool, **kwargs):
     """
     Define and execute a transformative algorithm, that is an algorithm modifying a data folder without creating a subfolder.
     Wrap an executable and manage command line assembly from parameters, chrono, stdout/stderr files and write a JSON file will all the info.
@@ -191,7 +193,7 @@ def TransformativeAlgorithm(name: str, input_folder, executable: Path, executabl
         info_file[start_datetime_iso]['parameters'][k] = v
     # Start chrono, call executable and store stdout/stderr
     chrono_start = time.monotonic()
-    completed_process = subprocess_tee.run(command, shell=True, capture_output=True, tee=tree)
+    completed_process = subprocess_tee.run(command, shell=True, capture_output=True, tee=tee)
     chrono_stop = time.monotonic()
     # write stdout and stderr
     if completed_process.stdout != '': # if the subprocess wrote something in standard output

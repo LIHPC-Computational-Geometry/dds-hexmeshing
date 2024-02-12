@@ -1,18 +1,17 @@
 from types import SimpleNamespace
 from json import load
 from pathlib import Path
-
 from sys import path
-path.append('.')
+path.append(str(Path(__file__).parent.parent.absolute()))
 
 class Settings(SimpleNamespace):
     """
     Interface to the settings file
     """
 
-    FILENAME = '../settings.json' # path relative to the top-level executed script (in cli/ or in python/)
+    FILENAME = Path(__file__).parent.parent / 'settings.json' # path relative to the top-level executed script (in cli/ or in python/)
 
-    def open_as_dict() -> dict():
+    def open_as_dict() -> dict:
         settings = dict()
         with open(Settings.FILENAME) as settings_file:
             settings = load(settings_file)

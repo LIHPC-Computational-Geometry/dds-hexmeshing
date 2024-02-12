@@ -1,3 +1,4 @@
 #!/usr/bin/zsh
 
-python -i -c "from modules.data_folder_types import *"
+parent_folder=${0:a:h} # the parent folder of this script
+python -i -c "from pathlib import Path; from sys import path; path.append(str(Path('${parent_folder}').parent.absolute())); from modules.data_folder_types import *"

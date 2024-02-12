@@ -3,6 +3,11 @@
 from pathlib import Path
 from argparse import ArgumentParser
 
+from sys import path
+
+# path.append(str((Path(__file__).parent / '../modules/').absolute()))
+path.append(str(Path(__file__).parent.parent.absolute()))
+
 from modules.data_folder_types import *
 
 parser = ArgumentParser(
