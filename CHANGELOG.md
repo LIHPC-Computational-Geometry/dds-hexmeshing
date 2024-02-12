@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `from_cli/datafolder` : print, clear or change the current data folder
 
+### Changed
+
+- `from_cli/list_collections` is now `from_cli/collections print`
+
 ### Removed
 
 - `from_cli/current_datafolder` (now a part of `from_cli/datafolder`)
