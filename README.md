@@ -226,3 +226,10 @@ graph LR
     labeling -- robustPolycube --> hex_mesh
     hex_mesh -- global_padding --> hex_mesh
 ```
+
+Repository structure:
+- [`from_cli`](from_cli/): scripts to interact with the database from the command line
+- [`from_python`](from_python/): scripts to interact with the database from Python
+- [`glue_code`](glue_code/): pieces of code for other softwares
+- [`img`](img/): images displayed in the README
+- [`modules`](modules/): Python modules internal to the project
