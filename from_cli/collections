@@ -6,7 +6,6 @@ from rich.pretty import pprint
 from sys import path
 path.append(str(Path(__file__).parent.parent.absolute()))
 
-from modules.settings import *
 from modules.collection_manager import *
 
 parser = ArgumentParser(
@@ -19,5 +18,6 @@ parser.add_argument(
 
 # TODO move actions code to root data folder methods
 
-collections_manager = CollectionsManager(Settings.path('data_folder'))
-pprint(collections_manager.json,expand_all=True)
+cm = CollectionsManager()
+for collection_name in cm.collections_names():
+    print(collection_name)
