@@ -4,6 +4,7 @@ from typing import Optional
 from abc import ABC, abstractmethod
 from rich.table import Table
 from rich.console import Console
+import logging
 from sys import path
 path.append(str(Path(__file__).parent.parent.absolute()))
 
@@ -92,9 +93,12 @@ class ConcreteCollection(Collection):
         assert('folders' in content.keys())
         # fill `self.folders`
         assert(isinstance(content['folders'], list))
+        # TODO check that content['folders'] has as many item as parent.folders
         for folder_as_str in content['folders']:
-            # assert(Path(data_folder / folder_as_str).exists()) -> cannot check existence because we don't have the data folder path
             assert(folder_as_str not in self.folders) # ensure no duplicates
+            full_path = Path(data_folder / folder_as_str).absolute()
+            if not full_path.exists():
+                logging.error(f"'{folder_as_str}' is mentioned in collections.json but doesn't exist")
             self.folders.add(folder_as_str)
         if 'onward' not in content.keys():
             return
