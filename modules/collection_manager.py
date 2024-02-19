@@ -2,6 +2,8 @@ from json import load, dump
 from pathlib import Path
 from typing import Optional
 from abc import ABC, abstractmethod
+from rich.table import Table
+from rich.console import Console
 from sys import path
 path.append(str(Path(__file__).parent.parent.absolute()))
 
@@ -22,10 +24,8 @@ class Collection(ABC):
     @classmethod
     def create_from(self, name: str, content: dict, collections: dict, data_folder: Path):
         if "subcollections" in content.keys():
-            print(f'Collection \'{name}\' is a virtual collection (has subcollections)')
             return VirtualCollection(name,content,collections,data_folder)
         else:
-            print(f'Collection \'{name}\' is a concrete collection (has no subcollections)')
             return ConcreteCollection(name,content,collections,data_folder)
 
     @abstractmethod
@@ -145,6 +145,15 @@ class CollectionsManager():
 
     def collections_names(self) -> set[str]:
         return self.collections.keys()
+    
+    def pprint(self):
+        table = Table()
+        table.add_column("Name")
+        table.add_column("Kind", style='bright_black')
+        for collection_name in self.collections_names():
+            table.add_row(collection_name,'virtual' if self.collections[collection_name].is_virtual() else 'concrete')
+        console = Console()
+        console.print(table)
 
     def save(self):
         with open(self.path,'w') as collections_JSON:
