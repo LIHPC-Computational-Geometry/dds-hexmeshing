@@ -9,17 +9,15 @@ from modules.settings import *
 
 class Collection(ABC):
     """
-    Store a set of data folder
+    Store a set of data subfolders
     """
 
     def __init__(self):
+        # class variables for both VirtualCollection & ConcreteCollection
         self.type: Optional[str] = None             # an AbstractDataFolder subclass name
-        self.folders: set[Path] = set()             # a set of paths to data folders
         self.onward: set[str] = set()               # a set of collection names
         self.backward: Optional[str] = None         # a collection name
-        self.subcollections: set[str] = set()       # a set of collection names
         self.supercollection: Optional[str] = None  # a collection name
-        self.is_complete: bool = False              # in case of a virtual collection, if all subcollections are complete
 
     @classmethod
     def create_from(self, name: str, content: dict, collections: dict):
@@ -38,14 +36,21 @@ class Collection(ABC):
     def is_concrete(self) -> bool:
         exit(1)
 
+    def type_str(self) -> Optional[str]:
+        return self.type
+
     def gather_all_folders(self) -> list:
         pass
 
-# a collection that have subcollections
 class VirtualCollection(Collection):
+    """
+    Store a set of data subfolders (a collection) that have subcollections
+    """
 
     def __init__(self, name: str, content: dict, collections: dict):
         super().__init__()
+        self.subcollections: set[str] = set()       # a set of collection names
+        self.is_complete: bool = False              # in case of a virtual collection, if all subcollections are complete
         # check if there is not already a collection with this name
         assert(name not in collections.keys())
         # check the content corresponds to a virtual collection
@@ -62,7 +67,7 @@ class VirtualCollection(Collection):
             collections[subcollection_name] = Collection.create_from(subcollection_name,subcollection_content,collections)
             # link this <- subcollections = store `name` in subcollections.supercollection
             collections[subcollection_name].supercollection = name
-            # link this -> subcollections = list name of subcollections in `this_collection.subcollections`
+            # link this -> subcollections = list name of subcollections in `self.subcollections`
             self.subcollections.add(subcollection_name)
     
     def is_virtual(self) -> bool:
@@ -71,18 +76,21 @@ class VirtualCollection(Collection):
     def is_concrete(self) -> bool:
         return False
 
-# a collection directly listing folders
-
 class ConcreteCollection(Collection):
+    """
+    Store a set of data subfolders (a collection) that directly list folders (no subcollections)
+    """
 
     def __init__(self, name: str, content: dict, collections: dict):
         super().__init__()
+        self.folders: set[Path] = set()             # a set of paths to data folders
+        self.is_complete: bool = False              # in case of a virtual collection, if all subcollections are complete
         # check if there is not already a collection with this name
         assert(name not in collections.keys())
         # check the content corresponds to a concrete collection
         assert('subcollections' not in content.keys())
         assert('folders' in content.keys())
-        # fill `this_collection.folders`
+        # fill `self.folders`
         assert(isinstance(content['folders'], list))
         for folder_as_str in content['folders']:
             # assert(Path(data_folder / folder_as_str).exists()) -> cannot check existence because we don't have the data folder path
@@ -98,7 +106,7 @@ class ConcreteCollection(Collection):
             assert(collections[onward_collection_name].is_concrete()) # cannot have virtual collections nested in concrete collections
             # link this <- onward_collection = store `name` in onward_collection.backward
             collections[onward_collection_name].backward = name
-            # link this -> onward_collection = list name of onward_collection in `this_collection.onward`
+            # link this -> onward_collection = list name of onward_collection in `self.onward`
             self.onward.add(onward_collection_name)
         # TODO backpropagate to virtual collections
             
