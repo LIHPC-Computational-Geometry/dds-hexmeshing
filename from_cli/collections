@@ -6,7 +6,7 @@ from rich.pretty import pprint
 from sys import path
 path.append(str(Path(__file__).parent.parent.absolute()))
 
-from modules.collection_manager import *
+from modules.data_folder_types import *
 
 parser = ArgumentParser(
     prog='datafolder',
@@ -16,8 +16,5 @@ parser.add_argument(
     'action',
     choices=['print'])
 
-# TODO move actions code to root data folder methods
-
-cm = CollectionsManager()
-for collection_name in cm.collections_names():
-    print(collection_name)
+root_folder = root()
+root_folder.view(what='collections')

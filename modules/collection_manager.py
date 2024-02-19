@@ -20,13 +20,13 @@ class Collection(ABC):
         self.supercollection: Optional[str] = None  # a collection name
 
     @classmethod
-    def create_from(self, name: str, content: dict, collections: dict):
+    def create_from(self, name: str, content: dict, collections: dict, data_folder: Path):
         if "subcollections" in content.keys():
             print(f'Collection \'{name}\' is a virtual collection (has subcollections)')
-            return VirtualCollection(name,content,collections)
+            return VirtualCollection(name,content,collections,data_folder)
         else:
             print(f'Collection \'{name}\' is a concrete collection (has no subcollections)')
-            return ConcreteCollection(name,content,collections)
+            return ConcreteCollection(name,content,collections,data_folder)
 
     @abstractmethod
     def is_virtual(self) -> bool:
@@ -47,7 +47,7 @@ class VirtualCollection(Collection):
     Store a set of data subfolders (a collection) that have subcollections
     """
 
-    def __init__(self, name: str, content: dict, collections: dict):
+    def __init__(self, name: str, content: dict, collections: dict, data_folder: Path):
         super().__init__()
         self.subcollections: set[str] = set()       # a set of collection names
         self.is_complete: bool = False              # in case of a virtual collection, if all subcollections are complete
@@ -64,7 +64,7 @@ class VirtualCollection(Collection):
             subcollection_name = f'{name}.{subcollection_name}'
             # assert the subcollection doesn't already exist
             assert(subcollection_name not in collections.keys())
-            collections[subcollection_name] = Collection.create_from(subcollection_name,subcollection_content,collections)
+            collections[subcollection_name] = Collection.create_from(subcollection_name,subcollection_content,collections,data_folder)
             # link this <- subcollections = store `name` in subcollections.supercollection
             collections[subcollection_name].supercollection = name
             # link this -> subcollections = list name of subcollections in `self.subcollections`
@@ -81,7 +81,7 @@ class ConcreteCollection(Collection):
     Store a set of data subfolders (a collection) that directly list folders (no subcollections)
     """
 
-    def __init__(self, name: str, content: dict, collections: dict):
+    def __init__(self, name: str, content: dict, collections: dict, data_folder: Path):
         super().__init__()
         self.folders: set[Path] = set()             # a set of paths to data folders
         self.is_complete: bool = False              # in case of a virtual collection, if all subcollections are complete
@@ -102,7 +102,7 @@ class ConcreteCollection(Collection):
         for onward_collection_name, onward_collection_content in content['onward'].items():
             assert('/' not in onward_collection_name)
             onward_collection_name = f'{name}/{onward_collection_name}'
-            collections[onward_collection_name] = Collection.create_from(onward_collection_name,onward_collection_content,collections)
+            collections[onward_collection_name] = Collection.create_from(onward_collection_name,onward_collection_content,collections,data_folder)
             assert(collections[onward_collection_name].is_concrete()) # cannot have virtual collections nested in concrete collections
             # link this <- onward_collection = store `name` in onward_collection.backward
             collections[onward_collection_name].backward = name
@@ -121,7 +121,7 @@ class CollectionsManager():
     """
     Manage collections, interface to the collections.json of the current datafolder
     """
-    def __init__(self):
+    def __init__(self, data_folder: Path):
         self.collections: dict[Collection] = dict()
         self.path = Settings.path('data_folder') / 'collections.json'
         if not self.path.exists():
@@ -131,8 +131,7 @@ class CollectionsManager():
             # parse `json_dict` and fill `self.collections`
             for key,value in json_dict.items():
                 assert(isinstance(value, dict))
-                self.collections[key] = Collection.create_from(key,value,self.collections)
-                
+                self.collections[key] = Collection.create_from(key,value,self.collections,data_folder)
 
     @classmethod
     def create_empty_JSON(path: Path):

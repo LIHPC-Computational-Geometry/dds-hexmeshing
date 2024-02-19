@@ -1034,6 +1034,9 @@ class root(AbstractDataFolder):
             what = self.DEFAULT_VIEW
         if what == 'print_path':
             print(str(self.path.absolute()))
+        elif what == 'collections':
+            for collection_name in self.collections_manager.collections_names():
+                print(collection_name)
         else:
             raise Exception(f"root.view() does not recognize 'what' value: '{what}'")
         
