@@ -40,7 +40,6 @@ parser.add_argument(
 
 args = parser.parse_args()
 
-
 input_folder = root() if args.input == None else AbstractDataFolder.instantiate(args.input)
 input_folder.print_children(
     [] if args.type == None else [args.type],
