@@ -5,6 +5,8 @@ from os import mkdir
 from shutil import move
 from json import load, dump
 import logging
+from rich.rule import Rule
+from rich.console import Console
 from sys import path
 path.append(str(Path(__file__).parent.parent.absolute()))
 
@@ -52,9 +54,12 @@ def GenerativeAlgorithm(name: str, input_folder, executable: Path, executable_ar
     for k,v in kwargs.items():
         info_file[start_datetime_iso]['parameters'][k] = v
     # Start chrono, call executable and store stdout/stderr
+    console = Console()
+    console.print(Rule(f'beginning of captured output of {executable.absolute()}'))
     chrono_start = time.monotonic()
     completed_process = subprocess_tee.run(command, shell=True, capture_output=True, tee=tee)
     chrono_stop = time.monotonic()
+    console.print(Rule(f'end of captured output of {executable.absolute()}'))
     # write stdout and stderr
     if completed_process.stdout != '': # if the subprocess wrote something in standard output
         filename = name + '.stdout.txt'
@@ -130,9 +135,12 @@ def InteractiveGenerativeAlgorithm(name: str, input_folder, executable: Path, ex
             info_file[start_datetime_iso]['parameters'][k] = v
 
     # Start chrono, call executable and store stdout/stderr
+    console = Console()
+    console.print(Rule(f'beginning of captured output of {executable.absolute()}'))
     chrono_start = time.monotonic()
     completed_process = subprocess_tee.run(command, shell=True, capture_output=(name_template != None), tee=tee)
     chrono_stop = time.monotonic()
+    console.print(Rule(f'end of captured output of {executable.absolute()}'))
 
     if name_template != None:
         # write stdout and stderr
@@ -192,9 +200,12 @@ def TransformativeAlgorithm(name: str, input_folder, executable: Path, executabl
     for k,v in kwargs.items():
         info_file[start_datetime_iso]['parameters'][k] = v
     # Start chrono, call executable and store stdout/stderr
+    console = Console()
+    console.print(Rule(f'beginning of captured output of {executable.absolute()}'))
     chrono_start = time.monotonic()
     completed_process = subprocess_tee.run(command, shell=True, capture_output=True, tee=tee)
     chrono_stop = time.monotonic()
+    console.print(Rule(f'end of captured output of {executable.absolute()}'))
     # write stdout and stderr
     if completed_process.stdout != '': # if the subprocess wrote something in standard output
         filename = name + '.stdout.txt'
