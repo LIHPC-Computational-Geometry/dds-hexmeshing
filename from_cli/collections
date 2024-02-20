@@ -2,9 +2,11 @@
 
 from pathlib import Path
 from argparse import ArgumentParser
-from rich.pretty import pprint
 from sys import path
 path.append(str(Path(__file__).parent.parent.absolute()))
+from rich.console import Console
+from rich.traceback import install
+install(show_locals=True,width=Console().width,word_wrap=True)
 
 from modules.data_folder_types import *
 
@@ -18,3 +20,6 @@ parser.add_argument(
 
 root_folder = root()
 root_folder.view(what='collections')
+
+for collection in root_folder.collections_manager.collections.values():
+    print(collection)
