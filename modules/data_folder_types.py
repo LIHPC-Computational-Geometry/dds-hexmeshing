@@ -17,7 +17,7 @@ if path[-1] != project_root: path.append(project_root)
 # own modules
 from modules.settings import *
 from modules.algorithms import *
-from modules.collection_manager import *
+from modules.collections_manager import *
 from modules.user_input import *
 
 class AbstractDataFolder(ABC):
