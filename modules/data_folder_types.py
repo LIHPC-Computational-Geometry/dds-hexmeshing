@@ -48,7 +48,21 @@ class AbstractDataFolder(ABC):
         print(self)
 
     def get_file(self, filename : str, must_exist : bool = False) -> Path:
-        return (self.path / filename).absolute()
+        path = (self.path / filename).absolute()
+        if (not must_exist) or (must_exist and path.exists()):
+            return path
+        # so 'file' is missing -> try to auto-compute it
+        if self.auto_generate_missing_file(filename):
+            return self.get_file(filename,True)
+        raise Exception(f'Missing file {path}')
+    
+    @abstractmethod
+    def auto_generate_missing_file(self, filename: str) -> bool:
+        """
+        Try to auto-generate a missing file from existing files.
+        Return True if successful.
+        """
+        pass
 
     # ----- Specific functions of the abstract class --------------------
 
@@ -231,12 +245,10 @@ class step(AbstractDataFolder):
             )
         else:
             raise Exception(f"step.view() does not recognize 'what' value: '{what}'")
-    
-    def get_file(self, filename : str, must_exist : bool = False) -> Path:
-        path = super().get_file(filename)
-        if (not must_exist) or (must_exist and path.exists()):
-            return path
-        raise Exception(f'Missing file {path}')
+        
+    def auto_generate_missing_file(self, filename: str) -> bool:
+        # no missing file in a 'step' subfolder can be auto-generated
+        return False
         
     # ----- Generative algorithms (create subfolders) --------------------
 
@@ -297,22 +309,18 @@ class tet_mesh(AbstractDataFolder):
             )
         else:
             raise Exception(f"tet_mesh.view() does not recognize 'what' value: '{what}'")
-    
-    def get_file(self, filename : str, must_exist : bool = False) -> Path:
-        path = super().get_file(filename)
-        if (not must_exist) or (must_exist and path.exists()):
-            return path
-        # so 'file' is missing -> try to auto-compute it
+        
+    def auto_generate_missing_file(self, filename: str) -> bool:
         if filename in [self.FILENAMES.SURFACE_MESH_OBJ, self.FILENAMES.SURFACE_MAP_TXT]:
             self.extract_surface()
-            return self.get_file(filename,True)
-        if filename == self.FILENAMES.TET_MESH_VTK:
+            return True
+        elif filename == self.FILENAMES.TET_MESH_VTK:
             self.Gmsh_convert_to_VTKv2()
-            return self.get_file(filename,True)
-        if filename == self.FILENAMES.TET_MESH_STATS_JSON:
-            if self.mesh_stats():
-                return self.get_file(filename,True)
-        raise Exception(f'Missing file {path}')
+            return True
+        elif filename == self.FILENAMES.TET_MESH_STATS_JSON:
+            return self.mesh_stats()
+        else:
+            return False
     
     # ----- Access data from files --------------------
 
@@ -571,13 +579,10 @@ class marchinghex_grid(AbstractDataFolder):
             )
         else:
             raise Exception(f"marchinghex_grid.view() does not recognize 'what' value: '{what}'")
-    
-    def get_file(self, filename : str, must_exist : bool = False) -> Path:
-        path = super().get_file(filename)
-        if (not must_exist) or (must_exist and path.exists()):
-            return path
-        # so 'file' is missing
-        raise Exception(f'Missing file {path}')
+        
+    def auto_generate_missing_file(self, filename: str) -> bool:
+        # no missing file in a 'marchinghex_grid' subfolder can be auto-generated
+        return False
     
     # ----- Transformative algorithms (modify current folder) --------------------
 
@@ -692,34 +697,31 @@ class labeling(AbstractDataFolder):
             )
         else:
             raise Exception(f"labeling.view() does not recognize 'what' value: '{what}'")
-    
-    def get_file(self, filename : str, must_exist : bool = False) -> Path:
-        path = super().get_file(filename)
-        if (not must_exist) or (must_exist and path.exists()):
-            return path
-        # so 'file' is missing -> try to auto-compute it
+        
+    def auto_generate_missing_file(self, filename: str) -> bool:
         if filename == self.FILENAMES.VOLUME_LABELING_TXT:
             self.volume_labeling()
-            return self.get_file(filename,True)
+            return True
         elif filename == self.FILENAMES.POLYCUBE_SURFACE_MESH_OBJ:
             self.fastbndpolycube()
-            return self.get_file(filename,True)
+            return True
         elif filename == self.FILENAMES.PREPROCESSED_TET_MESH_MEDIT:
             self.preprocess_polycube()
-            return self.get_file(filename,True)
+            return True
         elif filename in [self.FILENAMES.TET_MESH_REMESHED_MEDIT, self.FILENAMES.TET_MESH_REMESHED_LABELING_TXT, self.FILENAMES.POLYCUBOID_MESH_MEDIT]:
             self.rb_generate_deformation()
-            return self.get_file(filename,True)
+            return True
         elif filename == self.FILENAMES.SURFACE_LABELING_MESH_GEOGRAM:
             parent_tet_mesh = self.get_closest_parent_of_type('tet_mesh')
             surface_mesh = parent_tet_mesh.get_file(tet_mesh.FILENAMES.SURFACE_MESH_OBJ,True)
             self.write_geogram(surface_mesh,self.FILENAMES.SURFACE_LABELING_MESH_GEOGRAM) # write labeled surface mesh
-            return self.get_file(filename,True)
+            return True
         elif filename == self.FILENAMES.POLYCUBE_LABELING_MESH_GEOGRAM:
             surface_mesh = self.get_file(self.FILENAMES.POLYCUBE_SURFACE_MESH_OBJ,True)
             self.write_geogram(surface_mesh,self.FILENAMES.POLYCUBE_LABELING_MESH_GEOGRAM) # write labeled polycube mesh
-            return self.get_file(filename,True)
-        raise Exception(f'Missing file {path}')
+            return True
+        else:
+            return False
         
     # ----- Transformative algorithms (modify current folder) --------------------
 
@@ -938,16 +940,13 @@ class hex_mesh(AbstractDataFolder):
             )
         else:
             raise Exception(f"hex_mesh.view() does not recognize 'what' value: '{what}'")
-    
-    def get_file(self, filename : str, must_exist : bool = False) -> Path:
-        path = super().get_file(filename)
-        if (not must_exist) or (must_exist and path.exists()):
-            return path
-        # so 'file' is missing -> try to auto-compute it
+        
+    def auto_generate_missing_file(self, filename: str) -> bool:
         if filename == self.FILENAMES.HEX_MESH_MEDIT:
             self.OVM_to_MEDIT()
-            return self.get_file(filename,True)
-        raise Exception(f'Missing file {path}')
+            return True
+        else:
+            return False
 
     # ----- Transformative algorithms (modify current folder) --------------------
 
@@ -1043,11 +1042,9 @@ class root(AbstractDataFolder):
         else:
             raise Exception(f"root.view() does not recognize 'what' value: '{what}'")
         
-    def get_file(self, filename : str, must_exist : bool = False) -> Path:
-        path = super().get_file(filename)
-        if (not must_exist) or (must_exist and path.exists()):
-            return path
-        raise Exception(f'Missing file {path}')
+    def auto_generate_missing_file(self, filename: str) -> bool:
+        # no missing file in a 'step' subfolder can be auto-generated
+        return False
 
     def recursive_update(self):
         # for each filename, list old filenames
