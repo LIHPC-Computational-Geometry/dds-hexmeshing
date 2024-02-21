@@ -45,11 +45,16 @@ class Collection(ABC):
     def __str__(self) -> str:
         exit(1)
 
+    @abstractmethod
+    def to_dict(self) -> dict:
+        exit(1)
+
     def type_str(self) -> Optional[str]:
         return self.type
 
-    def full_name(self) -> str:
-        return '.'.join(str(x) for x in self.subcollections_stack) + ('' if len(self.onward_stack)==0 else '/'+'/'.join(str(x) for x in self.onward_stack))
+    @staticmethod
+    def full_name(subcollections_stack: list, onward_stack: list):
+        return '.'.join(str(x) for x in subcollections_stack) + ('' if len(onward_stack)==0 else '/'+'/'.join(str(x) for x in onward_stack))
 
     def gather_all_folders(self) -> list:
         pass
@@ -68,7 +73,7 @@ class VirtualCollection(Collection):
     def create_from_content(cls,subcollections_stack: list, onward_stack: list, content: Optional[dict], collections: dict, data_folder: Path):
         out = VirtualCollection(subcollections_stack,onward_stack)
         # check if there is not already a collection with this name
-        name = out.full_name()
+        name = Collection.full_name(out.subcollections_stack,out.onward_stack)
         assert(name not in collections.keys())
         # if no `content`, stop here
         if content is None:
@@ -82,7 +87,7 @@ class VirtualCollection(Collection):
         for subcollection_suffix, subcollection_content in content['subcollections'].items():
             # assert the subcollection doesn't already exist
             new_collection = Collection.create_from_content(subcollections_stack+[subcollection_suffix],onward_stack,subcollection_content,collections,data_folder)
-            new_collection_name = new_collection.full_name()
+            new_collection_name = Collection.full_name(new_collection.subcollections_stack,new_collection.onward_stack)
             assert(new_collection_name not in collections.keys())
             # check type
             if out.type is None:
@@ -108,7 +113,7 @@ class VirtualCollection(Collection):
         if len(subcollections_stack) > 1:
             abstract_supercollection = VirtualCollection.create_onward_collection(subcollections_stack[:-1],onward_stack,collections)
             abstract_supercollection.type = out.type
-            abstract_supercollection_name = abstract_supercollection.full_name()
+            abstract_supercollection_name = Collection.full_name(abstract_supercollection.subcollections_stack,abstract_supercollection.onward_stack)
             if abstract_supercollection_name not in collections.keys():
                 collections[abstract_supercollection_name] = abstract_supercollection
         assert(out.subcollections == set()) # empty set
@@ -122,13 +127,21 @@ class VirtualCollection(Collection):
         return False
 
     def __str__(self) -> str:
-        return f"""VirtualCollection '{self.full_name()}'
+        return f"""VirtualCollection '{Collection.full_name(self.subcollections_stack,self.onward_stack)}'
                    \tsubcollections_stack = {self.subcollections_stack}
                    \tonward_stack = {self.onward_stack}
                    \ttype = {self.type}
                    \tonward = {self.onward}
                    \tsubcollections = {self.subcollections}
                    \tis_complete = {self.is_complete}"""
+    
+    def to_dict(self, collections: dict) -> dict:
+        out = dict()
+        if self.subcollections != set():
+            out['subcollections'] = dict()
+        for subcollection_suffix in self.subcollections:
+            out['subcollections'][subcollection_suffix] = collections[Collection.full_name(self.subcollections_stack+[subcollection_suffix],self.onward_stack)].to_dict(collections)
+        return out
 
 class ConcreteCollection(Collection):
     """
@@ -144,7 +157,7 @@ class ConcreteCollection(Collection):
         from modules.data_folder_types import AbstractDataFolder # imported here to avoid circular import
         out = ConcreteCollection(subcollections_stack,onward_stack)
         # check if there is not already a collection with this name
-        name = out.full_name()
+        name = Collection.full_name(out.subcollections_stack,out.onward_stack)
         assert(name not in collections.keys())
         # check the content corresponds to a concrete collection
         assert('subcollections' not in content.keys())
@@ -170,7 +183,7 @@ class ConcreteCollection(Collection):
             assert(isinstance(content['onward'], dict))
             for onward_collection_suffix, onward_collection_content in content['onward'].items():
                 new_collection = Collection.create_from_content(subcollections_stack,onward_stack+[onward_collection_suffix],onward_collection_content,collections,data_folder)
-                new_collection_name = new_collection.full_name()
+                new_collection_name = Collection.full_name(new_collection.subcollections_stack,new_collection.onward_stack)
                 assert(new_collection_name not in collections.keys())
                 collections[new_collection_name] = new_collection
                 assert(collections[new_collection_name].is_concrete()) # cannot have virtual collections nested in concrete collections
@@ -180,7 +193,7 @@ class ConcreteCollection(Collection):
         if len(out.subcollections_stack) > 1 and len(onward_stack)>0:
             abstract_supercollection = VirtualCollection.create_onward_collection(subcollections_stack[:-1],onward_stack,collections)
             abstract_supercollection.type = out.type
-            abstract_supercollection_name = abstract_supercollection.full_name()
+            abstract_supercollection_name = Collection.full_name(abstract_supercollection.subcollections_stack,abstract_supercollection.onward_stack)
             if abstract_supercollection_name not in collections.keys():
                 collections[abstract_supercollection_name] = abstract_supercollection
         
@@ -193,12 +206,21 @@ class ConcreteCollection(Collection):
         return True
     
     def __str__(self) -> str:
-        return f"""ConcreteCollection '{self.full_name()}'
+        return f"""ConcreteCollection '{Collection.full_name(self.subcollections_stack,self.onward_stack)}'
                    \tsubcollections_stack = {self.subcollections_stack}
                    \tonward_stack = {self.onward_stack}
                    \ttype = {self.type}
                    \tonward = {self.onward}
                    \tfolders = {self.folders}"""
+
+    def to_dict(self, collections: dict) -> dict:
+        out = dict()
+        out['folders'] = list(self.folders)
+        if self.onward != set():
+            out['onward'] = dict()
+        for onward_suffix in self.onward:
+            out['onward'][onward_suffix] = collections[Collection.full_name(self.subcollections_stack,self.onward_stack+[onward_suffix])].to_dict(collections)
+        return out
 
 # move inside `root` class in modules.data_folder_types ?
 class CollectionsManager():
@@ -218,10 +240,33 @@ class CollectionsManager():
                 self.collections[key] = Collection.create_from_content([key],[],value,self.collections,data_folder)
 
     @classmethod
-    def create_empty_JSON(path: Path):
+    def create_empty_JSON(cls,path: Path):
         assert(not path.exists())
         with open(path,'w') as file:
             dump(dict(), file)
+
+    def append_folder_to_collection(self, subcollections_stack: list, onward_stack: list, relative_path: str):
+        from modules.data_folder_types import AbstractDataFolder # imported here to avoid circular import
+        full_path = self.path.parent / relative_path
+        collection_name = Collection.full_name(subcollections_stack,onward_stack)
+        infered_type = AbstractDataFolder.type_inference(full_path).__name__
+        if collection_name not in self.collections_names():
+            self.collections[collection_name] = ConcreteCollection(subcollections_stack,onward_stack)
+            self.collections[collection_name].type = infered_type
+        else:
+            assert(infered_type == self.collections[collection_name].type)
+        self.collections[collection_name].folders.add(relative_path)
+
+    def append_collection_to_collection(self, subcollections_stack: list, onward_stack: list, suffix: str):
+        new_subcollection_name = Collection.full_name(subcollections_stack+[suffix],onward_stack)
+        assert(new_subcollection_name in self.collections_names())
+        collection_name = Collection.full_name(subcollections_stack,onward_stack)
+        if collection_name not in self.collections_names():
+            self.collections[collection_name] = VirtualCollection(subcollections_stack,onward_stack)
+            self.collections[collection_name].type = self.collections[new_subcollection_name].type
+        else:
+            assert(self.collections[new_subcollection_name].type == self.collections[collection_name].type)
+        self.collections[collection_name].subcollections.add(suffix)
 
     # operator[] -> redirect to self.collections
     def __getitem__(self, key: str):
@@ -242,7 +287,10 @@ class CollectionsManager():
 
     def save(self):
         with open(self.path,'w') as collections_JSON:
-            # TODO construct the JSON object
-            # dump(..., collections_JSON, sort_keys=True, indent=4)
-            print('Error: CollectionsManager.save() not implemented')
+            root_collection = [key for (key,value) in self.collections.items() if len(value.subcollections_stack)==1 and len(value.onward_stack)==0]
+            assert(len(root_collection) == 1)
+            root_collection = root_collection[0]
+            json_dict = dict()
+            json_dict[root_collection] = self.collections[root_collection].to_dict(self.collections)
+            dump(json_dict, collections_JSON, sort_keys=True, indent=4)
             return

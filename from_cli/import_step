@@ -37,9 +37,11 @@ args = parser.parse_args()
 
 input = Path(args.input)
 assert(input.exists())
-step_object = step(Settings.path('data_folder') / input.stem, input)
+root_folder = root()
+root_folder.import_STEP(input.stem, input)
 print(input.stem + ' imported')
 # TODO allow to append to a collection
 
 if args.view_output:
-    step_object.view()
+    step_folder = AbstractDataFolder.instantiate(root_folder.path / input.stem)
+    step_folder.view()

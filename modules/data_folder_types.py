@@ -208,21 +208,8 @@ class step(AbstractDataFolder):
     def is_instance(path: Path) -> bool:
         return (path / step.FILENAMES.STEP).exists()
 
-    def __init__(self,path: Path, step_file: Path = None):
-        # 2 modes
-        # - if step_file is None -> create a 'step' class instance interfacing an existing data folder
-        # - if step_file is something else -> create the folder, move inside the given STEP file, then instanciate the 'step' class
-        path = Path(path)
-        if(step_file!=None):
-            if path.exists():
-                logging.error(f'{path} already exists. Overwriting not allowed')
-                exit(1)
-            mkdir(path)
-            copyfile(step_file, path / self.FILENAMES.STEP)
-        AbstractDataFolder.__init__(self,path)
-        if not (path / self.FILENAMES.STEP).exists():
-            logging.error(f'At the end of step.__init__(), {path} does not exist')
-            exit(1)
+    def __init__(self,path: Path):
+        AbstractDataFolder.__init__(self,Path(path))
     
     def view(self, what = None):
         """
@@ -1067,7 +1054,24 @@ class root(AbstractDataFolder):
         
     # ----- Generative algorithms (create subfolders) --------------------
 
-    def import_MAMBO(self,path_to_MAMBO : str = None):
+    def import_STEP(self, folder_name: Path, step_file: Path):
+        folder_path = self.path / folder_name
+        if folder_path.exists():
+            logging.error(f'{folder_name} already exists. Overwriting not allowed')
+            exit(1)
+        start_datetime = time.localtime()
+        start_datetime_iso = time.strftime('%Y-%m-%dT%H:%M:%SZ', start_datetime)
+        mkdir(folder_path)
+        copyfile(step_file, folder_path / step.FILENAMES.STEP)
+        info_file = dict()
+        info_file[start_datetime_iso] = {
+            'GenerativeAlgorithm': 'import_STEP'
+        }
+        # write JSON file
+        with open(folder_path / 'info.json','w') as file:
+            dump(info_file, file, sort_keys=True, indent=4)
+
+    def import_MAMBO(self,path_to_MAMBO : Optional[str] = None):
         tmp_dir_used = True
         if path_to_MAMBO==None:
             if not UserInput.ask('No input was given, so the MAMBO dataset will be downloaded, are you sure you want to continue ?'):
@@ -1095,10 +1099,10 @@ class root(AbstractDataFolder):
             if subfolder.name in ['Scripts', '.git']:
                 continue # ignore this subfolder
             for file in [x for x in subfolder.iterdir() if x.suffix == '.step']:
-                step_object = step(self.path / file.stem,file)
+                self.import_STEP(file.stem,file)
                 print(file.stem + ' imported')
-                self.collections_manager.append_to_collection('MAMBO_'+subfolder.name,str(file.stem)) # 'MAMBO_Basic', 'MAMBO_Simple' & 'MAMBO_Medium' collections
-            self.collections_manager.append_to_collection('MAMBO','MAMBO_'+subfolder.name) # 'MAMBO' collection, will contain 'MAMBO_Basic', 'MAMBO_Simple' & 'MAMBO_Medium'
+                self.collections_manager.append_folder_to_collection(['MAMBO',subfolder.name],[],str(file.stem)) # 'MAMBO_Basic', 'MAMBO_Simple' & 'MAMBO_Medium' collections
+            self.collections_manager.append_collection_to_collection(['MAMBO'],[],subfolder.name)
         self.collections_manager.save()
 
         if tmp_dir_used:
