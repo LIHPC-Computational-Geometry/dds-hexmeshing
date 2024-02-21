@@ -115,6 +115,7 @@ class ConcreteCollection(Collection):
 
     @classmethod
     def create_from(cls,subcollections_stack: list, onward_stack: list, content: dict, collections: dict, data_folder: Path):
+        from modules.data_folder_types import AbstractDataFolder # imported here to avoid circular import
         out = ConcreteCollection(subcollections_stack,onward_stack)
         # check if there is not already a collection with this name
         name = out.full_name()
@@ -130,6 +131,14 @@ class ConcreteCollection(Collection):
             full_path = Path(data_folder / folder_as_str).absolute()
             if not full_path.exists():
                 logging.error(f"'{folder_as_str}' is mentioned in collections.json but doesn't exist")
+            else:
+                infered_type = AbstractDataFolder.type_inference(full_path).__name__ # infer subfolder type from what's inside, get name of associated class. lighter than AbstractDataFolder.instanciate(...).type()
+                if out.type is None:
+                    out.type = infered_type
+                else:
+                    if infered_type != out.type:
+                        raise Exception(f"Folder '{folder_as_str}' is of type '{infered_type}', whereas previous folder(s) are of type '{out.type}'. In a collection, all folders must have the same type.")
+                    # else : this folder comply with out.type, e.g. for now all folders have the same type
             out.folders.add(folder_as_str)
         if 'onward' not in content.keys():
             return out
@@ -192,9 +201,10 @@ class CollectionsManager():
     def pprint(self):
         table = Table()
         table.add_column("Name")
-        table.add_column("Kind", style='bright_black')
+        table.add_column("Kind")
+        table.add_column("Type")
         for collection_name in sorted(self.collections_names()):
-            table.add_row(collection_name,'virtual' if self.collections[collection_name].is_virtual() else 'concrete')
+            table.add_row(collection_name,'virtual' if self.collections[collection_name].is_virtual() else 'concrete',self.collections[collection_name].type)
         console = Console()
         console.print(table)
 
