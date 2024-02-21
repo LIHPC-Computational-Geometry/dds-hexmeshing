@@ -27,6 +27,16 @@ parser.add_argument(
 root_folder = root()
 root_folder.view(what='collections')
 
+print('')
+
 # verbose print
 for collection in root_folder.collections_manager.collections.values():
     print(collection)
+
+print('')
+
+# test gather_all_folders()
+for name,collection in root_folder.collections_manager.collections.items():
+    print(name)
+    print(collection.gather_all_folders(root_folder.collections_manager.collections))
+    print('')

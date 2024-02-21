@@ -56,8 +56,16 @@ class Collection(ABC):
     def full_name(subcollections_stack: list, onward_stack: list):
         return '.'.join(str(x) for x in subcollections_stack) + ('' if len(onward_stack)==0 else '/'+'/'.join(str(x) for x in onward_stack))
 
-    def gather_all_folders(self) -> list:
-        pass
+    def gather_all_folders(self, collections: dict) -> list:
+        all_folders = list()
+        if self.is_virtual():
+            for subcollection_prefix in self.subcollections:
+                all_folders += collections[Collection.full_name(self.subcollections_stack+[subcollection_prefix],self.onward_stack)].gather_all_folders(collections)
+        elif self.is_concrete():
+            all_folders += list(self.folders)
+        else:
+            raise Exception(f"Collection {Collection.full_name(self.subcollections_stack,self.onward_stack)} is neither virtual nor concrete")
+        return all_folders
 
 class VirtualCollection(Collection):
     """
