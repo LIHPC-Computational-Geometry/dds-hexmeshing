@@ -312,7 +312,7 @@ class tet_mesh(AbstractDataFolder):
     # ----- Access data from files --------------------
 
     def get_mesh_stats_dict(self) -> dict:
-        if(self.mesh_stats_dict == None): # if the stats are not already cached
+        if(self.mesh_stats_dict is None): # if the stats are not already cached
             self.mesh_stats_dict = load(open(self.get_file(self.FILENAMES.TET_MESH_STATS_JSON,True))) # compute if missing and load the JSON file
         return self.mesh_stats_dict
     
@@ -617,6 +617,7 @@ class labeling(AbstractDataFolder):
         POLYCUBOID_MESH_MEDIT           = 'polycuboid.mesh'                     # polycuboid generated from remeshed_tet_mesh and its labeling. GMF/MEDIT ASCII format.
         SURFACE_LABELING_MESH_GEOGRAM   = 'labeled_surface.geogram'             # surface triangle mesh in the Geogram format with the surface labeling as facet attribute (to be visualized with Graphite)
         POLYCUBE_LABELING_MESH_GEOGRAM  = 'fastbndpolycube.geogram'             # same as the polycube surface mesh, but with the labeling as facet attribute and in the Geogram format (to be visualized with Graphite)
+        LABELING_STATS_JSON             = 'labeling.stats.json'                 # labeling stats (nb charts/boundaries/corners/turning-points, nb invalid features) computed on SURFACE_LABELING_TXT, as JSON file
 
     DEFAULT_VIEW = 'labeled_surface'
 
@@ -626,6 +627,7 @@ class labeling(AbstractDataFolder):
 
     def __init__(self,path: Path):
         AbstractDataFolder.__init__(self,Path(path))
+        self.labeling_stats_dict = None
     
     def view(self,what = 'labeled_surface'):
         """
@@ -707,8 +709,17 @@ class labeling(AbstractDataFolder):
             surface_mesh = self.get_file(self.FILENAMES.POLYCUBE_SURFACE_MESH_OBJ,True)
             self.write_geogram(surface_mesh,self.FILENAMES.POLYCUBE_LABELING_MESH_GEOGRAM) # write labeled polycube mesh
             return True
+        elif filename == self.FILENAMES.LABELING_STATS_JSON:
+            return self.labeling_stats()
         else:
             return False
+    
+    # ----- Access data from files --------------------
+
+    def get_labeling_stats_dict(self) -> dict:
+        if(self.labeling_stats_dict is None): # if the stats are not already cached
+            self.labeling_stats_dict = load(open(self.get_file(self.FILENAMES.LABELING_STATS_JSON,True))) # compute if missing and load the JSON file
+        return self.labeling_stats_dict
         
     # ----- Transformative algorithms (modify current folder) --------------------
 
@@ -779,6 +790,29 @@ class labeling(AbstractDataFolder):
             preprocessed_tet_mesh = str(self.get_file(self.FILENAMES.PREPROCESSED_TET_MESH_MEDIT    )),
             volume_labeling         = str(self.get_file(self.FILENAMES.VOLUME_LABELING_TXT,     True))
         )
+
+    def labeling_stats(self) -> bool:
+        parent = AbstractDataFolder.instantiate(self.path.parent) # we need the parent folder to get the surface mesh
+        assert(parent.type() == 'tet_mesh') # the parent folder should be of tet_mesh type
+        TransformativeAlgorithm(
+            'labeling_stats',
+            self.path,
+            Settings.path('automatic_polycube') / 'labeling_stats',
+            '{surface_mesh} {surface_labeling}',
+            False, # disable tee mode
+            surface_mesh = str(parent.get_file(tet_mesh.FILENAMES.SURFACE_MESH_OBJ,  True)),
+            surface_labeling = str(self.get_file(self.FILENAMES.SURFACE_LABELING_TXT,  True)),
+        )
+        # TODO check if the return code is 0
+        if (self.path / 'labeling_stats.stdout.txt').exists():
+            # stdout should be a valid JSON file
+            # use rename_file() to keep track of the operation in info.json
+            rename_file(self.path,'labeling_stats.stdout.txt',self.FILENAMES.LABELING_STATS_JSON)
+            return True
+        else:
+            return False # unable to generate mesh stats file
+    
+    # ----- Generative algorithms (create subfolders) --------------------
 
     def polycube_withHexEx(self, scale, keep_debug_files = False):
         parent = AbstractDataFolder.instantiate(self.path.parent) # we need the parent folder to get the tet mesh
