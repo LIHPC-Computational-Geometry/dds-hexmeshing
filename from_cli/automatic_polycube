@@ -2,12 +2,18 @@
 
 from pathlib import Path
 from argparse import ArgumentParser
-
 from sys import path
+from rich.console import Console
+from rich.traceback import install
 
-# path.append(str((Path(__file__).parent / '../modules/').absolute()))
-path.append(str(Path(__file__).parent.parent.absolute()))
+# Add root of HexMeshWorkshop project folder in path
+project_root = str(Path(__file__).parent.parent.absolute())
+if path[-1] != project_root: path.append(project_root)
 
+# colored and detailed Python traceback
+install(show_locals=True,width=Console().width,word_wrap=True)
+
+# own modules
 from modules.data_folder_types import *
 
 parser = ArgumentParser(

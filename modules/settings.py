@@ -2,7 +2,10 @@ from types import SimpleNamespace
 from json import load
 from pathlib import Path
 from sys import path
-path.append(str(Path(__file__).parent.parent.absolute()))
+
+# Add root of HexMeshWorkshop project folder in path
+project_root = str(Path(__file__).parent.parent.absolute())
+if path[-1] != project_root: path.append(project_root)
 
 class Settings(SimpleNamespace):
     """

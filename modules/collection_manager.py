@@ -6,8 +6,12 @@ from rich.table import Table
 from rich.console import Console
 import logging
 from sys import path
-path.append(str(Path(__file__).parent.parent.absolute()))
 
+# Add root of HexMeshWorkshop project folder in path
+project_root = str(Path(__file__).parent.parent.absolute())
+if path[-1] != project_root: path.append(project_root)
+
+# own modules
 from modules.settings import *
 
 class Collection(ABC):
