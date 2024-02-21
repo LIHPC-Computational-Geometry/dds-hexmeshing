@@ -252,7 +252,7 @@ class step(AbstractDataFolder):
         
     # ----- Generative algorithms (create subfolders) --------------------
 
-    def Gmsh(self,mesh_size) -> Path:
+    def Gmsh(self,mesh_size,nb_threads) -> Path:
         return GenerativeAlgorithm(
             'Gmsh',
             self.path,
@@ -264,7 +264,7 @@ class step(AbstractDataFolder):
             step                            = str(self.get_file(self.FILENAMES.STEP,True)),
             output_file                     = tet_mesh.FILENAMES.TET_MESH_MEDIT,
             characteristic_length_factor    = mesh_size,
-            nb_threads                      = 8)
+            nb_threads                      = nb_threads)
 
 class tet_mesh(AbstractDataFolder):
     """

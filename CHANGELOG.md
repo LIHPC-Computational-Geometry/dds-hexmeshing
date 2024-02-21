@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - new in-file and in-memory structures for collections
 - `from_cli/list_collections` is now `from_cli/collections print`
 - all scripts in `from_cli/` use the colored Python traceback provided by [Rich](https://rich.readthedocs.io/en/latest/traceback.html)
+- `from_cli/Gmsh` as a new optional argument `-nt` for the number of threads
 
 ### Removed
 
