@@ -7,6 +7,7 @@ from pathlib import Path
 from rich.console import Console
 from rich.traceback import install
 import logging
+from os import remove
 
 # Add root of HexMeshWorkshop project folder in path
 project_root = str(Path(__file__).parent.parent.absolute())
@@ -29,6 +30,8 @@ invalid_labelings = list()
 valid_labelings_but_non_monotone = list()
 valid_and_all_monotone_labelings = list()
 
+per_labeling_feature_edges_stats = dict()
+
 root_folder = root()
 for level_minus_1_folder in [x for x in root_folder.path.iterdir() if x.is_dir()]:
     if not (level_minus_1_folder / step.FILENAMES.STEP).exists():
@@ -42,21 +45,26 @@ for level_minus_1_folder in [x for x in root_folder.path.iterdir() if x.is_dir()
             continue
         nb_meshes_success += 1
         for level_minus_3_folder in [x for x in level_minus_2_folder.iterdir() if x.is_dir()]:
+            # assemble relative path
+            relative_path = f'{level_minus_1_folder.name}/{level_minus_2_folder.name}/{level_minus_3_folder.name}'
             if not (level_minus_3_folder / labeling.FILENAMES.SURFACE_LABELING_TXT).exists():
                 logging.warning(f"Folder {level_minus_3_folder} has no {labeling.FILENAMES.SURFACE_LABELING_TXT}")
-                labelings_fail.append(f'{level_minus_1_folder.name}/{level_minus_2_folder.name}/{level_minus_3_folder.name}')
+                labelings_fail.append(relative_path)
                 continue
             labeling_folder = AbstractDataFolder.instantiate(level_minus_3_folder)
             assert(labeling_folder.type() == 'labeling')
+            # remove the labeling stats, to recompute them with the latest version of the `labeling_stats` executable from automatic_polycube
+            if (level_minus_3_folder / labeling.FILENAMES.LABELING_STATS_JSON).exists():
+                remove(level_minus_3_folder / labeling.FILENAMES.LABELING_STATS_JSON)
             stats = labeling_folder.get_labeling_stats_dict()
+            per_labeling_feature_edges_stats[relative_path] = stats['feature-edges']
             if stats['charts']['invalid'] > 0 or stats['boundaries']['invalid'] > 0 or stats['corners']['invalid'] > 0:
-                invalid_labelings.append(f'{level_minus_1_folder.name}/{level_minus_2_folder.name}/{level_minus_3_folder.name}')
+                invalid_labelings.append(relative_path)
                 continue
             if stats['turning-points']['nb'] > 0:
-                valid_labelings_but_non_monotone.append(f'{level_minus_1_folder.name}/{level_minus_2_folder.name}/{level_minus_3_folder.name}')
+                valid_labelings_but_non_monotone.append(relative_path)
                 continue
-            valid_and_all_monotone_labelings.append(f'{level_minus_1_folder.name}/{level_minus_2_folder.name}/{level_minus_3_folder.name}')
-
+            valid_and_all_monotone_labelings.append(relative_path)
 
 ic(nb_CAD)
 
@@ -64,10 +72,25 @@ ic(nb_meshes_fail)
 ic(nb_meshes_success)
 
 ic(len(labelings_fail))
+print(f'-> {len(labelings_fail)/nb_CAD*100} %')
 ic(labelings_fail)
+
 ic(len(invalid_labelings))
+print(f'-> {len(invalid_labelings)/nb_CAD*100} %')
 ic(invalid_labelings)
+
 ic(len(valid_labelings_but_non_monotone))
+print(f'-> {len(valid_labelings_but_non_monotone)/nb_CAD*100} %')
 ic(valid_labelings_but_non_monotone)
+
 ic(len(valid_and_all_monotone_labelings))
+print(f'-> {len(valid_and_all_monotone_labelings)/nb_CAD*100} %')
 ic(valid_and_all_monotone_labelings)
+
+for rel_path,feature_edges_stats in per_labeling_feature_edges_stats.items():
+    total_nb_feature_edges = feature_edges_stats['removed']+feature_edges_stats['lost']+feature_edges_stats['preserved']
+    print(f'Feature edges in {rel_path}')
+    print(f"\tnb removed : {feature_edges_stats['removed']} -> {feature_edges_stats['removed']/total_nb_feature_edges*100} %")
+    print(f"\tnb lost : {feature_edges_stats['lost']} -> {feature_edges_stats['lost']/total_nb_feature_edges*100} %")
+    print(f"\tnb preserved : {feature_edges_stats['preserved']} -> {feature_edges_stats['preserved']/total_nb_feature_edges*100} %")
+    print('') # separation with empty line
