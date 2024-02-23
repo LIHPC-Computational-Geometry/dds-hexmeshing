@@ -184,6 +184,25 @@ class AbstractDataFolder(ABC):
             table.add_row(datetime,algo_name)
         console = Console()
         console.print(table)
+
+    def get_subfolders_of_type(self,type_str: str) -> list[Path]:
+        out = list()
+        for subfolder in [x for x in self.path.iterdir() if x.is_dir()]:
+            if AbstractDataFolder.type_inference(subfolder).__name__ == type_str:
+                out.append(subfolder)
+        return out
+
+    def get_subfolders_generated_by(self,generator_name: str) -> list[Path]:
+        out = list()
+        for subfolder in [x for x in self.path.iterdir() if x.is_dir()]:
+            if (subfolder / 'info.json').exists():
+                with open(subfolder / 'info.json') as json_file:
+                    json_dict = load(json_file)
+                    for _,per_algo_info in json_dict.items():
+                        if 'GenerativeAlgorithm' in per_algo_info.keys() and per_algo_info['GenerativeAlgorithm'] == generator_name:
+                            out.append(subfolder)
+        return out
+
             
 # Checklist for creating a subclass = a new kind of data folder
 # - for almost all cases, __init__(self,path) just need to call AbstractDataFolder.__init__(self,path)
