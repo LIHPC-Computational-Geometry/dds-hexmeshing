@@ -739,6 +739,14 @@ class labeling(AbstractDataFolder):
         if(self.labeling_stats_dict is None): # if the stats are not already cached
             self.labeling_stats_dict = load(open(self.get_file(self.FILENAMES.LABELING_STATS_JSON,True))) # compute if missing and load the JSON file
         return self.labeling_stats_dict
+    
+    def has_valid_labeling(self) -> bool:
+        stats = self.get_labeling_stats_dict()
+        return stats['charts']['invalid'] == 0 and stats['boundaries']['invalid'] == 0 and stats['corners']['invalid'] == 0
+    
+    def nb_turning_points(self) -> int:
+        stats = self.get_labeling_stats_dict()
+        return int(stats['turning-points']['nb'])
         
     # ----- Transformative algorithms (modify current folder) --------------------
 
