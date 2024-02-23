@@ -7,7 +7,6 @@ from pathlib import Path
 from rich.console import Console
 from rich.traceback import install
 import logging
-from os import remove
 
 # Add root of HexMeshWorkshop project folder in path
 project_root = str(Path(__file__).parent.parent.absolute())
@@ -18,19 +17,18 @@ install(show_locals=True,width=Console().width,word_wrap=True)
 
 from modules.data_folder_types import *
 
-from icecream import ic
-
 nb_CAD = 0
 
 nb_meshes_fail = 0
 nb_meshes_success = 0
 
-labelings_fail = list()
-invalid_labelings = list()
-valid_labelings_but_non_monotone = list()
-valid_and_all_monotone_labelings = list()
+missing_execution: list[str] = list()
+labelings_fail: list[str] = list()
+invalid_labelings: list[str] = list()
+valid_labelings_but_non_monotone: list[str] = list()
+valid_and_all_monotone_labelings: list[str] = list()
 
-per_labeling_feature_edges_stats = dict()
+per_labeling_feature_edges_stats: dict = dict()
 
 root_folder = root()
 for level_minus_1_folder in [x for x in root_folder.path.iterdir() if x.is_dir()]:
@@ -38,59 +36,90 @@ for level_minus_1_folder in [x for x in root_folder.path.iterdir() if x.is_dir()
         logging.warning(f"Folder {level_minus_1_folder} has no {step.FILENAMES.STEP}")
         continue
     nb_CAD += 1
-    for level_minus_2_folder in [x for x in level_minus_1_folder.iterdir() if x.is_dir()]:
-        if not (level_minus_2_folder / tet_mesh.FILENAMES.SURFACE_MESH_OBJ).exists():
-            logging.warning(f"Folder {level_minus_2_folder} has no {tet_mesh.FILENAMES.SURFACE_MESH_OBJ}")
-            nb_meshes_fail += 1
-            continue
+    if (level_minus_1_folder / 'Gmsh_0.1/').exists() and (level_minus_1_folder / 'Gmsh_0.1' / tet_mesh.FILENAMES.SURFACE_MESH_OBJ).exists():
+        tet_folder = AbstractDataFolder.instantiate(level_minus_1_folder / 'Gmsh_0.1')
         nb_meshes_success += 1
-        for level_minus_3_folder in [x for x in level_minus_2_folder.iterdir() if x.is_dir()]:
-            # assemble relative path
-            relative_path = f'{level_minus_1_folder.name}/{level_minus_2_folder.name}/{level_minus_3_folder.name}'
-            if not (level_minus_3_folder / labeling.FILENAMES.SURFACE_LABELING_TXT).exists():
-                logging.warning(f"Folder {level_minus_3_folder} has no {labeling.FILENAMES.SURFACE_LABELING_TXT}")
-                labelings_fail.append(relative_path)
-                continue
-            labeling_folder = AbstractDataFolder.instantiate(level_minus_3_folder)
-            assert(labeling_folder.type() == 'labeling')
-            # remove the labeling stats, to recompute them with the latest version of the `labeling_stats` executable from automatic_polycube
-            if (level_minus_3_folder / labeling.FILENAMES.LABELING_STATS_JSON).exists():
-                remove(level_minus_3_folder / labeling.FILENAMES.LABELING_STATS_JSON)
-            stats = labeling_folder.get_labeling_stats_dict()
-            per_labeling_feature_edges_stats[relative_path] = stats['feature-edges']
-            if stats['charts']['invalid'] > 0 or stats['boundaries']['invalid'] > 0 or stats['corners']['invalid'] > 0:
-                invalid_labelings.append(relative_path)
-                continue
-            if stats['turning-points']['nb'] > 0:
-                valid_labelings_but_non_monotone.append(relative_path)
-                continue
-            valid_and_all_monotone_labelings.append(relative_path)
+        labeling_subfolders_generated_by_automatic_polycube: list[Path] = tet_folder.get_subfolders_generated_by('automatic_polycube')
+        assert(len(labeling_subfolders_generated_by_automatic_polycube) <= 1)
+        if len(labeling_subfolders_generated_by_automatic_polycube) == 0:
+            missing_execution.append(str(level_minus_1_folder / 'Gmsh_0.1/'))
+            continue
+        relative_path = labeling_subfolders_generated_by_automatic_polycube[0].relative_to(root_folder.path)
+        if not (labeling_subfolders_generated_by_automatic_polycube[0] / labeling.FILENAMES.SURFACE_LABELING_TXT).exists():
+            logging.warning(f"Folder {labeling_subfolders_generated_by_automatic_polycube[0] / labeling.FILENAMES.SURFACE_LABELING_TXT} has no {labeling.FILENAMES.SURFACE_LABELING_TXT}")
+            labelings_fail.append(relative_path)
+            continue
+        labeling_folder: labeling = AbstractDataFolder.instantiate(labeling_subfolders_generated_by_automatic_polycube[0])
+        assert(labeling_folder.type() == 'labeling')
+        stats = labeling_folder.get_labeling_stats_dict()
+        per_labeling_feature_edges_stats[relative_path] = stats['feature-edges']
+        if not labeling_folder.has_valid_labeling():
+            invalid_labelings.append(relative_path)
+            continue
+        # valid labeling
+        if labeling_folder.nb_turning_points() > 0:
+            valid_labelings_but_non_monotone.append(relative_path)
+            continue
+        valid_and_all_monotone_labelings.append(relative_path)
+    else:
+        nb_meshes_fail += 1
 
-ic(nb_CAD)
+print('# CAD')
+print('')
+print(f'nb CAD = {nb_CAD}')
+print('')
 
-ic(nb_meshes_fail)
-ic(nb_meshes_success)
+print('# Tet meshes')
+print('')
+print(f'nb meshes fail = {nb_meshes_fail} -> {nb_meshes_fail/nb_CAD*100} %')
+print(f'nb meshes success = {nb_meshes_success} -> {nb_meshes_success/nb_CAD*100} %')
+print('')
 
-ic(len(labelings_fail))
-print(f'-> {len(labelings_fail)/nb_CAD*100} %')
-ic(labelings_fail)
+print('# Labelings')
+print('')
 
-ic(len(invalid_labelings))
-print(f'-> {len(invalid_labelings)/nb_CAD*100} %')
-ic(invalid_labelings)
+print('## Missing execution')
+print('')
+print(f'nb = {len(missing_execution)} -> {len(missing_execution)/nb_CAD*100} %')
+for rel_path in missing_execution:
+    print(f'- {rel_path}')
+print('')
 
-ic(len(valid_labelings_but_non_monotone))
-print(f'-> {len(valid_labelings_but_non_monotone)/nb_CAD*100} %')
-ic(valid_labelings_but_non_monotone)
+print('## Fails')
+print('')
+print(f'nb = {len(labelings_fail)} -> {len(labelings_fail)/nb_CAD*100} %')
+for rel_path in labelings_fail:
+    print(f'- {rel_path}')
+print('')
 
-ic(len(valid_and_all_monotone_labelings))
-print(f'-> {len(valid_and_all_monotone_labelings)/nb_CAD*100} %')
-ic(valid_and_all_monotone_labelings)
+print('## Invalid')
+print('')
+print(f'nb = {len(invalid_labelings)} -> {len(invalid_labelings)/nb_CAD*100} %')
+for rel_path in invalid_labelings:
+    print(f'- {rel_path}')
+print('')
+
+print('## Valid but non-monotone boundaries')
+print('')
+print(f'nb = {len(valid_labelings_but_non_monotone)} -> {len(valid_labelings_but_non_monotone)/nb_CAD*100} %')
+for rel_path in valid_labelings_but_non_monotone:
+    print(f'- {rel_path}')
+print('')
+
+print('## Valid and non-monotone boundaries')
+print('')
+print(f'nb = {len(valid_and_all_monotone_labelings)} -> {len(valid_and_all_monotone_labelings)/nb_CAD*100} %')
+for rel_path in valid_and_all_monotone_labelings:
+    print(f'- {rel_path}')
+print('')
+
+print('# Feature edges preservation')
 
 for rel_path,feature_edges_stats in per_labeling_feature_edges_stats.items():
     total_nb_feature_edges = feature_edges_stats['removed']+feature_edges_stats['lost']+feature_edges_stats['preserved']
-    print(f'Feature edges in {rel_path}')
-    print(f"\tnb removed : {feature_edges_stats['removed']} -> {feature_edges_stats['removed']/total_nb_feature_edges*100} %")
-    print(f"\tnb lost : {feature_edges_stats['lost']} -> {feature_edges_stats['lost']/total_nb_feature_edges*100} %")
-    print(f"\tnb preserved : {feature_edges_stats['preserved']} -> {feature_edges_stats['preserved']/total_nb_feature_edges*100} %")
+    print(f'## Feature edges in {rel_path}')
+    print('')
+    print(f"- nb removed : {feature_edges_stats['removed']} -> {feature_edges_stats['removed']/total_nb_feature_edges*100} %")
+    print(f"- nb lost : {feature_edges_stats['lost']} -> {feature_edges_stats['lost']/total_nb_feature_edges*100} %")
+    print(f"- nb preserved : {feature_edges_stats['preserved']} -> {feature_edges_stats['preserved']/total_nb_feature_edges*100} %")
     print('') # separation with empty line
