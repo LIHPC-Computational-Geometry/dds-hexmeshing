@@ -6,3 +6,4 @@ __pycache__/
 .venv/
 
 from_python/*.md
+from_python/*.html

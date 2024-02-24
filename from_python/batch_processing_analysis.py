@@ -7,6 +7,7 @@ from pathlib import Path
 from rich.console import Console
 from rich.traceback import install
 import logging
+from time import localtime, strftime
 
 # Add root of HexMeshWorkshop project folder in path
 project_root = str(Path(__file__).parent.parent.absolute())
@@ -17,109 +18,116 @@ install(show_locals=True,width=Console().width,word_wrap=True)
 
 from modules.data_folder_types import *
 
-nb_CAD = 0
+logging.getLogger().setLevel(logging.INFO)
 
-nb_meshes_fail = 0
-nb_meshes_success = 0
+report_name = strftime('%Y-%m-%d_%Hh%M_report', localtime())
 
-missing_execution: list[str] = list()
-labelings_fail: list[str] = list()
-invalid_labelings: list[str] = list()
-valid_labelings_but_non_monotone: list[str] = list()
-valid_and_all_monotone_labelings: list[str] = list()
+# https://www.ag-grid.com/react-data-grid/getting-started/
+HTML_report = f"""<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>{report_name}</title>
+		<meta charSet="UTF-8"/>
+		<meta name="viewport" content="width=device-width, initial-scale=1"/>
+		<style media="only screen">
+            html, body {{
+                height: 100%;
+                width: 100%;
+                margin: 0;
+                box-sizing: border-box;
+                -webkit-overflow-scrolling: touch;
+            }}
 
-per_labeling_feature_edges_stats: dict = dict()
+            html {{
+                position: absolute;
+                top: 0;
+                left: 0;
+                padding: 0;
+                overflow: auto;
+            }}
+
+            body {{
+                padding: 16px;
+                overflow: auto;
+                background-color: transparent
+            }}
+            </style>
+	</head>
+	<body style="text-align: center;">
+		<div id="myGrid" style="width: 100%; height: 100%" class="ag-theme-alpine-dark"></div>
+		<script src="https://cdn.jsdelivr.net/npm/ag-grid-community@31.1.1/dist/ag-grid-community.min.js"></script>
+		<script>
+            // Grid API: Access to Grid API methods
+            let gridApi;
+
+            // Grid Options: Contains all of the grid configurations
+            const gridOptions = {{
+            // Row Data: The data to be displayed.
+            rowData: [
+"""
 
 root_folder = root()
 for level_minus_1_folder in [x for x in root_folder.path.iterdir() if x.is_dir()]:
+    CAD_name = level_minus_1_folder.name
     if not (level_minus_1_folder / step.FILENAMES.STEP).exists():
         logging.warning(f"Folder {level_minus_1_folder} has no {step.FILENAMES.STEP}")
         continue
-    nb_CAD += 1
     if (level_minus_1_folder / 'Gmsh_0.1/').exists() and (level_minus_1_folder / 'Gmsh_0.1' / tet_mesh.FILENAMES.SURFACE_MESH_OBJ).exists():
-        tet_folder = AbstractDataFolder.instantiate(level_minus_1_folder / 'Gmsh_0.1')
-        nb_meshes_success += 1
+        tet_folder: tet_mesh = AbstractDataFolder.instantiate(level_minus_1_folder / 'Gmsh_0.1')
+        avg_edge_length = float(tet_folder.get_mesh_stats_dict()['edges']['length']['avg'])
         labeling_subfolders_generated_by_automatic_polycube: list[Path] = tet_folder.get_subfolders_generated_by('automatic_polycube')
         assert(len(labeling_subfolders_generated_by_automatic_polycube) <= 1)
         if len(labeling_subfolders_generated_by_automatic_polycube) == 0:
-            missing_execution.append(str(level_minus_1_folder / 'Gmsh_0.1/'))
+            HTML_report += f"""\n{{ name: "{CAD_name}", avg_edge_length: {avg_edge_length:.3f}, valid: null, nb_turning_points: null, percentage_removed: null, percentage_lost: null, percentage_preserved: null }},"""
             continue
         relative_path = labeling_subfolders_generated_by_automatic_polycube[0].relative_to(root_folder.path)
         if not (labeling_subfolders_generated_by_automatic_polycube[0] / labeling.FILENAMES.SURFACE_LABELING_TXT).exists():
-            logging.warning(f"Folder {labeling_subfolders_generated_by_automatic_polycube[0] / labeling.FILENAMES.SURFACE_LABELING_TXT} has no {labeling.FILENAMES.SURFACE_LABELING_TXT}")
-            labelings_fail.append(relative_path)
+            HTML_report += f"""\n{{ name: "{CAD_name}", avg_edge_length: {avg_edge_length:.3f}, valid: null, nb_turning_points: null, percentage_removed: null, percentage_lost: null, percentage_preserved: null }},"""
             continue
         labeling_folder: labeling = AbstractDataFolder.instantiate(labeling_subfolders_generated_by_automatic_polycube[0])
         assert(labeling_folder.type() == 'labeling')
-        stats = labeling_folder.get_labeling_stats_dict()
-        per_labeling_feature_edges_stats[relative_path] = stats['feature-edges']
-        if not labeling_folder.has_valid_labeling():
-            invalid_labelings.append(relative_path)
-            continue
-        # valid labeling
-        if labeling_folder.nb_turning_points() > 0:
-            valid_labelings_but_non_monotone.append(relative_path)
-            continue
-        valid_and_all_monotone_labelings.append(relative_path)
+        feature_edges_stats = labeling_folder.get_labeling_stats_dict()['feature-edges']
+        total_feature_edges = feature_edges_stats['removed'] + feature_edges_stats['lost'] + feature_edges_stats['preserved']
+        HTML_report += f"""\n{{ name: "{CAD_name}", avg_edge_length: {avg_edge_length:.3f}, valid: {str(labeling_folder.has_valid_labeling()).lower()}, nb_turning_points: {labeling_folder.nb_turning_points()}, percentage_removed: {feature_edges_stats['removed']/total_feature_edges*100:.2f}, percentage_lost: {feature_edges_stats['lost']/total_feature_edges*100:.2f}, percentage_preserved: {feature_edges_stats['preserved']/total_feature_edges*100:.2f} }},"""
     else:
-        nb_meshes_fail += 1
+        HTML_report += f"""\n{{ name: "{CAD_name}", avg_edge_length: null, valid: null, nb_turning_points: null, percentage_removed: null, percentage_lost: null, percentage_preserved: null }},"""
 
-print('# CAD')
-print('')
-print(f'nb CAD = {nb_CAD}')
-print('')
+HTML_report += """
+            ],
+            // Column Definitions: Defines & controls grid columns.
+            columnDefs: [
+                { field: "name",            headerName: "CAD model",        cellDataType: 'text' },
+                {
+                    headerName: 'tet mesh',
+                    children: [
+                        { field: "avg_edge_length", headerName: "avg. edge length", cellDataType: 'number' },
+                    ]
+                },
+                {
+                    headerName: 'labeling',
+                    children: [
+                        { field: "valid",               headerName: "valid",            cellDataType: 'boolean' },
+                        { field: "nb_turning_points",   headerName: "#turning-points",  cellDataType: 'number' },
+                    ]
+                },
+                {
+                    headerName: 'feature edges',
+                    children: [
+                        { field: "percentage_removed",      headerName: "%age removed",     cellDataType: 'number' },
+                        { field: "percentage_lost",         headerName: "%age lost",        cellDataType: 'number' },
+                        { field: "percentage_preserved",    headerName: "%age preserved",   cellDataType: 'number' },
+                    ]
+                },
+            ],
+            };
 
-print('# Tet meshes')
-print('')
-print(f'nb meshes fail = {nb_meshes_fail} -> {nb_meshes_fail/nb_CAD*100} %')
-print(f'nb meshes success = {nb_meshes_success} -> {nb_meshes_success/nb_CAD*100} %')
-print('')
+            // Create Grid: Create new grid within the #myGrid div, using the Grid Options object
+            gridApi = agGrid.createGrid(document.querySelector('#myGrid'), gridOptions);
+		</script>
+	</body>
+</html>
+"""
 
-print('# Labelings')
-print('')
-
-print('## Missing execution')
-print('')
-print(f'nb = {len(missing_execution)} -> {len(missing_execution)/nb_CAD*100} %')
-for rel_path in missing_execution:
-    print(f'- {rel_path}')
-print('')
-
-print('## Fails')
-print('')
-print(f'nb = {len(labelings_fail)} -> {len(labelings_fail)/nb_CAD*100} %')
-for rel_path in labelings_fail:
-    print(f'- {rel_path}')
-print('')
-
-print('## Invalid')
-print('')
-print(f'nb = {len(invalid_labelings)} -> {len(invalid_labelings)/nb_CAD*100} %')
-for rel_path in invalid_labelings:
-    print(f'- {rel_path}')
-print('')
-
-print('## Valid but non-monotone boundaries')
-print('')
-print(f'nb = {len(valid_labelings_but_non_monotone)} -> {len(valid_labelings_but_non_monotone)/nb_CAD*100} %')
-for rel_path in valid_labelings_but_non_monotone:
-    print(f'- {rel_path}')
-print('')
-
-print('## Valid and non-monotone boundaries')
-print('')
-print(f'nb = {len(valid_and_all_monotone_labelings)} -> {len(valid_and_all_monotone_labelings)/nb_CAD*100} %')
-for rel_path in valid_and_all_monotone_labelings:
-    print(f'- {rel_path}')
-print('')
-
-print('# Feature edges preservation')
-
-for rel_path,feature_edges_stats in per_labeling_feature_edges_stats.items():
-    total_nb_feature_edges = feature_edges_stats['removed']+feature_edges_stats['lost']+feature_edges_stats['preserved']
-    print(f'## Feature edges in {rel_path}')
-    print('')
-    print(f"- nb removed : {feature_edges_stats['removed']} -> {feature_edges_stats['removed']/total_nb_feature_edges*100} %")
-    print(f"- nb lost : {feature_edges_stats['lost']} -> {feature_edges_stats['lost']/total_nb_feature_edges*100} %")
-    print(f"- nb preserved : {feature_edges_stats['preserved']} -> {feature_edges_stats['preserved']/total_nb_feature_edges*100} %")
-    print('') # separation with empty line
+with open(f'{report_name}.html','w') as HTML_file:
+    logging.info(f'Writing {report_name}.html...')
+    HTML_file.write(HTML_report)
