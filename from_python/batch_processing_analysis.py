@@ -23,47 +23,78 @@ logging.getLogger().setLevel(logging.INFO)
 report_name = strftime('%Y-%m-%d_%Hh%M_report', localtime())
 
 # https://www.ag-grid.com/react-data-grid/getting-started/
-HTML_report = f"""<!DOCTYPE html>
+HTML_report = """<!DOCTYPE html>
 <html lang="en">
 	<head>
-		<title>{report_name}</title>
+		<title>""" + report_name + """</title>
 		<meta charSet="UTF-8"/>
 		<meta name="viewport" content="width=device-width, initial-scale=1"/>
 		<style media="only screen">
-            html, body {{
+            html, body {
                 height: 100%;
                 width: 100%;
                 margin: 0;
                 box-sizing: border-box;
                 -webkit-overflow-scrolling: touch;
-            }}
+            }
 
-            html {{
+            html {
                 position: absolute;
                 top: 0;
                 left: 0;
                 padding: 0;
                 overflow: auto;
-            }}
+            }
 
-            body {{
+            body {
                 padding: 16px;
                 overflow: auto;
                 background-color: transparent
-            }}
+            }
             </style>
 	</head>
 	<body style="text-align: center;">
 		<div id="myGrid" style="width: 100%; height: 100%" class="ag-theme-alpine-dark"></div>
 		<script src="https://cdn.jsdelivr.net/npm/ag-grid-community@31.1.1/dist/ag-grid-community.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.11/dist/clipboard.min.js"></script>
 		<script>
+            // clipboard.js
+            new ClipboardJS('.btn');
+
+            function getViewCommand(params) {
+                return "./view -i " + params.data.folder
+            }
+
+            class CustomButtonComponent {
+                eGui;
+                eButton;
+
+                init(params) {
+                    this.eGui = document.createElement('div');
+                    this.eGui.classList.add('custom-element');
+                    this.eGui.innerHTML = `
+                        <button class="btn" data-clipboard-text="${getViewCommand(params)}">
+                            Copy
+                        </button>
+                    `;
+                }
+
+                getGui() {
+                    return this.eGui;
+                }
+
+                refresh(params) {
+                    return false;
+                }
+            }
+
             // Grid API: Access to Grid API methods
             let gridApi;
 
             // Grid Options: Contains all of the grid configurations
-            const gridOptions = {{
-            // Row Data: The data to be displayed.
-            rowData: [
+            const gridOptions = {
+                // Row Data: The data to be displayed.
+                rowData: [
 """
 
 root_folder = root()
@@ -78,47 +109,49 @@ for level_minus_1_folder in [x for x in root_folder.path.iterdir() if x.is_dir()
         labeling_subfolders_generated_by_automatic_polycube: list[Path] = tet_folder.get_subfolders_generated_by('automatic_polycube')
         assert(len(labeling_subfolders_generated_by_automatic_polycube) <= 1)
         if len(labeling_subfolders_generated_by_automatic_polycube) == 0:
-            HTML_report += f"""\n{{ name: "{CAD_name}", avg_edge_length: {avg_edge_length:.3f}, valid: null, nb_turning_points: null, percentage_removed: null, percentage_lost: null, percentage_preserved: null }},"""
+            HTML_report += f"""\n{{ name: "{CAD_name}", avg_edge_length: {avg_edge_length:.3f}, valid: null, nb_turning_points: null, percentage_removed: null, percentage_lost: null, percentage_preserved: null, folder: "{str(tet_folder.path)}" }},"""
             continue
         relative_path = labeling_subfolders_generated_by_automatic_polycube[0].relative_to(root_folder.path)
         if not (labeling_subfolders_generated_by_automatic_polycube[0] / labeling.FILENAMES.SURFACE_LABELING_TXT).exists():
-            HTML_report += f"""\n{{ name: "{CAD_name}", avg_edge_length: {avg_edge_length:.3f}, valid: null, nb_turning_points: null, percentage_removed: null, percentage_lost: null, percentage_preserved: null }},"""
+            HTML_report += f"""\n{{ name: "{CAD_name}", avg_edge_length: {avg_edge_length:.3f}, valid: null, nb_turning_points: null, percentage_removed: null, percentage_lost: null, percentage_preserved: null, folder: "{str(tet_folder.path)}" }},"""
             continue
         labeling_folder: labeling = AbstractDataFolder.instantiate(labeling_subfolders_generated_by_automatic_polycube[0])
         assert(labeling_folder.type() == 'labeling')
         feature_edges_stats = labeling_folder.get_labeling_stats_dict()['feature-edges']
         total_feature_edges = feature_edges_stats['removed'] + feature_edges_stats['lost'] + feature_edges_stats['preserved']
-        HTML_report += f"""\n{{ name: "{CAD_name}", avg_edge_length: {avg_edge_length:.3f}, valid: {str(labeling_folder.has_valid_labeling()).lower()}, nb_turning_points: {labeling_folder.nb_turning_points()}, percentage_removed: {feature_edges_stats['removed']/total_feature_edges*100:.2f}, percentage_lost: {feature_edges_stats['lost']/total_feature_edges*100:.2f}, percentage_preserved: {feature_edges_stats['preserved']/total_feature_edges*100:.2f} }},"""
+        HTML_report += f"""\n{{ name: "{CAD_name}", avg_edge_length: {avg_edge_length:.3f}, valid: {str(labeling_folder.has_valid_labeling()).lower()}, nb_turning_points: {labeling_folder.nb_turning_points()}, percentage_removed: {feature_edges_stats['removed']/total_feature_edges*100:.2f}, percentage_lost: {feature_edges_stats['lost']/total_feature_edges*100:.2f}, percentage_preserved: {feature_edges_stats['preserved']/total_feature_edges*100:.2f}, folder: "{str(labeling_subfolders_generated_by_automatic_polycube[0])}" }},"""
     else:
-        HTML_report += f"""\n{{ name: "{CAD_name}", avg_edge_length: null, valid: null, nb_turning_points: null, percentage_removed: null, percentage_lost: null, percentage_preserved: null }},"""
+        # not even a surface mesh
+        HTML_report += f"""\n{{ name: "{CAD_name}", avg_edge_length: null, valid: null, nb_turning_points: null, percentage_removed: null, percentage_lost: null, percentage_preserved: null, folder: "{str(level_minus_1_folder)}" }},"""
 
 HTML_report += """
-            ],
-            // Column Definitions: Defines & controls grid columns.
-            columnDefs: [
-                { field: "name",            headerName: "CAD model",        cellDataType: 'text' },
-                {
-                    headerName: 'tet mesh',
-                    children: [
-                        { field: "avg_edge_length", headerName: "avg. edge length", cellDataType: 'number' },
-                    ]
-                },
-                {
-                    headerName: 'labeling',
-                    children: [
-                        { field: "valid",               headerName: "valid",            cellDataType: 'boolean' },
-                        { field: "nb_turning_points",   headerName: "#turning-points",  cellDataType: 'number' },
-                    ]
-                },
-                {
-                    headerName: 'feature edges',
-                    children: [
-                        { field: "percentage_removed",      headerName: "%age removed",     cellDataType: 'number' },
-                        { field: "percentage_lost",         headerName: "%age lost",        cellDataType: 'number' },
-                        { field: "percentage_preserved",    headerName: "%age preserved",   cellDataType: 'number' },
-                    ]
-                },
-            ],
+                ],
+                // Column Definitions: Defines & controls grid columns.
+                columnDefs: [
+                    { field: "name",            headerName: "CAD model",        cellDataType: 'text' },
+                    {
+                        headerName: 'tet mesh',
+                        children: [
+                            { field: "avg_edge_length", headerName: "avg. edge length", cellDataType: 'number' },
+                        ]
+                    },
+                    {
+                        headerName: 'labeling',
+                        children: [
+                            { field: "valid",               headerName: "valid",            cellDataType: 'boolean' },
+                            { field: "nb_turning_points",   headerName: "#turning-points",  cellDataType: 'number' },
+                        ]
+                    },
+                    {
+                        headerName: 'feature edges',
+                        children: [
+                            { field: "percentage_removed",      headerName: "%age removed",     cellDataType: 'number' },
+                            { field: "percentage_lost",         headerName: "%age lost",        cellDataType: 'number' },
+                            { field: "percentage_preserved",    headerName: "%age preserved",   cellDataType: 'number' },
+                        ]
+                    },
+                    { field: 'command', headerName: "'view' command", cellRenderer: CustomButtonComponent },
+                ]
             };
 
             // Create Grid: Create new grid within the #myGrid div, using the Grid Options object
