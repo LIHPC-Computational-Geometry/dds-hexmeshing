@@ -47,7 +47,7 @@ for level_minus_1_folder in [x for x in root_folder.path.iterdir() if x.is_dir()
     if (level_minus_1_folder / 'Gmsh_0.1/').exists() and (level_minus_1_folder / 'Gmsh_0.1' / tet_mesh.FILENAMES.SURFACE_MESH_OBJ).exists():
         tet_folder: tet_mesh = AbstractDataFolder.instantiate(level_minus_1_folder / 'Gmsh_0.1')
         nb_meshing_successes += 1
-        avg_edge_length = float(tet_folder.get_mesh_stats_dict()['edges']['length']['avg'])
+        avg_edge_length = float(tet_folder.get_tet_mesh_stats_dict()['edges']['length']['avg'])
         labeling_subfolders_generated_by_automatic_polycube: list[Path] = tet_folder.get_subfolders_generated_by('automatic_polycube')
         assert(len(labeling_subfolders_generated_by_automatic_polycube) <= 1)
         if len(labeling_subfolders_generated_by_automatic_polycube) == 0:
