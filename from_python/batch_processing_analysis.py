@@ -8,6 +8,7 @@ from rich.console import Console
 from rich.traceback import install
 import logging
 from time import localtime, strftime
+from json import dumps
 
 # Add root of HexMeshWorkshop project folder in path
 project_root = str(Path(__file__).parent.parent.absolute())
@@ -168,6 +169,27 @@ for level_minus_1_folder in [x for x in root_folder.path.iterdir() if x.is_dir()
 assert(nb_meshing_fails + nb_meshing_successes == nb_CAD)
 assert(nb_labelings_failed + nb_labelings_invalid + nb_labelings_valid_with_turning_points + nb_labelings_valid_no_turning_points == nb_meshing_successes)
 
+Sankey_diagram_data = dict()
+Sankey_diagram_data["nodes"] = list()
+Sankey_diagram_data["nodes"].append({"node":0,"name":f"{nb_CAD} CAD models"})
+Sankey_diagram_data["nodes"].append({"node":1,"name":f"meshing successes : {nb_meshing_successes/nb_CAD*100:.2f} %"})
+Sankey_diagram_data["nodes"].append({"node":2,"name":f"labelings failed : {nb_labelings_failed/nb_meshing_successes*100:.2f} %"})
+Sankey_diagram_data["nodes"].append({"node":3,"name":f"labelings invalid : {nb_labelings_invalid/nb_meshing_successes*100:.2f} %"})
+Sankey_diagram_data["nodes"].append({"node":4,"name":f"labelings non-monotone : {nb_labelings_valid_with_turning_points/nb_meshing_successes*100:.2f} %"})
+Sankey_diagram_data["nodes"].append({"node":5,"name":f"labelings OK : {nb_labelings_valid_no_turning_points/nb_meshing_successes*100:.2f} %"})
+if nb_meshing_fails != 0:
+    # add a node for failed tet mesh generation
+    Sankey_diagram_data["nodes"].append({"node":6,"name":f"meshing failed : {nb_meshing_fails/nb_CAD*100:.2f} %"})
+Sankey_diagram_data["links"] = list()
+Sankey_diagram_data["links"].append({"source":0,"target":1,"value":nb_CAD})
+Sankey_diagram_data["links"].append({"source":1,"target":2,"value":nb_labelings_failed})
+Sankey_diagram_data["links"].append({"source":1,"target":3,"value":nb_labelings_invalid})
+Sankey_diagram_data["links"].append({"source":1,"target":4,"value":nb_labelings_valid_with_turning_points})
+Sankey_diagram_data["links"].append({"source":1,"target":5,"value":nb_labelings_valid_no_turning_points})
+if nb_meshing_fails != 0:
+    # add a link 'CAD models -> meshing failed'
+    Sankey_diagram_data["nodes"].append({"source":0,"target":6,"value":nb_meshing_fails})
+
 HTML_report += """
                 ],
                 // Column Definitions: Defines & controls grid columns.
@@ -204,8 +226,8 @@ HTML_report += """
             ///////// Sankey diagram /////////////////////////////////
 
             // set the dimensions and margins of the graph
-            var margin = {top: 10, right: 10, bottom: 10, left: 10},
-            width = 800 - margin.left - margin.right,
+            var margin = {top: 10, right: 10, bottom: 50, left: 10},
+            width = 1200 - margin.left - margin.right,
             height = 800 - margin.top - margin.bottom;
 
             // append the svg object to the body of the page
@@ -225,25 +247,7 @@ HTML_report += """
                 .nodePadding(50)
                 .size([width, height]);
 
-            graph = {
-                "nodes":[
-                    {"node":0,"name":"CAD models"},
-                    {"node":1,"name":"meshing successes"}, // "113 tet meshes"
-                    {"node":2,"name":"labelings failed"}, // "13 failed labelings"
-                    {"node":3,"name":"labelings invalid"}, // "20 invalid labelings"
-                    {"node":4,"name":"labelings non monotone"}, // "2 valid but non-monotone labelings"
-                    {"node":5,"name":"labelings ok"}, // "78 valid and non-monotone labelings"
-""" + ('' if nb_meshing_fails == 0 else '{"node":6,"name":"meshing fails"},') + """
-                ],
-                "links":[
-                    {"source":0,"target":1,"value":""" + str(nb_CAD) + """},
-                    {"source":1,"target":2,"value":""" + str(nb_labelings_failed) + """},
-                    {"source":1,"target":3,"value":""" + str(nb_labelings_invalid) + """},
-                    {"source":1,"target":4,"value":""" + str(nb_labelings_valid_with_turning_points) + """},
-                    {"source":1,"target":5,"value":""" + str(nb_labelings_valid_no_turning_points) + """},
-""" + ('' if nb_meshing_fails == 0 else '{"source":0,"target":6,"value":' + str(nb_meshing_fails) + '},') + """
-                ]
-            }
+            graph = """ + dumps(Sankey_diagram_data) + """
 
             // Constructs a new Sankey generator with the default settings.
             sankey
