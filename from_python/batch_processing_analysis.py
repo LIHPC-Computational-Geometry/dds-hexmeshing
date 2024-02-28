@@ -240,26 +240,26 @@ HTML_report = """<!DOCTYPE html>
                 rowData: """ + dumps(AG_Grid_rowData) + """,
                 // Column Definitions: Defines & controls grid columns.
                 columnDefs: [
-                    { field: "name",            headerName: "CAD model",        cellDataType: 'text' },
+                    { field: "name", headerName: "CAD model", cellDataType: 'text', filter: true },
                     {
                         headerName: 'tet mesh',
                         children: [
-                            { field: "avg_edge_length", headerName: "avg. edge length", cellDataType: 'number', valueFormatter: floatingPointFormatter },
+                            { field: "avg_edge_length", headerName: "avg. edge length", cellDataType: 'number', valueFormatter: floatingPointFormatter, filter: true },
                         ]
                     },
                     {
                         headerName: 'labeling',
                         children: [
-                            { field: "valid",               headerName: "valid",            cellDataType: 'boolean' },
-                            { field: "nb_turning_points",   headerName: "#turning-points",  cellDataType: 'number' },
+                            { field: "valid",               headerName: "valid",            cellDataType: 'boolean', filter: true },
+                            { field: "nb_turning_points",   headerName: "#turning-points",  cellDataType: 'number', filter: true },
                         ]
                     },
                     {
                         headerName: 'feature edges',
                         children: [
-                            { field: "percentage_removed",      headerName: "%age removed",     cellDataType: 'number', valueFormatter: floatingPointFormatter },
-                            { field: "percentage_lost",         headerName: "%age lost",        cellDataType: 'number', valueFormatter: floatingPointFormatter },
-                            { field: "percentage_preserved",    headerName: "%age preserved",   cellDataType: 'number', valueFormatter: floatingPointFormatter },
+                            { field: "percentage_removed",      headerName: "%age removed",     cellDataType: 'number', valueFormatter: floatingPointFormatter, filter: true },
+                            { field: "percentage_lost",         headerName: "%age lost",        cellDataType: 'number', valueFormatter: floatingPointFormatter, filter: true },
+                            { field: "percentage_preserved",    headerName: "%age preserved",   cellDataType: 'number', valueFormatter: floatingPointFormatter, filter: true },
                         ]
                     },
                     { field: 'command', headerName: "'view' command", cellRenderer: CustomButtonComponent },
