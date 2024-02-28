@@ -287,7 +287,7 @@ HTML_report = """<!DOCTYPE html>
                 rowData: """ + dumps(AG_Grid_rowData) + """,
                 // Column Definitions: Defines & controls grid columns.
                 columnDefs: [
-                    { field: "CAD_name", headerName: "CAD model", cellDataType: 'text', filter: true },
+                    { field: "CAD_name", headerName: "CAD model", cellDataType: 'text', filter: true, pinned: 'left' },
                     {
                         headerName: 'surface mesh',
                         children: [
