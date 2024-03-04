@@ -292,7 +292,7 @@ HTML_report = """<!DOCTYPE html>
                         headerName: 'surface mesh',
                         children: [
                             { field: "nb_vertices", headerName: "#vertices",    cellDataType: 'number', filter: true },
-                            { field: "nb_facets",   headerName: "#vertices",    cellDataType: 'number', filter: true },
+                            { field: "nb_facets",   headerName: "#facets",      cellDataType: 'number', filter: true },
                             { field: "area_sd",     headerName: "sd(area)",     cellDataType: 'number', filter: true, valueFormatter: floatingPointFormatter },
                         ]
                     },
