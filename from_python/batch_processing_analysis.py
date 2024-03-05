@@ -399,7 +399,10 @@ HTML_report = """<!DOCTYPE html>
                         ]
                     },
                     { field: "launch_GUI", headerName: "launch GUI", cellRenderer: ViewLaunchGuiButton },
-                ]
+                ],
+                autoSizeStrategy: {
+                    type: "fitCellContents"
+                }
             };
 
             // Create Grid: Create new grid within the #myGrid div, using the Grid Options object
