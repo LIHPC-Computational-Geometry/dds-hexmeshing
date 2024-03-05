@@ -8,6 +8,7 @@ import logging
 from rich.rule import Rule
 from rich.console import Console
 from sys import path
+from typing import Optional
 
 # Add root of HexMeshWorkshop project folder in path
 project_root = str(Path(__file__).parent.parent.absolute())
@@ -17,7 +18,7 @@ if path[-1] != project_root: path.append(project_root)
 from modules.parametric_string import *
 from modules.simple_human_readable_duration import *
 
-def GenerativeAlgorithm(name: str, input_folder, executable: Path, executable_arugments: str, tee : bool, name_template: str, inside_subfolder: list, **kwargs):
+def GenerativeAlgorithm(name: str, input_folder, executable: Path, executable_arugments: str, tee : bool, name_template: str, inside_subfolder: list, **kwargs) -> Optional[Path]:
     """
     Define and execute a generative algorithm, that is an algorithm on a data folder which creates a subfolder.
     Wrap an executable and manage command line assembly from parameters, chrono, stdout/stderr files and write a JSON file will all the info.
@@ -87,7 +88,7 @@ def GenerativeAlgorithm(name: str, input_folder, executable: Path, executable_ar
     #self.completed_process.check_returncode()# will raise a CalledProcessError if non-zero
     return input_folder / subfolder_name
 
-def InteractiveGenerativeAlgorithm(name: str, input_folder, executable: Path, executable_arugments: str, tee : bool, name_template: str = None, inside_subfolder: list = [], **kwargs):
+def InteractiveGenerativeAlgorithm(name: str, input_folder, executable: Path, executable_arugments: str, tee : bool, name_template: str = None, inside_subfolder: list = [], **kwargs) -> Optional[Path]:
     """
     Define and execute an interactive generative algorithm, that is an interactive algorithm on a data folder which creates a subfolder (optional).
     Wrap an executable and manage command line assembly from parameters.

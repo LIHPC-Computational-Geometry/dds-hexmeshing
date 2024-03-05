@@ -242,7 +242,7 @@ HTML_report = """<!DOCTYPE html>
             }
 
             function getLaunchGuiCommand(params) {
-                return ((params.data.CAD_path == null) || (params.data.tet_mesh_subfolder == null)) ? null : ("./automatic_polycube -i " + params.data.CAD_path + "/" + params.data.tet_mesh_subfolder + " --gui");
+                return ((params.data.CAD_path == null) || (params.data.tet_mesh_subfolder == null)) ? null : ("./automatic_polycube -i " + params.data.CAD_path + "/" + params.data.tet_mesh_subfolder + " --gui --auto-remove-if-empty");
             }
 
             class ViewStepButton {

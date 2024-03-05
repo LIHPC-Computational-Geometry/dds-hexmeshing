@@ -505,9 +505,10 @@ class tet_mesh(AbstractDataFolder):
             unlink(output_folder / 'tris_to_tets.txt')
         return output_folder
 
-    def automatic_polycube(self, gui: bool):
+    def automatic_polycube(self, gui: bool, auto_remove_if_empty: bool):
+        subfolder: Optional[Path] = None
         if gui:
-            InteractiveGenerativeAlgorithm(
+            subfolder = InteractiveGenerativeAlgorithm(
                 'automatic_polycube',
                 self.path,
                 Settings.path('automatic_polycube') / 'automatic_polycube',
@@ -519,7 +520,7 @@ class tet_mesh(AbstractDataFolder):
                 labeling     = labeling.FILENAMES.SURFACE_LABELING_TXT
             )
         else:
-            GenerativeAlgorithm(
+            subfolder = GenerativeAlgorithm(
                 'automatic_polycube',
                 self.path,
                 Settings.path('automatic_polycube') / 'automatic_polycube',
@@ -530,6 +531,9 @@ class tet_mesh(AbstractDataFolder):
                 surface_mesh = str(self.get_file(self.FILENAMES.SURFACE_MESH_OBJ,   True)),
                 labeling     = labeling.FILENAMES.SURFACE_LABELING_TXT
             )
+        if auto_remove_if_empty and not (subfolder / labeling.FILENAMES.SURFACE_LABELING_TXT).exists():
+            logging.warn(f"Auto-removing {str(subfolder)} because no labeling was saved inside")
+            rmtree(subfolder)
     
     def HexBox(self):
         InteractiveGenerativeAlgorithm(

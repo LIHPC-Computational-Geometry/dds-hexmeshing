@@ -33,6 +33,12 @@ parser.add_argument(
     dest='gui',
     help='launch the graphical user interface')
 
+parser.add_argument(
+    '--auto-remove-if-empty',
+    action='store_true',
+    dest='auto_remove_if_empty',
+    help='auto-remove the generated folder if no labeling was saved inside')
+
 args = parser.parse_args()
 
 root_folder = root()
@@ -42,4 +48,4 @@ if args.input in root_folder.collections_manager.collections_names():
     exit(0)
 
 input = AbstractDataFolder.instantiate(Path(args.input))
-input.automatic_polycube(args.gui)
+input.automatic_polycube(args.gui,args.auto_remove_if_empty)
