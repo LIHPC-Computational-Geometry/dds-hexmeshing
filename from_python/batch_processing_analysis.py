@@ -354,6 +354,10 @@ HTML_report = """<!DOCTYPE html>
                 return params.value == null ? null : params.value.toFixed(2);
             }
 
+            function PercentageFormatter(params) {
+                return params.value == null ? null : floatingPointFormatter(params) + ' %';
+            }
+
             // Grid API: Access to Grid API methods
             let gridApi;
 
@@ -393,9 +397,9 @@ HTML_report = """<!DOCTYPE html>
                     {
                         headerName: 'feature edges',
                         children: [
-                            { field: "percentage_removed",      headerName: "%age removed",     cellDataType: 'number', filter: true, valueFormatter: floatingPointFormatter },
-                            { field: "percentage_lost",         headerName: "%age lost",        cellDataType: 'number', filter: true, valueFormatter: floatingPointFormatter },
-                            { field: "percentage_preserved",    headerName: "%age preserved",   cellDataType: 'number', filter: true, valueFormatter: floatingPointFormatter },
+                            { field: "percentage_removed",      headerName: "removed",     cellDataType: 'number', filter: true, valueFormatter: PercentageFormatter },
+                            { field: "percentage_lost",         headerName: "lost",        cellDataType: 'number', filter: true, valueFormatter: PercentageFormatter },
+                            { field: "percentage_preserved",    headerName: "preserved",   cellDataType: 'number', filter: true, valueFormatter: PercentageFormatter },
                         ]
                     },
                     { field: "launch_GUI", headerName: "launch GUI", cellRenderer: ViewLaunchGuiButton },
