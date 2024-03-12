@@ -9,6 +9,8 @@ from rich.table import Table
 from rich.console import Console
 from rich.tree import Tree
 from sys import path
+from time import localtime, strftime
+from json import dumps
 
 # Add root of HexMeshWorkshop project folder in path
 project_root = str(Path(__file__).parent.parent.absolute())
@@ -1226,6 +1228,509 @@ class root(AbstractDataFolder):
                 #else: the user wants tho keep the folder
             else:
                 tet_folder.automatic_polycube(False,True)
+
+    def generate_report(self):
+        """
+        What was `batch_processing_analysis.py`. Parse the data folder and create an HTML report with stats.
+        """
+        logging.getLogger().setLevel(logging.INFO)
+        current_time = localtime()
+        report_name = strftime('%Y-%m-%d_%Hh%M_report', current_time)
+        report_folder_name = strftime('report_%Y%m%d_%H%M', current_time)
+
+        nb_CAD = 0
+        nb_meshing_fails = 0
+        nb_meshing_successes = 0
+        nb_labelings_failed = 0
+        nb_labelings_invalid = 0
+        nb_labelings_valid_with_turning_points = 0
+        nb_labelings_valid_no_turning_points = 0
+
+        AG_Grid_rowData = list()
+
+        # parse the current data folder,
+        # count tet meshes, failed/invalid/valid labelings,
+        # and fill `AG_Grid_rowData`
+
+        root_folder = root()
+        for level_minus_1_folder in [x for x in root_folder.path.iterdir() if x.is_dir()]:
+            CAD_name = level_minus_1_folder.name
+            if not (level_minus_1_folder / step.FILENAMES.STEP).exists():
+                logging.warning(f"Folder {level_minus_1_folder} has no {step.FILENAMES.STEP}")
+                continue
+            nb_CAD += 1
+            if (level_minus_1_folder / 'Gmsh_0.1/').exists() and (level_minus_1_folder / 'Gmsh_0.1' / tet_mesh.FILENAMES.SURFACE_MESH_OBJ).exists():
+                tet_folder: tet_mesh = AbstractDataFolder.instantiate(level_minus_1_folder / 'Gmsh_0.1')
+                nb_meshing_successes += 1
+                surface_mesh_stats = tet_folder.get_surface_mesh_stats_dict()
+                labeling_subfolders_generated_by_automatic_polycube: list[Path] = tet_folder.get_subfolders_generated_by('automatic_polycube')
+                assert(len(labeling_subfolders_generated_by_automatic_polycube) <= 1)
+                if ( (len(labeling_subfolders_generated_by_automatic_polycube) == 0) or \
+                    not (labeling_subfolders_generated_by_automatic_polycube[0] / labeling.FILENAMES.SURFACE_LABELING_TXT).exists() ):
+                    nb_labelings_failed += 1
+                    current_row = dict()
+                    current_row['CAD_name']                 = CAD_name
+                    current_row['CAD_path']                 = str(level_minus_1_folder.absolute())
+                    current_row['nb_vertices']              = surface_mesh_stats['vertices']['nb']
+                    current_row['nb_facets']                = surface_mesh_stats['facets']['nb']
+                    current_row['area_sd']                  = surface_mesh_stats['facets']['area']['sd']
+                    current_row['tet_mesh_subfolder']       = 'Gmsh_0.1' # subfolder relative to the STEP data folder
+                    current_row['nb_charts']                = None # will be converted to JSON/Javascript 'null'
+                    current_row['nb_boundaries']            = None
+                    current_row['nb_corners']               = None
+                    current_row['nb_invalid_charts']        = None
+                    current_row['nb_invalid_boundaries']    = None
+                    current_row['nb_invalid_corners']       = None
+                    current_row['min_fidelity']             = None
+                    current_row['avg_fidelity']             = None
+                    current_row['valid']                    = None
+                    current_row['nb_turning_points']        = None
+                    current_row['labeling_subfolder']       = None # subfolder relative to the tet_mesh data folder
+                    current_row['percentage_removed']       = None
+                    current_row['percentage_lost']          = None
+                    current_row['percentage_preserved']     = None
+                    AG_Grid_rowData.append(current_row)
+                    continue
+                labeling_folder: labeling = AbstractDataFolder.instantiate(labeling_subfolders_generated_by_automatic_polycube[0])
+                assert(labeling_folder.type() == 'labeling')
+                labeling_stats = labeling_folder.get_labeling_stats_dict()
+                total_feature_edges = labeling_stats['feature-edges']['removed'] + labeling_stats['feature-edges']['lost'] + labeling_stats['feature-edges']['preserved']
+                assert(total_feature_edges == surface_mesh_stats['edges']['nb'])
+                current_row = dict()
+                current_row['CAD_name']                 = CAD_name
+                current_row['CAD_path']                 = str(level_minus_1_folder.absolute())
+                current_row['nb_vertices']              = surface_mesh_stats['vertices']['nb']
+                current_row['nb_facets']                = surface_mesh_stats['facets']['nb']
+                current_row['area_sd']                  = surface_mesh_stats['facets']['area']['sd']
+                current_row['tet_mesh_subfolder']       = 'Gmsh_0.1' # subfolder relative to the STEP data folder
+                current_row['nb_charts']                = labeling_stats['charts']['nb']
+                current_row['nb_boundaries']            = labeling_stats['boundaries']['nb']
+                current_row['nb_corners']               = labeling_stats['corners']['nb']
+                current_row['nb_invalid_charts']        = labeling_stats['charts']['invalid']
+                current_row['nb_invalid_boundaries']    = labeling_stats['boundaries']['invalid']
+                current_row['nb_invalid_corners']       = labeling_stats['corners']['invalid']
+                current_row['min_fidelity']             = labeling_stats['fidelity']['min']
+                current_row['avg_fidelity']             = labeling_stats['fidelity']['avg']
+                current_row['valid']                    = labeling_folder.has_valid_labeling()
+                current_row['nb_turning_points']        = labeling_folder.nb_turning_points() # == labeling_stats['turning-points']['nb']
+                current_row['labeling_subfolder']       = labeling_subfolders_generated_by_automatic_polycube[0].name
+                current_row['percentage_removed']       = labeling_stats['feature-edges']['removed']/total_feature_edges*100
+                current_row['percentage_lost']          = labeling_stats['feature-edges']['lost']/total_feature_edges*100
+                current_row['percentage_preserved']     = labeling_stats['feature-edges']['preserved']/total_feature_edges*100
+                AG_Grid_rowData.append(current_row)
+                if not labeling_folder.has_valid_labeling():
+                    nb_labelings_invalid += 1
+                    continue
+                if labeling_folder.nb_turning_points() != 0:
+                    nb_labelings_valid_with_turning_points += 1
+                    continue
+                nb_labelings_valid_no_turning_points += 1
+            else:
+                # not even a surface mesh
+                nb_meshing_fails += 1
+                current_row = dict()
+                current_row['CAD_name']                 = CAD_name
+                current_row['CAD_path']                 = str(level_minus_1_folder.absolute())
+                current_row['nb_vertices']              = None
+                current_row['nb_facets']                = None
+                current_row['area_sd']                  = None
+                current_row['tet_mesh_subfolder']       = None
+                current_row['nb_charts']                = None
+                current_row['nb_boundaries']            = None
+                current_row['nb_corners']               = None
+                current_row['nb_invalid_charts']        = None
+                current_row['nb_invalid_boundaries']    = None
+                current_row['nb_invalid_corners']       = None
+                current_row['min_fidelity']             = None
+                current_row['avg_fidelity']             = None
+                current_row['valid']                    = None
+                current_row['nb_turning_points']        = None
+                current_row['labeling_subfolder']       = None
+                current_row['percentage_removed']       = None
+                current_row['percentage_lost']          = None
+                current_row['percentage_preserved']     = None
+                AG_Grid_rowData.append(current_row)
+
+        assert(nb_meshing_fails + nb_meshing_successes == nb_CAD)
+        assert(nb_labelings_failed + nb_labelings_invalid + nb_labelings_valid_with_turning_points + nb_labelings_valid_no_turning_points == nb_meshing_successes)
+
+        # Define nodes & links of the Sankey diagram
+
+        Sankey_diagram_data = dict()
+        Sankey_diagram_data["nodes"] = list()
+        Sankey_diagram_data["nodes"].append({"node":0,"name":f"{nb_CAD} CAD models"})
+        Sankey_diagram_data["nodes"].append({"node":1,"name":f"meshing successes : {nb_meshing_successes/nb_CAD*100:.2f} %"})
+        Sankey_diagram_data["nodes"].append({"node":2,"name":f"labelings failed : {nb_labelings_failed/nb_meshing_successes*100:.2f} %"})
+        Sankey_diagram_data["nodes"].append({"node":3,"name":f"labelings invalid : {nb_labelings_invalid/nb_meshing_successes*100:.2f} %"})
+        Sankey_diagram_data["nodes"].append({"node":4,"name":f"labelings non-monotone : {nb_labelings_valid_with_turning_points/nb_meshing_successes*100:.2f} %"})
+        Sankey_diagram_data["nodes"].append({"node":5,"name":f"labelings OK : {nb_labelings_valid_no_turning_points/nb_meshing_successes*100:.2f} %"})
+        if nb_meshing_fails != 0:
+            # add a node for failed tet mesh generation
+            Sankey_diagram_data["nodes"].append({"node":6,"name":f"meshing failed : {nb_meshing_fails/nb_CAD*100:.2f} %"})
+        Sankey_diagram_data["links"] = list()
+        Sankey_diagram_data["links"].append({"source":0,"target":1,"value":nb_CAD})
+        Sankey_diagram_data["links"].append({"source":1,"target":2,"value":nb_labelings_failed})
+        Sankey_diagram_data["links"].append({"source":1,"target":3,"value":nb_labelings_invalid})
+        Sankey_diagram_data["links"].append({"source":1,"target":4,"value":nb_labelings_valid_with_turning_points})
+        Sankey_diagram_data["links"].append({"source":1,"target":5,"value":nb_labelings_valid_no_turning_points})
+        if nb_meshing_fails != 0:
+            # add a link 'CAD models -> meshing failed'
+            Sankey_diagram_data["nodes"].append({"source":0,"target":6,"value":nb_meshing_fails})
+
+        # Assemble the HTML file
+
+        HTML_report = """<!DOCTYPE html>
+        <html lang="en">
+            <head>
+                <title>""" + report_name + """</title>
+                <meta charSet="UTF-8"/>
+                <meta name="viewport" content="width=device-width, initial-scale=1"/>
+                <style media="only screen">
+                    html, body {
+                        height: 100%;
+                        width: 100%;
+                        margin: 0;
+                        box-sizing: border-box;
+                        -webkit-overflow-scrolling: touch;
+                    }
+
+                    html {
+                        position: absolute;
+                        top: 0;
+                        left: 0;
+                        padding: 0;
+                        overflow: auto;
+                    }
+
+                    body {
+                        padding: 16px;
+                        overflow: auto;
+                        background-color: #181d1f;
+                    }
+
+                    body details {
+                        color: white;
+                        text-align: center;
+                    }
+
+                    /* for the AG Grid */
+                    #myGrid {
+                        width: 100%;
+                        height: 98%;
+                    }
+
+                    /* for the Sankey diagram */
+                    .link {
+                        fill: none;
+                        stroke: white;
+                        stroke-opacity: .2;
+                    }
+                    .link:hover {
+                        stroke-opacity: .5;
+                    }
+                    </style>
+            </head>
+            <body>
+                <details>
+                    <summary>Sankey diagram</summary>
+                    <div id="sankey"></div>
+                </details>
+                <div id="myGrid" class="ag-theme-alpine-dark"></div>
+                <script src="https://cdn.jsdelivr.net/npm/ag-grid-community@31.1.1/dist/ag-grid-community.min.js"></script>
+                <script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.11/dist/clipboard.min.js"></script>
+                <script src="https://d3js.org/d3.v4.min.js"></script> <!-- Load d3.js -->
+                <script src="https://cdn.jsdelivr.net/gh/holtzy/D3-graph-gallery@master/LIB/sankey.js"></script><!-- Load the sankey.js function -->
+                <script>
+                    // clipboard.js
+                    new ClipboardJS('.btn');
+
+                    function getViewStepCommand(params) {
+                        return (params.data.CAD_path == null) ? null : ("./view -i " + params.data.CAD_path);
+                    }
+
+                    function getViewTetMeshCommand(params) {
+                        return ((params.data.CAD_path == null) || (params.data.tet_mesh_subfolder == null)) ? null : ("./view -i " + params.data.CAD_path + "/" + params.data.tet_mesh_subfolder);
+                    }
+
+                    function getViewLabelingCommand(params) {
+                        return ((params.data.CAD_path == null) || (params.data.tet_mesh_subfolder == null) || (params.data.labeling_subfolder == null)) ? null : ("./view -i " + params.data.CAD_path + "/" + params.data.tet_mesh_subfolder + "/" + params.data.labeling_subfolder);
+                    }
+
+                    function getLaunchGuiCommand(params) {
+                        return ((params.data.CAD_path == null) || (params.data.tet_mesh_subfolder == null)) ? null : ("./automatic_polycube -i " + params.data.CAD_path + "/" + params.data.tet_mesh_subfolder + " --gui --auto-remove-if-empty");
+                    }
+
+                    class ViewStepButton {
+                        eGui;
+                        eButton;
+
+                        init(params) {
+                            this.eGui = document.createElement('div');
+                            this.eGui.classList.add('custom-element');
+                            let command = getViewStepCommand(params);
+                            if(command != null) {
+                                this.eGui.innerHTML = `
+                                    <button class="btn" data-clipboard-text="${command}">
+                                        Copy
+                                    </button>
+                                `;
+                            }
+                        }
+
+                        getGui() {
+                            return this.eGui;
+                        }
+
+                        refresh(params) {
+                            return false;
+                        }
+                    }
+
+                    class ViewTetMeshButton {
+                        eGui;
+                        eButton;
+
+                        init(params) {
+                            this.eGui = document.createElement('div');
+                            this.eGui.classList.add('custom-element');
+                            let command = getViewTetMeshCommand(params);
+                            if(command != null) {
+                                this.eGui.innerHTML = `
+                                    <button class="btn" data-clipboard-text="${command}">
+                                        Copy
+                                    </button>
+                                `;
+                            }
+                        }
+
+                        getGui() {
+                            return this.eGui;
+                        }
+
+                        refresh(params) {
+                            return false;
+                        }
+                    }
+
+                    class ViewLabelingButton {
+                        eGui;
+                        eButton;
+
+                        init(params) {
+                            this.eGui = document.createElement('div');
+                            this.eGui.classList.add('custom-element');
+                            let command = getViewLabelingCommand(params);
+                            if(command != null) {
+                                this.eGui.innerHTML = `
+                                <button class="btn" data-clipboard-text="${command}">
+                                    Copy
+                                </button>
+                            `;
+                            }
+                        }
+
+                        getGui() {
+                            return this.eGui;
+                        }
+
+                        refresh(params) {
+                            return false;
+                        }
+                    }
+
+                    class ViewLaunchGuiButton {
+                        eGui;
+                        eButton;
+
+                        init(params) {
+                            this.eGui = document.createElement('div');
+                            this.eGui.classList.add('custom-element');
+                            let command = getLaunchGuiCommand(params);
+                            if(command != null) {
+                                this.eGui.innerHTML = `
+                                    <button class="btn" data-clipboard-text="${command}">
+                                        Copy
+                                    </button>
+                                `;
+                            }
+                        }
+
+                        getGui() {
+                            return this.eGui;
+                        }
+
+                        refresh(params) {
+                            return false;
+                        }
+                    }
+
+                    // thanks Bamdad Fard https://blog.ag-grid.com/formatting-numbers-strings-currency-in-ag-grid/
+                    function floatingPointFormatter(params) {
+                        return params.value == null ? null : params.value.toFixed(2);
+                    }
+
+                    function PercentageFormatter(params) {
+                        return params.value == null ? null : floatingPointFormatter(params) + ' %';
+                    }
+
+                    // Grid API: Access to Grid API methods
+                    let gridApi;
+
+                    // Grid Options: Contains all of the grid configurations
+                    const gridOptions = {
+                        // Row Data: The data to be displayed.
+                        rowData: """ + dumps(AG_Grid_rowData) + """,
+                        // Column Definitions: Defines & controls grid columns.
+                        columnDefs: [
+                            { field: "CAD_name", headerName: "CAD model", cellDataType: 'text', filter: true, pinned: 'left' },
+                            { field: "view_CAD_command", headerName: "view CAD", cellRenderer: ViewStepButton },
+                            {
+                                headerName: 'surface mesh',
+                                children: [
+                                    { field: "nb_vertices",         headerName: "#vertices",    cellDataType: 'number', filter: true },
+                                    { field: "nb_facets",           headerName: "#facets",      cellDataType: 'number', filter: true },
+                                    { field: "area_sd",             headerName: "sd(area)",     cellDataType: 'number', filter: true, valueFormatter: floatingPointFormatter },
+                                    { field: "view_mesh_command",   headerName: "view mesh",    cellRenderer: ViewTetMeshButton },
+                                ]
+                            },
+                            {
+                                headerName: 'labeling',
+                                children: [
+                                    { field: "nb_charts",               headerName: "#charts",              cellDataType: 'number',  filter: true },
+                                    { field: "nb_boundaries",           headerName: "#boundaries",          cellDataType: 'number',  filter: true },
+                                    { field: "nb_corners",              headerName: "#corners",             cellDataType: 'number',  filter: true },
+                                    { field: "nb_invalid_charts",       headerName: "#invalid-charts",      cellDataType: 'number',  filter: true },
+                                    { field: "nb_invalid_boundaries",   headerName: "#invalid-boundaries",  cellDataType: 'number',  filter: true },
+                                    { field: "nb_invalid_corners",      headerName: "#invalid-corners",     cellDataType: 'number',  filter: true },
+                                    { field: "min_fidelity",            headerName: "min(fidelity)",        cellDataType: 'number',  filter: true, valueFormatter: floatingPointFormatter },
+                                    { field: "avg_fidelity",            headerName: "avg(fidelity)",        cellDataType: 'number',  filter: true, valueFormatter: floatingPointFormatter },
+                                    { field: "valid",                   headerName: "valid",                cellDataType: 'boolean', filter: true },
+                                    { field: "nb_turning_points",       headerName: "#turning-points",      cellDataType: 'number',  filter: true },
+                                    { field: "view_labeling_command",   headerName: "view labeling",                 cellRenderer: ViewLabelingButton },
+                                ]
+                            },
+                            {
+                                headerName: 'feature edges',
+                                children: [
+                                    { field: "percentage_removed",      headerName: "removed",     cellDataType: 'number', filter: true, valueFormatter: PercentageFormatter },
+                                    { field: "percentage_lost",         headerName: "lost",        cellDataType: 'number', filter: true, valueFormatter: PercentageFormatter },
+                                    { field: "percentage_preserved",    headerName: "preserved",   cellDataType: 'number', filter: true, valueFormatter: PercentageFormatter },
+                                ]
+                            },
+                            { field: "launch_GUI", headerName: "launch GUI", cellRenderer: ViewLaunchGuiButton },
+                        ],
+                        autoSizeStrategy: {
+                            type: "fitCellContents"
+                        }
+                    };
+
+                    // Create Grid: Create new grid within the #myGrid div, using the Grid Options object
+                    gridApi = agGrid.createGrid(document.querySelector('#myGrid'), gridOptions);
+
+                    ///////// Sankey diagram /////////////////////////////////
+
+                    // set the dimensions and margins of the graph
+                    var margin = {top: 10, right: 10, bottom: 50, left: 10},
+                    width = 1200 - margin.left - margin.right,
+                    height = 800 - margin.top - margin.bottom;
+
+                    // append the svg object to the body of the page
+                    var svg = d3.select("#sankey").append("svg")
+                        .attr("width", width + margin.left + margin.right)
+                        .attr("height", height + margin.top + margin.bottom)
+                        .append("g")
+                        .attr("transform",
+                            "translate(" + margin.left + "," + margin.top + ")");
+
+                    // Color scale used
+                    var color = d3.scaleOrdinal(d3.schemeCategory20);
+
+                    // Set the sankey diagram properties
+                    var sankey = d3.sankey()
+                        .nodeWidth(36)
+                        .nodePadding(50)
+                        .size([width, height]);
+
+                    graph = """ + dumps(Sankey_diagram_data) + """
+
+                    // Constructs a new Sankey generator with the default settings.
+                    sankey
+                        .nodes(graph.nodes)
+                        .links(graph.links)
+                        .layout(1);
+
+                    // add in the links
+                    var link = svg.append("g")
+                        .selectAll(".link")
+                        .data(graph.links)
+                        .enter()
+                        .append("path")
+                        .attr("class", "link")
+                        .attr("d", sankey.link() )
+                        .style("stroke-width", function(d) { return Math.max(1, d.dy); })
+                        .sort(function(a, b) { return b.dy - a.dy; });
+
+                    // add in the nodes
+                    var node = svg.append("g")
+                        .selectAll(".node")
+                        .data(graph.nodes)
+                        .enter().append("g")
+                        .attr("class", "node")
+                        .attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; })
+                        .call(d3.drag()
+                            .subject(function(d) { return d; })
+                            .on("start", function() { this.parentNode.appendChild(this); })
+                            .on("drag", dragmove));
+
+                    // add the rectangles for the nodes
+                    node
+                        .append("rect")
+                        .attr("height", function(d) { return d.dy; })
+                        .attr("width", sankey.nodeWidth())
+                        .style("fill", function(d) { return d.color = color(d.name.replace(/ .*/, "")); })
+                        .style("stroke", function(d) { return d3.rgb(d.color).darker(2); })
+                        // Add hover text
+                        .append("title")
+                        .text(function(d) { return d.name + """ + r'"\n"' + """ + "There is " + d.value + " items in this node"; });
+
+                    // add in the title for the nodes
+                        node
+                        .append("text")
+                        .style("fill", "white")
+                        .attr("x", -6)
+                        .attr("y", function(d) { return d.dy / 2; })
+                        .attr("dy", ".35em")
+                        .attr("text-anchor", "end")
+                        .attr("transform", null)
+                        .text(function(d) { return d.name; })
+                        .filter(function(d) { return d.x < width / 2; })
+                        .attr("x", 6 + sankey.nodeWidth())
+                        .attr("text-anchor", "start");
+
+                    // the function for moving the nodes
+                    function dragmove(d) {
+                        d3.select(this)
+                        .attr("transform",
+                                "translate("
+                                + d.x + ","
+                                + (d.y = Math.max(
+                                    0, Math.min(height - d.dy, d3.event.y))
+                                    ) + ")");
+                        sankey.relayout();
+                        link.attr("d", sankey.link() );
+                    }
+
+                    SankeyChart({nodes,links})
+
+                </script>
+            </body>
+        </html>
+        """
+        
+        mkdir(self.path / report_folder_name)
+        with open(self.path / report_folder_name / 'report.html','w') as HTML_file:
+            logging.info(f'Writing {report_name}.html...')
+            HTML_file.write(HTML_report)
 
 class report(AbstractDataFolder):
     """
