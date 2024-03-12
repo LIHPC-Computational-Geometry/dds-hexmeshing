@@ -210,7 +210,7 @@ class AbstractDataFolder(ABC):
 # - specialize the view() method to visualize the content of theses data folders the way you want
 # - name your default visualization and create a class variable named DEFAULT_VIEW. overwrite 'what' argument of view() if it's None
 # - enumerate hard coded filenames in inner namespace FILENAMES
-# - specialize the get_file() method to detect missing files and potentially auto-compute them
+# - specialize the auto_generate_missing_file() method to potentially auto-compute missing files
 # - create specific methods to add files in your datafolder or to create subfolders
 
 class step(AbstractDataFolder):
@@ -1201,3 +1201,31 @@ class root(AbstractDataFolder):
             # delete the temporary directory
             logging.debug('Deleting folder \'' + str(tmp_folder) + '\'')
             rmtree(tmp_folder)
+
+class report(AbstractDataFolder):
+    """
+    Interface a batch execution report
+    """
+
+    class FILENAMES(SimpleNamespace):
+        REPORT_HTML = 'report.html'
+
+    DEFAULT_VIEW = 'interactive_report'
+
+    @staticmethod
+    def is_instance(path: Path) -> bool:
+        return (path / report.FILENAMES.REPORT_HTML).exists() or (path / 'report.md').exists()
+
+    def __init__(self,path: Path):
+        AbstractDataFolder.__init__(self,Path(path))
+    
+    def view(self, what = None):
+        if what == None:
+            what = self.DEFAULT_VIEW
+        if what == 'interactive_report':
+            logging.error('Not implemented yet. Open the file with your internet navigator')
+        else:
+            raise Exception(f"report.view() does not recognize 'what' value: '{what}'")
+        
+    def auto_generate_missing_file(self, filename: str) -> bool:
+        return False
