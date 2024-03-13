@@ -1304,6 +1304,8 @@ class root(AbstractDataFolder):
                     current_row['avg_fidelity']             = None
                     current_row['valid']                    = None
                     current_row['nb_turning_points']        = None
+                    current_row['datetime']                 = None
+                    current_row['duration']                 = None
                     current_row['labeling_subfolder']       = None # subfolder relative to the tet_mesh data folder
                     current_row['percentage_removed']       = None
                     current_row['percentage_lost']          = None
@@ -1312,6 +1314,8 @@ class root(AbstractDataFolder):
                     continue
                 labeling_folder: labeling = AbstractDataFolder.instantiate(labeling_subfolders_generated_by_automatic_polycube[0])
                 assert(labeling_folder.type() == 'labeling')
+                ISO_datetime = labeling_folder.get_datetime_key_of_algo_in_info_file('automatic_polycube')
+                assert(ISO_datetime is not None)
                 labeling_stats = labeling_folder.get_labeling_stats_dict()
                 total_feature_edges = labeling_stats['feature-edges']['removed'] + labeling_stats['feature-edges']['lost'] + labeling_stats['feature-edges']['preserved']
                 assert(total_feature_edges == surface_mesh_stats['edges']['nb'])
@@ -1332,6 +1336,8 @@ class root(AbstractDataFolder):
                 current_row['avg_fidelity']             = labeling_stats['fidelity']['avg']
                 current_row['valid']                    = labeling_folder.has_valid_labeling()
                 current_row['nb_turning_points']        = labeling_folder.nb_turning_points() # == labeling_stats['turning-points']['nb']
+                current_row['datetime']                 = ISO_datetime_to_readable_datetime(ISO_datetime)
+                current_row['duration']                 = labeling_folder.get_info_dict()[ISO_datetime]['duration'][0]
                 current_row['labeling_subfolder']       = labeling_subfolders_generated_by_automatic_polycube[0].name
                 current_row['percentage_removed']       = labeling_stats['feature-edges']['removed']/total_feature_edges*100
                 current_row['percentage_lost']          = labeling_stats['feature-edges']['lost']/total_feature_edges*100
@@ -1364,6 +1370,8 @@ class root(AbstractDataFolder):
                 current_row['avg_fidelity']             = None
                 current_row['valid']                    = None
                 current_row['nb_turning_points']        = None
+                current_row['datetime']                 = None
+                current_row['duration']                 = None
                 current_row['labeling_subfolder']       = None
                 current_row['percentage_removed']       = None
                 current_row['percentage_lost']          = None
@@ -1592,6 +1600,10 @@ class root(AbstractDataFolder):
                         return params.value == null ? null : floatingPointFormatter(params) + ' %';
                     }
 
+                    function DurationSecondsFormatter(params) {
+                        return params.value == null ? null : params.value.toFixed(3) + ' s';
+                    }
+
                     // Grid API: Access to Grid API methods
                     let gridApi;
 
@@ -1625,6 +1637,8 @@ class root(AbstractDataFolder):
                                     { field: "avg_fidelity",            headerName: "avg(fidelity)",        cellDataType: 'number',  filter: true, valueFormatter: floatingPointFormatter },
                                     { field: "valid",                   headerName: "valid",                cellDataType: 'boolean', filter: true },
                                     { field: "nb_turning_points",       headerName: "#turning-points",      cellDataType: 'number',  filter: true },
+                                    { field: "datetime",                headerName: "date & time",          cellDataType: 'text',    filter: true },
+                                    { field: "duration",                headerName: "duration",             cellDataType: 'number',  filter: true, valueFormatter: DurationSecondsFormatter },
                                     { field: "view_labeling_command",   headerName: "view labeling",                 cellRenderer: ViewLabelingButton },
                                 ]
                             },
