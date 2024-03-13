@@ -192,6 +192,21 @@ class AbstractDataFolder(ABC):
         console = Console()
         console.print(table)
 
+    # if the algo was executed several times on this data folder,
+    # return the first occurence in the info.json file
+    def get_datetime_key_of_algo_in_info_file(self, algo_name: str) -> Optional[str]:
+        if (self.path / 'info.json').exists():
+            with open(self.path / 'info.json') as json_file:
+                json_dict = load(json_file)
+                for datetime_key,per_algo_info in json_dict.items():
+                    if (
+                        ('GenerativeAlgorithm' in per_algo_info.keys() and per_algo_info['GenerativeAlgorithm'] == algo_name) or 
+                        ('TransformativeAlgorithm' in per_algo_info.keys() and per_algo_info['TransformativeAlgorithm'] == algo_name) or 
+                        ('InteractiveGenerativeAlgorithm' in per_algo_info.keys() and per_algo_info['InteractiveGenerativeAlgorithm'] == algo_name)
+                    ):
+                        return datetime_key
+        return None
+
     def get_subfolders_of_type(self,type_str: str) -> list[Path]:
         out = list()
         for subfolder in [x for x in self.path.iterdir() if x.is_dir()]:
