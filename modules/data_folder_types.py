@@ -23,6 +23,10 @@ from modules.collections_manager import *
 from modules.user_input import *
 from modules.print_folder_as_tree import *
 
+def ISO_datetime_to_readable_datetime(datetime: str) -> str:
+    #ex: '2024-03-13T22:10:41Z' -> '2024-03-13 22:10:41'
+    return datetime.replace('T',' ')[0:-1] # use a space separator between date and time (instead of 'T') & remove trailing 'Z'
+
 class AbstractDataFolder(ABC):
     """
     Represents an entry of the data folder
@@ -176,7 +180,7 @@ class AbstractDataFolder(ABC):
         table.add_column("Datetime", style="cyan")
         table.add_column("Name")
         for datetime, algo_info in self.get_info_dict().items(): # for each top-level entry in info.json
-            datetime = datetime.replace('T',' ')[0:-1] # use a space separator between date and time (instead of 'T') & remove trailing 'Z'
+            datetime = ISO_datetime_to_readable_datetime(datetime)
             algo_name = '?'
             if 'GenerativeAlgorithm' in algo_info:
                 algo_name = algo_info['GenerativeAlgorithm']
