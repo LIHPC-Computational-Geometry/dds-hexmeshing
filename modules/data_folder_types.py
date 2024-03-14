@@ -784,6 +784,9 @@ class labeling(AbstractDataFolder):
             return True
         elif filename == self.FILENAMES.LABELING_STATS_JSON:
             return self.labeling_stats()
+        elif filename == self.FILENAMES.LABELED_MESH_GLB:
+            self.write_glb()
+            return True
         else:
             return False
     
