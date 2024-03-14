@@ -690,6 +690,7 @@ class labeling(AbstractDataFolder):
         SURFACE_LABELING_MESH_GEOGRAM   = 'labeled_surface.geogram'             # surface triangle mesh in the Geogram format with the surface labeling as facet attribute (to be visualized with Graphite)
         POLYCUBE_LABELING_MESH_GEOGRAM  = 'fastbndpolycube.geogram'             # same as the polycube surface mesh, but with the labeling as facet attribute and in the Geogram format (to be visualized with Graphite)
         LABELING_STATS_JSON             = 'labeling.stats.json'                 # labeling stats (nb charts/boundaries/corners/turning-points, nb invalid features) computed on SURFACE_LABELING_TXT, as JSON file
+        LABELED_MESH_GLB                = 'labeled_mesh.glb'                    # SURFACE_MESH_OBJ colored according to SURFACE_LABELING_TXT as glTF 2.0 binary file
 
     DEFAULT_VIEW = 'labeled_surface'
 
@@ -891,6 +892,20 @@ class labeling(AbstractDataFolder):
             return True
         else:
             return False # unable to generate mesh stats file
+        
+    def write_glb(self):
+        parent = AbstractDataFolder.instantiate(self.path.parent) # we need the parent folder to get the surface mesh
+        assert(parent.type() == 'tet_mesh') # the parent folder should be of tet_mesh type
+        TransformativeAlgorithm(
+            'write_glb',
+            self.path,
+            Settings.path('automatic_polycube') / 'to_glTF',
+            '{surface_mesh} {output_file} labeling={surface_labeling}',
+            True,
+            surface_mesh        = str(parent.get_file(tet_mesh.FILENAMES.SURFACE_MESH_OBJ,  True)),
+            output_file         = str(self.get_file(self.FILENAMES.LABELED_MESH_GLB,        False)),
+            surface_labeling    = str(self.get_file(self.FILENAMES.SURFACE_LABELING_TXT,    True)),
+        )
     
     # ----- Generative algorithms (create subfolders) --------------------
 
