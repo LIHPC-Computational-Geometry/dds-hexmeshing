@@ -306,6 +306,7 @@ class tet_mesh(AbstractDataFolder):
         SURFACE_MAP_TXT         = 'surface_map.txt'         # association between surface triangles and tet facets (see https://github.com/LIHPC-Computational-Geometry/automatic_polycube/blob/main/app/extract_surface.cpp for the format)
         TET_MESH_STATS_JSON     = 'tet_mesh.stats.json'     # mesh stats (min/max/avg/sd of mesh metrics) computed on TET_MESH_MEDIT, as JSON file
         SURFACE_MESH_STATS_JSON = 'surface_mesh.stats.json' # mesh stats (min/max/avg/sd of mesh metrics) computed on SURFACE_MESH_OBJ, as JSON file
+        SURFACE_MESH_GLB        = 'surface_mesh.glb'        # SURFACE_MESH_OBJ as glTF 2.0 binary file
 
     DEFAULT_VIEW = 'surface_mesh'
 
@@ -351,6 +352,9 @@ class tet_mesh(AbstractDataFolder):
             return self.tet_mesh_stats()
         elif filename == self.FILENAMES.SURFACE_MESH_STATS_JSON:
             return self.surface_mesh_stats()
+        elif filename == self.FILENAMES.SURFACE_MESH_GLB:
+            self.write_glb()
+            return True
         else:
             return False
     
@@ -428,6 +432,17 @@ class tet_mesh(AbstractDataFolder):
             return True
         else:
             return False # unable to generate mesh stats file
+    
+    def write_glb(self):
+        TransformativeAlgorithm(
+            'write_glb',
+            self.path,
+            Settings.path('automatic_polycube') / 'to_glTF',
+            '{surface_mesh} {output_file}',
+            True,
+            surface_mesh = str(self.get_file(self.FILENAMES.SURFACE_MESH_OBJ, True)),
+            output_file  = str(self.get_file(self.FILENAMES.SURFACE_MESH_GLB, False)),
+        )
     
     # ----- Generative algorithms (create subfolders) --------------------
 
@@ -1336,7 +1351,11 @@ class root(AbstractDataFolder):
                 assert(len(labeling_subfolders_generated_by_automatic_polycube) <= 1)
                 if ( (len(labeling_subfolders_generated_by_automatic_polycube) == 0) or \
                     not (labeling_subfolders_generated_by_automatic_polycube[0] / labeling.FILENAMES.SURFACE_LABELING_TXT).exists() ):
+                    # there is a tet mesh but no labeling was written
                     nb_labelings_failed += 1
+                    # export the surface mesh to glTF binary format
+                    glb_file: Path = tet_folder.get_file(tet_folder.FILENAMES.SURFACE_MESH_GLB, True) # will be autocomputed
+                    copyfile(glb_file, self.path / report_folder_name / 'glb' / (CAD_name + '.glb'))
                     current_row = dict()
                     current_row['CAD_name']                 = CAD_name
                     current_row['CAD_path']                 = str(level_minus_1_folder.absolute())
@@ -1356,7 +1375,7 @@ class root(AbstractDataFolder):
                     current_row['nb_turning_points']        = None
                     current_row['datetime']                 = None
                     current_row['duration']                 = None
-                    current_row['glb_file']                 = None
+                    current_row['glb_file']                 = CAD_name + '.glb' # no labeling can be viewed, but at least the user will be able to view the input mesh
                     current_row['labeling_subfolder']       = None # subfolder relative to the tet_mesh data folder
                     current_row['percentage_removed']       = None
                     current_row['percentage_lost']          = None
