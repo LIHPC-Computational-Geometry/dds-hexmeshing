@@ -23,25 +23,36 @@ parser = ArgumentParser(
     description='Print mesh stats (over vertices, facets, etc)')
 
 parser.add_argument(
-    'action',
-    choices=['tet_mesh','surface'])
-
-parser.add_argument(
     '-i', '--input',
     dest='input',
     metavar='PATH',
-    help='path to the input folder (type tet_mesh)',
+    help='path to the input folder (type tet_mesh or hex_mesh)',
     required=True)
+
+parser.add_argument(
+    '--surface',
+    action='store_true',
+    dest='surface',
+    help='path to the input folder (case tet_mesh input folder only)')
 
 args = parser.parse_args()
 
 input: tet_mesh = AbstractDataFolder.instantiate(Path(args.input))
 mesh_stats_dict = dict()
-if args.action == 'tet_mesh':
-    mesh_stats_dict = input.get_tet_mesh_stats_dict()
-elif args.action == 'surface':
-    mesh_stats_dict = input.get_surface_mesh_stats_dict()
+
+if input.type() == 'hex_mesh':
+    if args.surface == True:
+        logging.error("'--surface' option is only for 'tet_mesh' input folders")
+        exit(1)
+    mesh_stats_dict = input.get_mesh_stats_dict()
+elif input.type() == 'tet_mesh':
+    if args.surface == True:
+        # compute stats on surface mesh
+        mesh_stats_dict = input.get_surface_mesh_stats_dict()
+    else:
+        # compute stats on volume mesh
+        mesh_stats_dict = input.get_tet_mesh_stats_dict()
 else:
-    logging.error(f"Unrecognized value '{args.action}' for 'action' argument")
+    logging.error(f"Bad input folder type: '{input.type()}', expecting 'tet_mesh' or 'hex_mesh'")
     exit(1)
 pprint(mesh_stats_dict)

@@ -315,8 +315,8 @@ class tet_mesh(AbstractDataFolder):
 
     def __init__(self,path: Path):
         AbstractDataFolder.__init__(self,Path(path))
-        self.tet_mesh_stats_dict = None
-        self.surface_mesh_stats_dict = None
+        self.tet_mesh_stats_dict: Optional[dict] = None
+        self.surface_mesh_stats_dict: Optional[dict] = None
     
     def view(self, what = None):
         """
@@ -1028,8 +1028,9 @@ class hex_mesh(AbstractDataFolder):
     """
 
     class FILENAMES(SimpleNamespace):
-        HEX_MESH_MEDIT  = 'hex.mesh'        # hexahedral mesh, GMF/MEDIT ASCII format
-        HEX_MESH_OVM    = 'hex_mesh.ovm'    # hexahedral mesh, OpenVolumeMesh format
+        HEX_MESH_MEDIT          = 'hex.mesh'            # hexahedral mesh, GMF/MEDIT ASCII format
+        HEX_MESH_OVM            = 'hex_mesh.ovm'        # hexahedral mesh, OpenVolumeMesh format
+        HEX_MESH_STATS_JSON     = 'hex_mesh.stats.json' # mesh stats (min/max/avg/sd of mesh metrics) computed on HEX_MESH_MEDIT, as JSON file
 
     DEFAULT_VIEW = 'hex_mesh'
 
@@ -1039,6 +1040,7 @@ class hex_mesh(AbstractDataFolder):
 
     def __init__(self,path: Path):
         AbstractDataFolder.__init__(self,Path(path))
+        self.mesh_stats_dict: Optional[dict] = None
     
     def view(self, what = None):
         """
@@ -1064,8 +1066,17 @@ class hex_mesh(AbstractDataFolder):
         if filename == self.FILENAMES.HEX_MESH_MEDIT:
             self.OVM_to_MEDIT()
             return True
+        elif filename == self.FILENAMES.HEX_MESH_STATS_JSON:
+            return self.mesh_stats()
         else:
             return False
+    
+    # ----- Access data from files --------------------
+
+    def get_mesh_stats_dict(self) -> dict:
+        if(self.mesh_stats_dict is None): # if the stats are not already cached
+            self.mesh_stats_dict = load(open(self.get_file(self.FILENAMES.HEX_MESH_STATS_JSON,True))) # compute if missing and load the JSON file
+        return self.mesh_stats_dict
 
     # ----- Transformative algorithms (modify current folder) --------------------
 
@@ -1079,6 +1090,24 @@ class hex_mesh(AbstractDataFolder):
             input   = str(self.get_file(self.FILENAMES.HEX_MESH_OVM,    True)),
             output  = str(self.get_file(self.FILENAMES.HEX_MESH_MEDIT       )),
         )
+    
+    def mesh_stats(self) -> bool:
+        TransformativeAlgorithm(
+            'mesh_stats',
+            self.path,
+            Settings.path('automatic_polycube') / 'mesh_stats',
+            '{mesh}',
+            False, # disable tee mode
+            mesh = str(self.get_file(self.FILENAMES.HEX_MESH_MEDIT,  True)),
+        )
+        # TODO check if the return code is 0
+        if (self.path / 'mesh_stats.stdout.txt').exists():
+            # stdout should be a valid JSON file
+            # use rename_file() to keep track of the operation in info.json
+            rename_file(self.path,'mesh_stats.stdout.txt',self.FILENAMES.HEX_MESH_STATS_JSON)
+            return True
+        else:
+            return False # unable to generate mesh stats file
     
     # ----- Generative algorithms (create subfolders) --------------------
 
