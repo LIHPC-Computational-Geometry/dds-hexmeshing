@@ -1274,6 +1274,9 @@ class root(AbstractDataFolder):
         current_time = localtime()
         report_name = strftime('%Y-%m-%d_%Hh%M_report', current_time)
         report_folder_name = strftime('report_%Y%m%d_%H%M', current_time)
+        mkdir(self.path / report_folder_name)
+        mkdir(self.path / report_folder_name / 'glb')
+        mkdir(self.path / report_folder_name / 'js')
 
         nb_CAD = 0
         nb_meshing_fails = 0
@@ -1324,6 +1327,7 @@ class root(AbstractDataFolder):
                     current_row['nb_turning_points']        = None
                     current_row['datetime']                 = None
                     current_row['duration']                 = None
+                    current_row['glb_file']                 = None
                     current_row['labeling_subfolder']       = None # subfolder relative to the tet_mesh data folder
                     current_row['percentage_removed']       = None
                     current_row['percentage_lost']          = None
@@ -1337,6 +1341,8 @@ class root(AbstractDataFolder):
                 labeling_stats = labeling_folder.get_labeling_stats_dict()
                 total_feature_edges = labeling_stats['feature-edges']['removed'] + labeling_stats['feature-edges']['lost'] + labeling_stats['feature-edges']['preserved']
                 assert(total_feature_edges == surface_mesh_stats['edges']['nb'])
+                glb_file: Path = labeling_folder.get_file(labeling.FILENAMES.LABELED_MESH_GLB,True) # will be autocomputed
+                copyfile(glb_file, self.path / report_folder_name / 'glb' / (CAD_name + '.glb'))
                 current_row = dict()
                 current_row['CAD_name']                 = CAD_name
                 current_row['CAD_path']                 = str(level_minus_1_folder.absolute())
@@ -1356,6 +1362,7 @@ class root(AbstractDataFolder):
                 current_row['nb_turning_points']        = labeling_folder.nb_turning_points() # == labeling_stats['turning-points']['nb']
                 current_row['datetime']                 = ISO_datetime_to_readable_datetime(ISO_datetime)
                 current_row['duration']                 = labeling_folder.get_info_dict()[ISO_datetime]['duration'][0]
+                current_row['glb_file']                 = CAD_name + '.glb'
                 current_row['labeling_subfolder']       = labeling_subfolders_generated_by_automatic_polycube[0].name
                 current_row['percentage_removed']       = labeling_stats['feature-edges']['removed']/total_feature_edges*100
                 current_row['percentage_lost']          = labeling_stats['feature-edges']['lost']/total_feature_edges*100
@@ -1390,6 +1397,7 @@ class root(AbstractDataFolder):
                 current_row['nb_turning_points']        = None
                 current_row['datetime']                 = None
                 current_row['duration']                 = None
+                current_row['glb_file']                 = None
                 current_row['labeling_subfolder']       = None
                 current_row['percentage_removed']       = None
                 current_row['percentage_lost']          = None
@@ -1473,21 +1481,60 @@ class root(AbstractDataFolder):
                     .link:hover {
                         stroke-opacity: .5;
                     }
+
+                    dialog {
+                        height: calc(100% - 100px);
+                        width: calc(100% - 100px);
+                        text-align: center;
+                        background-color: #181d1f;
+                        border: none;
+                        border-radius: 5px;
+                        box-shadow: 0px 0px 10px white;
+                    }
+                    
+                    dialog model-viewer{
+                        height: calc(100% - 25px);
+                        width: 100%;
+                        background-color: #181d1f;
+                    }
                     </style>
             </head>
             <body>
+                <dialog>
+                    <button autofocus id="close-viewer">Close</button>
+                </dialog>
                 <details>
                     <summary>Sankey diagram</summary>
                     <div id="sankey"></div>
                 </details>
                 <div id="myGrid" class="ag-theme-alpine-dark"></div>
-                <script src="https://cdn.jsdelivr.net/npm/ag-grid-community@31.1.1/dist/ag-grid-community.min.js"></script>
-                <script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.11/dist/clipboard.min.js"></script>
-                <script src="https://d3js.org/d3.v4.min.js"></script> <!-- Load d3.js -->
-                <script src="https://cdn.jsdelivr.net/gh/holtzy/D3-graph-gallery@master/LIB/sankey.js"></script><!-- Load the sankey.js function -->
+                <script src="js/ag-grid-community.min.js"></script>
+                <script src="js/clipboard.min.js"></script>
+                <script src="js/d3.v4.min.js"></script>
+                <script src="js/sankey.js"></script>
+                <script type="module" src="js/model-viewer.min.js"></script>
                 <script>
                     // clipboard.js
                     new ClipboardJS('.btn');
+
+                    // open/close 3D model viewer
+                    const dialog = document.querySelector("dialog");
+                    const closeButton = document.querySelector("dialog #close-viewer");
+                    // The "Close" button closes the dialog
+                    closeButton.addEventListener("click", () => {
+                        dialog.close();
+                        dialog.removeChild(document.querySelector("dialog model-viewer"));
+                    });
+                    // fill the dialog with a <model-viewer>
+                    function make_dialog(filename) {
+                        let model_viewer = dialog.appendChild(document.createElement("model-viewer"));
+                        model_viewer.setAttribute("alt","labeling 3D viewer");
+                        model_viewer.setAttribute("src", "glb/" + filename);
+                        model_viewer.setAttribute("shadow-intensity", "1");
+                        model_viewer.setAttribute("camera-controls",true);
+                        model_viewer.setAttribute("touch-action","pan-y");
+                        dialog.showModal();
+                    }
 
                     function getViewStepCommand(params) {
                         return (params.data.CAD_path == null) ? null : ("./view -i " + params.data.CAD_path);
@@ -1609,6 +1656,30 @@ class root(AbstractDataFolder):
                         }
                     }
 
+                    class openViewerButton {
+                        eGui;
+                        eButton;
+
+                        init(params) {
+                            this.eGui = document.createElement('div');
+                            this.eGui.classList.add('custom-element');
+                            let command = getLaunchGuiCommand(params);
+                            if(params.data.glb_file != null) {
+                                this.eGui.innerHTML = `
+                                    <button class="open-viewer" onclick="make_dialog('${params.data.glb_file}')">Open</button>
+                                `;
+                            }
+                        }
+
+                        getGui() {
+                            return this.eGui;
+                        }
+
+                        refresh(params) {
+                            return false;
+                        }
+                    }
+
                     // thanks Bamdad Fard https://blog.ag-grid.com/formatting-numbers-strings-currency-in-ag-grid/
                     function floatingPointFormatter(params) {
                         return params.value == null ? null : params.value.toFixed(2);
@@ -1657,7 +1728,8 @@ class root(AbstractDataFolder):
                                     { field: "nb_turning_points",       headerName: "#turning-points",      cellDataType: 'number',  filter: true },
                                     { field: "datetime",                headerName: "date & time",          cellDataType: 'text',    filter: true },
                                     { field: "duration",                headerName: "duration",             cellDataType: 'number',  filter: true, valueFormatter: DurationSecondsFormatter },
-                                    { field: "view_labeling_command",   headerName: "view labeling",                 cellRenderer: ViewLabelingButton },
+                                    { field: "glb_file",                headerName: "open",                 cellRenderer: openViewerButton },
+                                    { field: "view_labeling_command",   headerName: "view labeling",        cellRenderer: ViewLabelingButton },
                                 ]
                             },
                             {
@@ -1777,11 +1849,43 @@ class root(AbstractDataFolder):
             </body>
         </html>
         """
-        
-        mkdir(self.path / report_folder_name)
+
         with open(self.path / report_folder_name / 'report.html','w') as HTML_file:
             logging.info(f'Writing {report_name}.html...')
             HTML_file.write(HTML_report)
+
+        # Download Javascript libraries, so the report can be opened offline
+            
+        # AG Grid https://www.ag-grid.com/
+        logging.info('Downloading AG Grid...')
+        request.urlretrieve(
+            url='https://cdn.jsdelivr.net/npm/ag-grid-community@31.1.1/dist/ag-grid-community.min.js',
+            filename = str(self.path / report_folder_name / 'js' / 'ag-grid-community.min.js')
+        )
+        # clipboard.js https://clipboardjs.com/
+        logging.info('Downloading clipboard.js...')
+        request.urlretrieve(
+            url='https://cdn.jsdelivr.net/npm/clipboard@2.0.11/dist/clipboard.min.js',
+            filename = str(self.path / report_folder_name / 'js' / 'clipboard.min.js')
+        )
+        # D3 https://d3js.org/
+        logging.info('Downloading D3...')
+        request.urlretrieve(
+            url='https://cdn.jsdelivr.net/npm/d3@4',
+            filename = str(self.path / report_folder_name / 'js' / 'd3.v4.min.js')
+        )
+        # d3-sankey https://observablehq.com/collection/@d3/d3-sankey
+        logging.info('Downloading d3-sankey...')
+        request.urlretrieve(
+            url='https://cdn.jsdelivr.net/gh/holtzy/D3-graph-gallery@master/LIB/sankey.js',
+            filename = str(self.path / report_folder_name / 'js' / 'sankey.js')
+        )
+        # <model-viewer> https://modelviewer.dev/
+        logging.info('Downloading <model-viewer>...')
+        request.urlretrieve(
+            url='https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js',
+            filename = str(self.path / report_folder_name / 'js' / 'model-viewer.min.js')
+        )
 
 class report(AbstractDataFolder):
     """
