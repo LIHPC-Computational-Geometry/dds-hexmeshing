@@ -1344,7 +1344,7 @@ class root(AbstractDataFolder):
                 if labeling_folder.has_valid_labeling():
                     labeling_folder.polycube_withHexEx(1.3,False)
 
-    def generate_report(self, export_datetime: bool = False):
+    def generate_report(self, export_datetime: bool = False, export_command_copy_buttons: bool = False):
         """
         What was `batch_processing_analysis.py`. Parse the data folder and create an HTML report with stats.
         """
@@ -1402,11 +1402,13 @@ class root(AbstractDataFolder):
                     copyfile(glb_labeling_file, self.path / report_folder_name / 'glb' / (CAD_name + '_labeling.glb'))
                     current_row = dict()
                     current_row['CAD_name']                 = CAD_name
-                    current_row['CAD_path']                 = str(level_minus_1_folder.absolute())
+                    if export_command_copy_buttons:
+                        current_row['CAD_path']             = str(level_minus_1_folder.absolute())
                     current_row['nb_vertices']              = surface_mesh_stats['vertices']['nb']
                     current_row['nb_facets']                = surface_mesh_stats['facets']['nb']
                     current_row['area_sd']                  = surface_mesh_stats['facets']['area']['sd']
-                    current_row['tet_mesh_subfolder']       = 'Gmsh_0.1' # subfolder relative to the STEP data folder
+                    if export_command_copy_buttons:
+                        current_row['tet_mesh_subfolder']   = 'Gmsh_0.1' # subfolder relative to the STEP data folder
                     current_row['nb_charts']                = None # will be converted to JSON/Javascript 'null'
                     current_row['nb_boundaries']            = None
                     current_row['nb_corners']               = None
@@ -1421,7 +1423,8 @@ class root(AbstractDataFolder):
                         current_row['datetime']             = None
                     current_row['duration']                 = None
                     current_row['glb_labeling']             = CAD_name + '_labeling.glb' # no labeling can be viewed, but at least the user will be able to view the input mesh
-                    current_row['labeling_subfolder']       = None # subfolder relative to the tet_mesh data folder
+                    if export_command_copy_buttons:
+                        current_row['labeling_subfolder']   = None # subfolder relative to the tet_mesh data folder
                     current_row['percentage_removed']       = None
                     current_row['percentage_lost']          = None
                     current_row['percentage_preserved']     = None
@@ -1461,11 +1464,13 @@ class root(AbstractDataFolder):
                         
                 current_row = dict()
                 current_row['CAD_name']                 = CAD_name
-                current_row['CAD_path']                 = str(level_minus_1_folder.absolute())
+                if export_command_copy_buttons:
+                    current_row['CAD_path']             = str(level_minus_1_folder.absolute())
                 current_row['nb_vertices']              = surface_mesh_stats['vertices']['nb']
                 current_row['nb_facets']                = surface_mesh_stats['facets']['nb']
                 current_row['area_sd']                  = surface_mesh_stats['facets']['area']['sd']
-                current_row['tet_mesh_subfolder']       = 'Gmsh_0.1' # subfolder relative to the STEP data folder
+                if export_command_copy_buttons:
+                    current_row['tet_mesh_subfolder']   = 'Gmsh_0.1' # subfolder relative to the STEP data folder
                 current_row['nb_charts']                = labeling_stats['charts']['nb']
                 current_row['nb_boundaries']            = labeling_stats['boundaries']['nb']
                 current_row['nb_corners']               = labeling_stats['corners']['nb']
@@ -1480,7 +1485,8 @@ class root(AbstractDataFolder):
                     current_row['datetime']             = ISO_datetime_to_readable_datetime(ISO_datetime)
                 current_row['duration']                 = labeling_folder.get_info_dict()[ISO_datetime]['duration'][0]
                 current_row['glb_labeling']             = CAD_name + '_labeling.glb'
-                current_row['labeling_subfolder']       = labeling_subfolders_generated_by_automatic_polycube[0].name
+                if export_command_copy_buttons:
+                    current_row['labeling_subfolder']   = labeling_subfolders_generated_by_automatic_polycube[0].name
                 current_row['percentage_removed']       = labeling_stats['feature-edges']['removed']/total_feature_edges*100
                 current_row['percentage_lost']          = labeling_stats['feature-edges']['lost']/total_feature_edges*100
                 current_row['percentage_preserved']     = labeling_stats['feature-edges']['preserved']/total_feature_edges*100
@@ -1519,11 +1525,13 @@ class root(AbstractDataFolder):
                 nb_CAD_2_meshing_failed += 1
                 current_row = dict()
                 current_row['CAD_name']                 = CAD_name
-                current_row['CAD_path']                 = str(level_minus_1_folder.absolute())
+                if export_command_copy_buttons:
+                    current_row['CAD_path']             = str(level_minus_1_folder.absolute())
                 current_row['nb_vertices']              = None
                 current_row['nb_facets']                = None
                 current_row['area_sd']                  = None
-                current_row['tet_mesh_subfolder']       = None
+                if export_command_copy_buttons:
+                    current_row['tet_mesh_subfolder']   = None
                 current_row['nb_charts']                = None
                 current_row['nb_boundaries']            = None
                 current_row['nb_corners']               = None
@@ -1538,7 +1546,8 @@ class root(AbstractDataFolder):
                     current_row['datetime']             = None
                 current_row['duration']                 = None
                 current_row['glb_labeling']             = None
-                current_row['labeling_subfolder']       = None
+                if export_command_copy_buttons:
+                    current_row['labeling_subfolder']   = None
                 current_row['percentage_removed']       = None
                 current_row['percentage_lost']          = None
                 current_row['percentage_preserved']     = None
@@ -1755,6 +1764,7 @@ class root(AbstractDataFolder):
                         model_viewer.setAttribute("autoplay",true);
                         dialog.showModal();
                     }
+                    """ + ("""
 
                     function getViewStepCommand(params) {
                         return (params.data.CAD_path == null) ? null : ("./view -i " + params.data.CAD_path);
@@ -1875,6 +1885,7 @@ class root(AbstractDataFolder):
                             return false;
                         }
                     }
+                    """ if export_command_copy_buttons else "") + """
 
                     class openLabelingViewerButton {
                         eGui;
@@ -1883,7 +1894,6 @@ class root(AbstractDataFolder):
                         init(params) {
                             this.eGui = document.createElement('div');
                             this.eGui.classList.add('custom-element');
-                            let command = getLaunchGuiCommand(params);
                             if(params.data.glb_labeling != null) {
                                 this.eGui.innerHTML = `
                                     <button class="open-viewer" onclick="make_dialog('${params.data.glb_labeling}')">Open</button>
@@ -1907,7 +1917,6 @@ class root(AbstractDataFolder):
                         init(params) {
                             this.eGui = document.createElement('div');
                             this.eGui.classList.add('custom-element');
-                            let command = getLaunchGuiCommand(params);
                             if(params.data.glb_hexmesh != null) {
                                 this.eGui.innerHTML = `
                                     <button class="open-viewer" onclick="make_dialog('${params.data.glb_hexmesh}')">Open</button>
@@ -1947,14 +1956,14 @@ class root(AbstractDataFolder):
                         // Column Definitions: Defines & controls grid columns.
                         columnDefs: [
                             { field: "CAD_name", headerName: "CAD model", cellDataType: 'text', filter: true, pinned: 'left' },
-                            { field: "view_CAD_command", headerName: "view CAD", cellRenderer: ViewStepButton },
+                            """ + ("""{ field: "view_CAD_command", headerName: "view CAD", cellRenderer: ViewStepButton },""" if export_command_copy_buttons else "") + """
                             {
                                 headerName: 'surface mesh',
                                 children: [
                                     { field: "nb_vertices",         headerName: "#vertices",    cellDataType: 'number', filter: true },
                                     { field: "nb_facets",           headerName: "#facets",      cellDataType: 'number', filter: true },
                                     { field: "area_sd",             headerName: "sd(area)",     cellDataType: 'number', filter: true, valueFormatter: floatingPointFormatter },
-                                    { field: "view_mesh_command",   headerName: "view mesh",    cellRenderer: ViewTetMeshButton },
+                                    """ + ("""{ field: "view_mesh_command", headerName: "view mesh", cellRenderer: ViewTetMeshButton },""" if export_command_copy_buttons else "") + """
                                 ]
                             },
                             {
@@ -1973,7 +1982,7 @@ class root(AbstractDataFolder):
                                     """ + ("""{ field: "datetime", headerName: "date & time", cellDataType: 'text', filter: true },""" if export_datetime else "") + """
                                     { field: "duration",                headerName: "duration",             cellDataType: 'number',  filter: true, valueFormatter: DurationSecondsFormatter },
                                     { field: "glb_labeling",            headerName: "open",                 cellRenderer: openLabelingViewerButton },
-                                    { field: "view_labeling_command",   headerName: "view labeling",        cellRenderer: ViewLabelingButton },
+                                    """ + ("""{ field: "view_labeling_command",   headerName: "view labeling",        cellRenderer: ViewLabelingButton },""" if export_command_copy_buttons else "") + """
                                 ]
                             },
                             {
@@ -1992,7 +2001,7 @@ class root(AbstractDataFolder):
                                     { field: "glb_hexmesh", headerName: "open",    cellRenderer: openHexMeshViewerButton },
                                 ]
                             },
-                            { field: "launch_GUI", headerName: "launch GUI", cellRenderer: ViewLaunchGuiButton },
+                            """ + ("""{ field: "launch_GUI", headerName: "launch GUI", cellRenderer: ViewLaunchGuiButton },""" if export_command_copy_buttons else "") + """
                         ],
                         autoSizeStrategy: {
                             type: "fitCellContents"
