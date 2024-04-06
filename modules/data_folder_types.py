@@ -1759,6 +1759,8 @@ class root(AbstractDataFolder):
                         model_viewer.setAttribute("alt","labeling 3D viewer");
                         model_viewer.setAttribute("src", "glb/" + filename);
                         model_viewer.setAttribute("shadow-intensity", "1");
+                        model_viewer.setAttribute("exposure","1");
+                        model_viewer.setAttribute("tone-mapping","commerce");
                         model_viewer.setAttribute("camera-controls",true);
                         model_viewer.setAttribute("touch-action","pan-y");
                         model_viewer.setAttribute("autoplay",true);
