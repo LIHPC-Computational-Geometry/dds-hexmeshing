@@ -1428,7 +1428,10 @@ class root(AbstractDataFolder):
                 total_feature_edges = labeling_stats['feature-edges']['removed'] + labeling_stats['feature-edges']['lost'] + labeling_stats['feature-edges']['preserved']
                 assert(total_feature_edges == surface_mesh_stats['edges']['nb'])
                 # copy the labeling as glTF
-                glb_labeling_file: Path = labeling_folder.get_file(labeling.FILENAMES.LABELED_MESH_GLB,True) # will be autocomputed
+                glb_labeling_file: Path = labeling_folder.get_file(labeling.FILENAMES.LABELED_MESH_GLB,True)
+                unlink(glb_labeling_file) # remove it to force re-generation
+                labeling_folder.write_glb(True) # write .glb with polycube deformation as animation
+                glb_labeling_file: Path = labeling_folder.get_file(labeling.FILENAMES.LABELED_MESH_GLB,True)
                 copyfile(glb_labeling_file, self.path / report_folder_name / 'glb' / (CAD_name + '_labeling.glb'))
                 # if there is an hex-mesh in the labeling folder, instantiate it and retreive mesh stats
                 minSJ = None
@@ -1643,6 +1646,7 @@ class root(AbstractDataFolder):
                         model_viewer.setAttribute("shadow-intensity", "1");
                         model_viewer.setAttribute("camera-controls",true);
                         model_viewer.setAttribute("touch-action","pan-y");
+                        model_viewer.setAttribute("autoplay",true);
                         dialog.showModal();
                     }
 
