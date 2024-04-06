@@ -1059,6 +1059,7 @@ class hex_mesh(AbstractDataFolder):
         HEX_MESH_MEDIT          = 'hex.mesh'            # hexahedral mesh, GMF/MEDIT ASCII format
         HEX_MESH_OVM            = 'hex_mesh.ovm'        # hexahedral mesh, OpenVolumeMesh format
         HEX_MESH_STATS_JSON     = 'hex_mesh.stats.json' # mesh stats (min/max/avg/sd of mesh metrics) computed on HEX_MESH_MEDIT, as JSON file
+        HEX_MESH_SURFACE_GLB    = 'hex_mesh.glb'        # surface of HEX_MESH_MEDIT, colored by scaled jacobian, as glTF 2.0 binary file
 
     DEFAULT_VIEW = 'hex_mesh'
 
@@ -1096,6 +1097,9 @@ class hex_mesh(AbstractDataFolder):
             return True
         elif filename == self.FILENAMES.HEX_MESH_STATS_JSON:
             return self.mesh_stats()
+        elif filename == self.FILENAMES.HEX_MESH_SURFACE_GLB:
+            self.write_glb()
+            return True
         else:
             return False
     
@@ -1136,6 +1140,17 @@ class hex_mesh(AbstractDataFolder):
             return True
         else:
             return False # unable to generate mesh stats file
+        
+    def write_glb(self):
+        TransformativeAlgorithm(
+            'write_glb',
+            self.path,
+            Settings.path('automatic_polycube') / 'to_glTF',
+            '{hex_mesh} {output_file}',
+            True,
+            hex_mesh    = str(self.get_file(self.FILENAMES.HEX_MESH_MEDIT,          True)),
+            output_file = str(self.get_file(self.FILENAMES.HEX_MESH_SURFACE_GLB,    False)),
+        )
     
     # ----- Generative algorithms (create subfolders) --------------------
 
@@ -1372,8 +1387,8 @@ class root(AbstractDataFolder):
                     # there is a tet mesh but no labeling was written
                     nb_labelings_failed += 1
                     # export the surface mesh to glTF binary format
-                    glb_file: Path = tet_folder.get_file(tet_folder.FILENAMES.SURFACE_MESH_GLB, True) # will be autocomputed
-                    copyfile(glb_file, self.path / report_folder_name / 'glb' / (CAD_name + '.glb'))
+                    glb_labeling_file: Path = tet_folder.get_file(tet_folder.FILENAMES.SURFACE_MESH_GLB, True) # will be autocomputed
+                    copyfile(glb_labeling_file, self.path / report_folder_name / 'glb' / (CAD_name + '_labeling.glb'))
                     current_row = dict()
                     current_row['CAD_name']                 = CAD_name
                     current_row['CAD_path']                 = str(level_minus_1_folder.absolute())
@@ -1393,13 +1408,14 @@ class root(AbstractDataFolder):
                     current_row['nb_turning_points']        = None
                     current_row['datetime']                 = None
                     current_row['duration']                 = None
-                    current_row['glb_file']                 = CAD_name + '.glb' # no labeling can be viewed, but at least the user will be able to view the input mesh
+                    current_row['glb_labeling']             = CAD_name + '_labeling.glb' # no labeling can be viewed, but at least the user will be able to view the input mesh
                     current_row['labeling_subfolder']       = None # subfolder relative to the tet_mesh data folder
                     current_row['percentage_removed']       = None
                     current_row['percentage_lost']          = None
                     current_row['percentage_preserved']     = None
                     current_row['minSJ']                    = None
                     current_row['avgSJ']                    = None
+                    current_row['glb_hexmesh']              = None
                     AG_Grid_rowData.append(current_row)
                     continue
                 # instantiate the labeling folder
@@ -1412,11 +1428,12 @@ class root(AbstractDataFolder):
                 total_feature_edges = labeling_stats['feature-edges']['removed'] + labeling_stats['feature-edges']['lost'] + labeling_stats['feature-edges']['preserved']
                 assert(total_feature_edges == surface_mesh_stats['edges']['nb'])
                 # copy the labeling as glTF
-                glb_file: Path = labeling_folder.get_file(labeling.FILENAMES.LABELED_MESH_GLB,True) # will be autocomputed
-                copyfile(glb_file, self.path / report_folder_name / 'glb' / (CAD_name + '.glb'))
+                glb_labeling_file: Path = labeling_folder.get_file(labeling.FILENAMES.LABELED_MESH_GLB,True) # will be autocomputed
+                copyfile(glb_labeling_file, self.path / report_folder_name / 'glb' / (CAD_name + '_labeling.glb'))
                 # if there is an hex-mesh in the labeling folder, instantiate it and retreive mesh stats
                 minSJ = None
                 avgSJ = None
+                glb_hexmesh_filename = None
                 if (labeling_folder.path / 'polycube_withHexEx_1.3').exists():
                     hex_mesh_folder: hex_mesh = AbstractDataFolder.instantiate(labeling_folder.path / 'polycube_withHexEx_1.3')
                     if 'quality' not in hex_mesh_folder.get_mesh_stats_dict()['cells']:
@@ -1425,6 +1442,11 @@ class root(AbstractDataFolder):
                     else:
                         minSJ = hex_mesh_folder.get_mesh_stats_dict()['cells']['quality']['hex_SJ']['min']
                         avgSJ = hex_mesh_folder.get_mesh_stats_dict()['cells']['quality']['hex_SJ']['avg']
+                        # copy the hex-mesh surface as glTF
+                        glb_hexmesh_file: Path = hex_mesh_folder.get_file(hex_mesh.FILENAMES.HEX_MESH_SURFACE_GLB,True) # will be autocomputed
+                        glb_hexmesh_filename = CAD_name + '_hexmesh.glb'
+                        copyfile(glb_hexmesh_file, self.path / report_folder_name / 'glb' / glb_hexmesh_filename)
+                        
                 current_row = dict()
                 current_row['CAD_name']                 = CAD_name
                 current_row['CAD_path']                 = str(level_minus_1_folder.absolute())
@@ -1444,13 +1466,14 @@ class root(AbstractDataFolder):
                 current_row['nb_turning_points']        = labeling_folder.nb_turning_points() # == labeling_stats['turning-points']['nb']
                 current_row['datetime']                 = ISO_datetime_to_readable_datetime(ISO_datetime)
                 current_row['duration']                 = labeling_folder.get_info_dict()[ISO_datetime]['duration'][0]
-                current_row['glb_file']                 = CAD_name + '.glb'
+                current_row['glb_labeling']             = CAD_name + '_labeling.glb'
                 current_row['labeling_subfolder']       = labeling_subfolders_generated_by_automatic_polycube[0].name
                 current_row['percentage_removed']       = labeling_stats['feature-edges']['removed']/total_feature_edges*100
                 current_row['percentage_lost']          = labeling_stats['feature-edges']['lost']/total_feature_edges*100
                 current_row['percentage_preserved']     = labeling_stats['feature-edges']['preserved']/total_feature_edges*100
                 current_row['minSJ']                    = minSJ
                 current_row['avgSJ']                    = avgSJ
+                current_row['glb_hexmesh']              = glb_hexmesh_filename
                 AG_Grid_rowData.append(current_row)
                 if not labeling_folder.has_valid_labeling():
                     nb_labelings_invalid += 1
@@ -1481,13 +1504,14 @@ class root(AbstractDataFolder):
                 current_row['nb_turning_points']        = None
                 current_row['datetime']                 = None
                 current_row['duration']                 = None
-                current_row['glb_file']                 = None
+                current_row['glb_labeling']             = None
                 current_row['labeling_subfolder']       = None
                 current_row['percentage_removed']       = None
                 current_row['percentage_lost']          = None
                 current_row['percentage_preserved']     = None
                 current_row['minSJ']                    = None
                 current_row['avgSJ']                    = None
+                current_row['glb_hexmesh']              = None
                 AG_Grid_rowData.append(current_row)
 
         assert(nb_meshing_fails + nb_meshing_successes == nb_CAD)
@@ -1742,7 +1766,7 @@ class root(AbstractDataFolder):
                         }
                     }
 
-                    class openViewerButton {
+                    class openLabelingViewerButton {
                         eGui;
                         eButton;
 
@@ -1750,9 +1774,33 @@ class root(AbstractDataFolder):
                             this.eGui = document.createElement('div');
                             this.eGui.classList.add('custom-element');
                             let command = getLaunchGuiCommand(params);
-                            if(params.data.glb_file != null) {
+                            if(params.data.glb_labeling != null) {
                                 this.eGui.innerHTML = `
-                                    <button class="open-viewer" onclick="make_dialog('${params.data.glb_file}')">Open</button>
+                                    <button class="open-viewer" onclick="make_dialog('${params.data.glb_labeling}')">Open</button>
+                                `;
+                            }
+                        }
+
+                        getGui() {
+                            return this.eGui;
+                        }
+
+                        refresh(params) {
+                            return false;
+                        }
+                    }
+
+                    class openHexMeshViewerButton {
+                        eGui;
+                        eButton;
+
+                        init(params) {
+                            this.eGui = document.createElement('div');
+                            this.eGui.classList.add('custom-element');
+                            let command = getLaunchGuiCommand(params);
+                            if(params.data.glb_hexmesh != null) {
+                                this.eGui.innerHTML = `
+                                    <button class="open-viewer" onclick="make_dialog('${params.data.glb_hexmesh}')">Open</button>
                                 `;
                             }
                         }
@@ -1814,7 +1862,7 @@ class root(AbstractDataFolder):
                                     { field: "nb_turning_points",       headerName: "#turning-points",      cellDataType: 'number',  filter: true },
                                     { field: "datetime",                headerName: "date & time",          cellDataType: 'text',    filter: true },
                                     { field: "duration",                headerName: "duration",             cellDataType: 'number',  filter: true, valueFormatter: DurationSecondsFormatter },
-                                    { field: "glb_file",                headerName: "open",                 cellRenderer: openViewerButton },
+                                    { field: "glb_labeling",            headerName: "open",                 cellRenderer: openLabelingViewerButton },
                                     { field: "view_labeling_command",   headerName: "view labeling",        cellRenderer: ViewLabelingButton },
                                 ]
                             },
@@ -1829,8 +1877,9 @@ class root(AbstractDataFolder):
                             {
                                 headerName: 'hex-mesh',
                                 children: [
-                                    { field: "minSJ", headerName: "min(SJ)", cellDataType: 'number', filter: true, valueFormatter: floatingPointFormatter },
-                                    { field: "avgSJ", headerName: "avg(SJ)", cellDataType: 'number', filter: true, valueFormatter: floatingPointFormatter },
+                                    { field: "minSJ",       headerName: "min(SJ)", cellDataType: 'number', filter: true, valueFormatter: floatingPointFormatter },
+                                    { field: "avgSJ",       headerName: "avg(SJ)", cellDataType: 'number', filter: true, valueFormatter: floatingPointFormatter },
+                                    { field: "glb_hexmesh", headerName: "open",    cellRenderer: openHexMeshViewerButton },
                                 ]
                             },
                             { field: "launch_GUI", headerName: "launch GUI", cellRenderer: ViewLaunchGuiButton },
