@@ -1344,7 +1344,7 @@ class root(AbstractDataFolder):
                 if labeling_folder.has_valid_labeling():
                     labeling_folder.polycube_withHexEx(1.3,False)
 
-    def generate_report(self):
+    def generate_report(self, export_datetime: bool = False):
         """
         What was `batch_processing_analysis.py`. Parse the data folder and create an HTML report with stats.
         """
@@ -1417,7 +1417,8 @@ class root(AbstractDataFolder):
                     current_row['avg_fidelity']             = None
                     current_row['valid']                    = None
                     current_row['nb_turning_points']        = None
-                    current_row['datetime']                 = None
+                    if export_datetime:
+                        current_row['datetime']             = None
                     current_row['duration']                 = None
                     current_row['glb_labeling']             = CAD_name + '_labeling.glb' # no labeling can be viewed, but at least the user will be able to view the input mesh
                     current_row['labeling_subfolder']       = None # subfolder relative to the tet_mesh data folder
@@ -1475,7 +1476,8 @@ class root(AbstractDataFolder):
                 current_row['avg_fidelity']             = labeling_stats['fidelity']['avg']
                 current_row['valid']                    = labeling_folder.has_valid_labeling()
                 current_row['nb_turning_points']        = labeling_folder.nb_turning_points() # == labeling_stats['turning-points']['nb']
-                current_row['datetime']                 = ISO_datetime_to_readable_datetime(ISO_datetime)
+                if export_datetime:
+                    current_row['datetime']             = ISO_datetime_to_readable_datetime(ISO_datetime)
                 current_row['duration']                 = labeling_folder.get_info_dict()[ISO_datetime]['duration'][0]
                 current_row['glb_labeling']             = CAD_name + '_labeling.glb'
                 current_row['labeling_subfolder']       = labeling_subfolders_generated_by_automatic_polycube[0].name
@@ -1532,7 +1534,8 @@ class root(AbstractDataFolder):
                 current_row['avg_fidelity']             = None
                 current_row['valid']                    = None
                 current_row['nb_turning_points']        = None
-                current_row['datetime']                 = None
+                if export_datetime:
+                    current_row['datetime']             = None
                 current_row['duration']                 = None
                 current_row['glb_labeling']             = None
                 current_row['labeling_subfolder']       = None
@@ -1967,7 +1970,7 @@ class root(AbstractDataFolder):
                                     { field: "avg_fidelity",            headerName: "avg(fidelity)",        cellDataType: 'number',  filter: true, valueFormatter: floatingPointFormatter },
                                     { field: "valid",                   headerName: "valid",                cellDataType: 'boolean', filter: true },
                                     { field: "nb_turning_points",       headerName: "#turning-points",      cellDataType: 'number',  filter: true },
-                                    { field: "datetime",                headerName: "date & time",          cellDataType: 'text',    filter: true },
+                                    """ + ("""{ field: "datetime", headerName: "date & time", cellDataType: 'text', filter: true },""" if export_datetime else "") + """
                                     { field: "duration",                headerName: "duration",             cellDataType: 'number',  filter: true, valueFormatter: DurationSecondsFormatter },
                                     { field: "glb_labeling",            headerName: "open",                 cellRenderer: openLabelingViewerButton },
                                     { field: "view_labeling_command",   headerName: "view labeling",        cellRenderer: ViewLabelingButton },
