@@ -1687,6 +1687,7 @@ class root(AbstractDataFolder):
                         padding: 16px;
                         overflow: auto;
                         background-color: #181d1f;
+                        font-family: sans-serif;
                     }
 
                     body details {
