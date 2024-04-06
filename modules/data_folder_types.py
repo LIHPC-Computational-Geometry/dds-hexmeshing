@@ -1398,17 +1398,33 @@ class root(AbstractDataFolder):
                     current_row['percentage_removed']       = None
                     current_row['percentage_lost']          = None
                     current_row['percentage_preserved']     = None
+                    current_row['minSJ']                    = None
+                    current_row['avgSJ']                    = None
                     AG_Grid_rowData.append(current_row)
                     continue
+                # instantiate the labeling folder
                 labeling_folder: labeling = AbstractDataFolder.instantiate(labeling_subfolders_generated_by_automatic_polycube[0])
                 assert(labeling_folder.type() == 'labeling')
+                # retreive datetime, labeling stats and feature edges info
                 ISO_datetime = labeling_folder.get_datetime_key_of_algo_in_info_file('automatic_polycube')
                 assert(ISO_datetime is not None)
                 labeling_stats = labeling_folder.get_labeling_stats_dict()
                 total_feature_edges = labeling_stats['feature-edges']['removed'] + labeling_stats['feature-edges']['lost'] + labeling_stats['feature-edges']['preserved']
                 assert(total_feature_edges == surface_mesh_stats['edges']['nb'])
+                # copy the labeling as glTF
                 glb_file: Path = labeling_folder.get_file(labeling.FILENAMES.LABELED_MESH_GLB,True) # will be autocomputed
                 copyfile(glb_file, self.path / report_folder_name / 'glb' / (CAD_name + '.glb'))
+                # if there is an hex-mesh in the labeling folder, instantiate it and retreive mesh stats
+                minSJ = None
+                avgSJ = None
+                if (labeling_folder.path / 'polycube_withHexEx_1.3').exists():
+                    hex_mesh_folder: hex_mesh = AbstractDataFolder.instantiate(labeling_folder.path / 'polycube_withHexEx_1.3')
+                    if 'quality' not in hex_mesh_folder.get_mesh_stats_dict()['cells']:
+                        logging.error(f"no 'quality' in hex mesh stats, path={hex_mesh_folder.path}")
+                        # can happen when HexEx fails to generate a volume mesh, only exports vertices
+                    else:
+                        minSJ = hex_mesh_folder.get_mesh_stats_dict()['cells']['quality']['hex_SJ']['min']
+                        avgSJ = hex_mesh_folder.get_mesh_stats_dict()['cells']['quality']['hex_SJ']['avg']
                 current_row = dict()
                 current_row['CAD_name']                 = CAD_name
                 current_row['CAD_path']                 = str(level_minus_1_folder.absolute())
@@ -1433,6 +1449,8 @@ class root(AbstractDataFolder):
                 current_row['percentage_removed']       = labeling_stats['feature-edges']['removed']/total_feature_edges*100
                 current_row['percentage_lost']          = labeling_stats['feature-edges']['lost']/total_feature_edges*100
                 current_row['percentage_preserved']     = labeling_stats['feature-edges']['preserved']/total_feature_edges*100
+                current_row['minSJ']                    = minSJ
+                current_row['avgSJ']                    = avgSJ
                 AG_Grid_rowData.append(current_row)
                 if not labeling_folder.has_valid_labeling():
                     nb_labelings_invalid += 1
@@ -1468,6 +1486,8 @@ class root(AbstractDataFolder):
                 current_row['percentage_removed']       = None
                 current_row['percentage_lost']          = None
                 current_row['percentage_preserved']     = None
+                current_row['minSJ']                    = None
+                current_row['avgSJ']                    = None
                 AG_Grid_rowData.append(current_row)
 
         assert(nb_meshing_fails + nb_meshing_successes == nb_CAD)
@@ -1804,6 +1824,13 @@ class root(AbstractDataFolder):
                                     { field: "percentage_removed",      headerName: "removed",     cellDataType: 'number', filter: true, valueFormatter: PercentageFormatter },
                                     { field: "percentage_lost",         headerName: "lost",        cellDataType: 'number', filter: true, valueFormatter: PercentageFormatter },
                                     { field: "percentage_preserved",    headerName: "preserved",   cellDataType: 'number', filter: true, valueFormatter: PercentageFormatter },
+                                ]
+                            },
+                            {
+                                headerName: 'hex-mesh',
+                                children: [
+                                    { field: "minSJ", headerName: "min(SJ)", cellDataType: 'number', filter: true, valueFormatter: floatingPointFormatter },
+                                    { field: "avgSJ", headerName: "avg(SJ)", cellDataType: 'number', filter: true, valueFormatter: floatingPointFormatter },
                                 ]
                             },
                             { field: "launch_GUI", headerName: "launch GUI", cellRenderer: ViewLaunchGuiButton },
