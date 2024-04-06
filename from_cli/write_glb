@@ -27,6 +27,12 @@ parser.add_argument(
     help='path to the input folder (type labeling)',
     required=True)
 
+parser.add_argument(
+    '--with-polycube',
+    action='store_true',
+    dest='with_polycube',
+    help='export the polycube deformation as glTF animation')
+
 args = parser.parse_args()
 
 root_folder = root()
@@ -36,4 +42,13 @@ if args.input in root_folder.collections_manager.collections_names():
     exit(0)
 
 input = AbstractDataFolder.instantiate(Path(args.input))
-input.write_glb()
+if input.type() == 'tet_mesh':
+    assert(args.with_polycube == False) # this option is only for 'labeling' input folders
+    input.write_glb()
+elif input.type() == 'labeling':
+    input.write_glb(args.with_polycube)
+elif input.type() == 'hex_mesh':
+    assert(args.with_polycube == False) # this option is only for 'labeling' input folders
+    input.write_glb()
+else:
+    logging.error(f"Invalid input folder type : '{input.type()}'")

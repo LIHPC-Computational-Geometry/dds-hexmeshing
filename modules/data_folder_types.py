@@ -911,19 +911,32 @@ class labeling(AbstractDataFolder):
         else:
             return False # unable to generate mesh stats file
         
-    def write_glb(self):
+    def write_glb(self, with_polycube_deformation: bool):
         parent = AbstractDataFolder.instantiate(self.path.parent) # we need the parent folder to get the surface mesh
         assert(parent.type() == 'tet_mesh') # the parent folder should be of tet_mesh type
-        TransformativeAlgorithm(
-            'write_glb',
-            self.path,
-            Settings.path('automatic_polycube') / 'to_glTF',
-            '{surface_mesh} {output_file} labeling={surface_labeling}',
-            True,
-            surface_mesh        = str(parent.get_file(tet_mesh.FILENAMES.SURFACE_MESH_OBJ,  True)),
-            output_file         = str(self.get_file(self.FILENAMES.LABELED_MESH_GLB,        False)),
-            surface_labeling    = str(self.get_file(self.FILENAMES.SURFACE_LABELING_TXT,    True)),
-        )
+        if with_polycube_deformation:
+            TransformativeAlgorithm(
+                'write_glb',
+                self.path,
+                Settings.path('automatic_polycube') / 'to_glTF',
+                '{surface_mesh} {output_file} labeling={surface_labeling} polycube={polycube}',
+                True,
+                surface_mesh        = str(parent.get_file(tet_mesh.FILENAMES.SURFACE_MESH_OBJ,      True)),
+                output_file         = str(self.get_file(self.FILENAMES.LABELED_MESH_GLB,            False)),
+                surface_labeling    = str(self.get_file(self.FILENAMES.SURFACE_LABELING_TXT,        True)),
+                polycube            = str(self.get_file(self.FILENAMES.POLYCUBE_SURFACE_MESH_OBJ,   True))
+            )
+        else:
+            TransformativeAlgorithm(
+                'write_glb',
+                self.path,
+                Settings.path('automatic_polycube') / 'to_glTF',
+                '{surface_mesh} {output_file} labeling={surface_labeling}',
+                True,
+                surface_mesh        = str(parent.get_file(tet_mesh.FILENAMES.SURFACE_MESH_OBJ,  True)),
+                output_file         = str(self.get_file(self.FILENAMES.LABELED_MESH_GLB,        False)),
+                surface_labeling    = str(self.get_file(self.FILENAMES.SURFACE_LABELING_TXT,    True)),
+            )
     
     # ----- Generative algorithms (create subfolders) --------------------
 
