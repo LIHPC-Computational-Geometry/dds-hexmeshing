@@ -74,17 +74,17 @@ class AbstractDataFolder(ABC):
     # ----- Specific functions of the abstract class --------------------
 
     @staticmethod
-    def type_inference(path: Path):
+    def type_inference(path: Path, must_be_recognized: bool = True):
         infered_types = list() # will store all AbstractDataFolder subclasses recognizing path as an instance
         for subclass in AbstractDataFolder.__subclasses__():
             if subclass.is_instance(path):
                 infered_types.append(subclass) # current subclass recognize path
-        if len(infered_types) == 0:
+        if len(infered_types) == 0 and must_be_recognized:
             raise Exception(f'No known class recognize the folder {path}')
         elif len(infered_types) > 1: # if multiple AbstractDataFolder subclasses recognize path
             raise Exception(f'Multiple classes recognize the folder {path} : {[x.__name__ for x in infered_types]}')
         else:
-            return infered_types[0]
+            return None if (not must_be_recognized and len(infered_types) == 0) else infered_types[0]
 
     @staticmethod
     def instantiate(path: Path): # Can this method become AbstractDataFolder.__init__() ??
@@ -210,7 +210,8 @@ class AbstractDataFolder(ABC):
     def get_subfolders_of_type(self,type_str: str) -> list[Path]:
         out = list()
         for subfolder in [x for x in self.path.iterdir() if x.is_dir()]:
-            if AbstractDataFolder.type_inference(subfolder).__name__ == type_str:
+            inferred_type = AbstractDataFolder.type_inference(subfolder,False)
+            if inferred_type is not None and inferred_type.__name__ == type_str:
                 out.append(subfolder)
         return out
 
@@ -1356,12 +1357,22 @@ class root(AbstractDataFolder):
         mkdir(self.path / report_folder_name / 'js')
 
         nb_CAD = 0
-        nb_meshing_fails = 0
-        nb_meshing_successes = 0
-        nb_labelings_failed = 0
-        nb_labelings_invalid = 0
-        nb_labelings_valid_with_turning_points = 0
-        nb_labelings_valid_no_turning_points = 0
+
+        nb_CAD_2_meshing_failed     = 0
+        nb_CAD_2_meshing_succeeded  = 0
+
+        nb_meshing_succeeded_2_labeling_failed          = 0
+        nb_meshing_succeeded_2_labeling_invalid         = 0
+        nb_meshing_succeeded_2_labeling_non_monotone    = 0
+        nb_meshing_succeeded_2_labeling_succeeded       = 0
+
+        nb_labeling_non_monotone_2_hexmesh_failed           = 0
+        nb_labeling_non_monotone_2_hexmesh_negative_min_sj  = 0
+        nb_labeling_non_monotone_2_hexmesh_positive_min_sj  = 0
+
+        nb_labeling_succeeded_2_hexmesh_failed          = 0
+        nb_labeling_succeeded_2_hexmesh_negative_min_sj = 0
+        nb_labeling_succeeded_2_hexmesh_positive_min_sj = 0
 
         AG_Grid_rowData = list()
 
@@ -1370,7 +1381,7 @@ class root(AbstractDataFolder):
         # and fill `AG_Grid_rowData`
 
         root_folder = root()
-        for level_minus_1_folder in [x for x in root_folder.path.iterdir() if x.is_dir()]:
+        for level_minus_1_folder in root_folder.get_subfolders_of_type('step'):
             CAD_name = level_minus_1_folder.name
             if not (level_minus_1_folder / step.FILENAMES.STEP).exists():
                 logging.warning(f"Folder {level_minus_1_folder} has no {step.FILENAMES.STEP}")
@@ -1378,14 +1389,14 @@ class root(AbstractDataFolder):
             nb_CAD += 1
             if (level_minus_1_folder / 'Gmsh_0.1/').exists() and (level_minus_1_folder / 'Gmsh_0.1' / tet_mesh.FILENAMES.SURFACE_MESH_OBJ).exists():
                 tet_folder: tet_mesh = AbstractDataFolder.instantiate(level_minus_1_folder / 'Gmsh_0.1')
-                nb_meshing_successes += 1
+                nb_CAD_2_meshing_succeeded += 1
                 surface_mesh_stats = tet_folder.get_surface_mesh_stats_dict()
                 labeling_subfolders_generated_by_automatic_polycube: list[Path] = tet_folder.get_subfolders_generated_by('automatic_polycube')
                 assert(len(labeling_subfolders_generated_by_automatic_polycube) <= 1)
                 if ( (len(labeling_subfolders_generated_by_automatic_polycube) == 0) or \
                     not (labeling_subfolders_generated_by_automatic_polycube[0] / labeling.FILENAMES.SURFACE_LABELING_TXT).exists() ):
                     # there is a tet mesh but no labeling was written
-                    nb_labelings_failed += 1
+                    nb_meshing_succeeded_2_labeling_failed += 1
                     # export the surface mesh to glTF binary format
                     glb_labeling_file: Path = tet_folder.get_file(tet_folder.FILENAMES.SURFACE_MESH_GLB, True) # will be autocomputed
                     copyfile(glb_labeling_file, self.path / report_folder_name / 'glb' / (CAD_name + '_labeling.glb'))
@@ -1476,15 +1487,34 @@ class root(AbstractDataFolder):
                 current_row['glb_hexmesh']              = glb_hexmesh_filename
                 AG_Grid_rowData.append(current_row)
                 if not labeling_folder.has_valid_labeling():
-                    nb_labelings_invalid += 1
+                    nb_meshing_succeeded_2_labeling_invalid += 1
                     continue
                 if labeling_folder.nb_turning_points() != 0:
-                    nb_labelings_valid_with_turning_points += 1
+                    nb_meshing_succeeded_2_labeling_non_monotone += 1
+                    if glb_hexmesh_filename is not None:
+                        # an hex-mesh was successully generated
+                        if minSJ < 0.0:
+                            nb_labeling_non_monotone_2_hexmesh_negative_min_sj += 1
+                        else:
+                            nb_labeling_non_monotone_2_hexmesh_positive_min_sj += 1
+                    else:
+                        # no hex-mesh
+                        nb_labeling_non_monotone_2_hexmesh_failed += 1
                     continue
-                nb_labelings_valid_no_turning_points += 1
+                # so we have a valid labeling with no turning-points
+                nb_meshing_succeeded_2_labeling_succeeded += 1
+                if glb_hexmesh_filename is not None:
+                    # an hex-mesh was successully generated
+                    if minSJ < 0.0:
+                        nb_labeling_succeeded_2_hexmesh_negative_min_sj += 1
+                    else:
+                        nb_labeling_succeeded_2_hexmesh_positive_min_sj += 1
+                else:
+                    # no hex-mesh
+                    nb_labeling_succeeded_2_hexmesh_failed += 1
             else:
                 # not even a surface mesh
-                nb_meshing_fails += 1
+                nb_CAD_2_meshing_failed += 1
                 current_row = dict()
                 current_row['CAD_name']                 = CAD_name
                 current_row['CAD_path']                 = str(level_minus_1_folder.absolute())
@@ -1514,31 +1544,107 @@ class root(AbstractDataFolder):
                 current_row['glb_hexmesh']              = None
                 AG_Grid_rowData.append(current_row)
 
-        assert(nb_meshing_fails + nb_meshing_successes == nb_CAD)
-        assert(nb_labelings_failed + nb_labelings_invalid + nb_labelings_valid_with_turning_points + nb_labelings_valid_no_turning_points == nb_meshing_successes)
+        # from links values (flow) to node values (containers)
+        nb_meshing_failed = nb_CAD_2_meshing_failed
+        nb_meshing_succeeded = nb_CAD_2_meshing_succeeded
+        nb_labeling_failed = nb_meshing_succeeded_2_labeling_failed
+        nb_labeling_invalid = nb_meshing_succeeded_2_labeling_invalid
+        nb_labeling_non_monotone = nb_meshing_succeeded_2_labeling_non_monotone
+        nb_labeling_succeeded = nb_meshing_succeeded_2_labeling_succeeded
+        max_nb_hexmeshes = nb_labeling_non_monotone + nb_labeling_succeeded # other cases cannot lead to an hex-mesh
+        nb_hexmesh_failed = nb_labeling_non_monotone_2_hexmesh_failed + nb_labeling_succeeded_2_hexmesh_failed
+        nb_hexmesh_negative_min_sj = nb_labeling_non_monotone_2_hexmesh_negative_min_sj + nb_labeling_succeeded_2_hexmesh_negative_min_sj
+        nb_hexmesh_positive_min_sj = nb_labeling_non_monotone_2_hexmesh_positive_min_sj + nb_labeling_succeeded_2_hexmesh_positive_min_sj
+
+        assert(nb_meshing_failed + nb_meshing_succeeded == nb_CAD)
+        assert(nb_labeling_failed + nb_labeling_invalid + nb_labeling_non_monotone + nb_labeling_succeeded == nb_meshing_succeeded)
+        assert(nb_hexmesh_failed + nb_hexmesh_negative_min_sj + nb_hexmesh_positive_min_sj == max_nb_hexmeshes)
 
         # Define nodes & links of the Sankey diagram
+        # Some nodes will not be defined, if they are empty
+        # To avoid an error with a missing node index,
+        # node indices will be assigned only if the node is not empty
+        node_name_to_index = dict()
+        node_name_to_index["CAD"] = 0
+        nb_nodes = 1
 
         Sankey_diagram_data = dict()
         Sankey_diagram_data["nodes"] = list()
-        Sankey_diagram_data["nodes"].append({"node":0,"name":f"{nb_CAD} CAD models"})
-        Sankey_diagram_data["nodes"].append({"node":1,"name":f"meshing successes : {nb_meshing_successes/nb_CAD*100:.2f} %"})
-        Sankey_diagram_data["nodes"].append({"node":2,"name":f"labelings failed : {nb_labelings_failed/nb_meshing_successes*100:.2f} %"})
-        Sankey_diagram_data["nodes"].append({"node":3,"name":f"labelings invalid : {nb_labelings_invalid/nb_meshing_successes*100:.2f} %"})
-        Sankey_diagram_data["nodes"].append({"node":4,"name":f"labelings non-monotone : {nb_labelings_valid_with_turning_points/nb_meshing_successes*100:.2f} %"})
-        Sankey_diagram_data["nodes"].append({"node":5,"name":f"labelings OK : {nb_labelings_valid_no_turning_points/nb_meshing_successes*100:.2f} %"})
-        if nb_meshing_fails != 0:
-            # add a node for failed tet mesh generation
-            Sankey_diagram_data["nodes"].append({"node":6,"name":f"meshing failed : {nb_meshing_fails/nb_CAD*100:.2f} %"})
+        Sankey_diagram_data["nodes"].append({"node":node_name_to_index["CAD"],"name":f"{nb_CAD} CAD models"})
+        if nb_meshing_failed != 0:
+            node_name_to_index["TETMESH_FAILED"] = nb_nodes
+            nb_nodes += 1
+            Sankey_diagram_data["nodes"].append({"node":node_name_to_index["TETMESH_FAILED"],"name":f"tet-meshing failed : {nb_meshing_failed/nb_CAD*100:.2f} %"})
+        if nb_meshing_succeeded != 0:
+            node_name_to_index["TETMESH_SUCCEEDED"] = nb_nodes
+            nb_nodes += 1
+            Sankey_diagram_data["nodes"].append({"node":node_name_to_index["TETMESH_SUCCEEDED"],"name":f"tet-meshing succeeded : {nb_meshing_succeeded/nb_CAD*100:.2f} %"})
+        if nb_labeling_failed != 0:
+            node_name_to_index["LABELING_FAILED"] = nb_nodes
+            nb_nodes += 1
+            Sankey_diagram_data["nodes"].append({"node":node_name_to_index["LABELING_FAILED"],"name":f"labeling failed : {nb_labeling_failed/nb_meshing_succeeded*100:.2f} %"})
+        if nb_labeling_invalid != 0:
+            node_name_to_index["LABELING_INVALID"] = nb_nodes
+            nb_nodes += 1
+            Sankey_diagram_data["nodes"].append({"node":node_name_to_index["LABELING_INVALID"],"name":f"labeling invalid : {nb_labeling_invalid/nb_meshing_succeeded*100:.2f} %"})
+        if nb_labeling_non_monotone != 0:
+            node_name_to_index["LABELING_NON_MONOTONE"] = nb_nodes
+            nb_nodes += 1
+            Sankey_diagram_data["nodes"].append({"node":node_name_to_index["LABELING_NON_MONOTONE"],"name":f"labeling non-monotone : {nb_labeling_non_monotone/nb_meshing_succeeded*100:.2f} %"})
+        if nb_labeling_succeeded != 0:
+            node_name_to_index["LABELING_SUCCEEDED"] = nb_nodes
+            nb_nodes += 1
+            Sankey_diagram_data["nodes"].append({"node":node_name_to_index["LABELING_SUCCEEDED"],"name":f"labeling succeeded : {nb_labeling_succeeded/nb_meshing_succeeded*100:.2f} %"})
+        if nb_hexmesh_failed != 0:
+            node_name_to_index["HEXMESH_FAILED"] = nb_nodes
+            nb_nodes += 1
+            Sankey_diagram_data["nodes"].append({"node":node_name_to_index["HEXMESH_FAILED"],"name":f"hex-meshing failed : {nb_hexmesh_failed/max_nb_hexmeshes*100:.2f} %"})
+        if nb_hexmesh_negative_min_sj != 0:
+            node_name_to_index["HEXMESH_NEGATIVE_MIN_SJ"] = nb_nodes
+            nb_nodes += 1
+            Sankey_diagram_data["nodes"].append({"node":node_name_to_index["HEXMESH_NEGATIVE_MIN_SJ"],"name":f"hex-mesh w/ minSJ<0 : {nb_hexmesh_negative_min_sj/max_nb_hexmeshes*100:.2f} %"})
+        if nb_hexmesh_positive_min_sj != 0:
+            node_name_to_index["HEXMESH_POSITIVE_MIN_SJ"] = nb_nodes
+            nb_nodes += 1
+            Sankey_diagram_data["nodes"].append({"node":node_name_to_index["HEXMESH_POSITIVE_MIN_SJ"],"name":f"hex-mesh w/ minSJ>=0 : {nb_hexmesh_positive_min_sj/max_nb_hexmeshes*100:.2f} %"})
+        
         Sankey_diagram_data["links"] = list()
-        Sankey_diagram_data["links"].append({"source":0,"target":1,"value":nb_CAD})
-        Sankey_diagram_data["links"].append({"source":1,"target":2,"value":nb_labelings_failed})
-        Sankey_diagram_data["links"].append({"source":1,"target":3,"value":nb_labelings_invalid})
-        Sankey_diagram_data["links"].append({"source":1,"target":4,"value":nb_labelings_valid_with_turning_points})
-        Sankey_diagram_data["links"].append({"source":1,"target":5,"value":nb_labelings_valid_no_turning_points})
-        if nb_meshing_fails != 0:
-            # add a link 'CAD models -> meshing failed'
-            Sankey_diagram_data["nodes"].append({"source":0,"target":6,"value":nb_meshing_fails})
+        if nb_CAD_2_meshing_failed != 0:
+            assert(nb_meshing_failed != 0)
+            Sankey_diagram_data["nodes"].append({"source":node_name_to_index["CAD"],"target":node_name_to_index["TETMESH_FAILED"],"value":nb_CAD_2_meshing_failed})
+        if nb_CAD_2_meshing_succeeded != 0:
+            assert(nb_meshing_succeeded != 0)
+            Sankey_diagram_data["links"].append({"source":node_name_to_index["CAD"],"target":node_name_to_index["TETMESH_SUCCEEDED"],"value":nb_CAD_2_meshing_succeeded})
+        if nb_meshing_succeeded_2_labeling_failed != 0:
+            assert(nb_labeling_failed != 0)
+            Sankey_diagram_data["links"].append({"source":node_name_to_index["TETMESH_SUCCEEDED"],"target":node_name_to_index["LABELING_FAILED"],"value":nb_meshing_succeeded_2_labeling_failed})
+        if nb_meshing_succeeded_2_labeling_invalid != 0:
+            assert(nb_labeling_invalid != 0)
+            Sankey_diagram_data["links"].append({"source":node_name_to_index["TETMESH_SUCCEEDED"],"target":node_name_to_index["LABELING_INVALID"],"value":nb_meshing_succeeded_2_labeling_invalid})
+        if nb_meshing_succeeded_2_labeling_non_monotone != 0:
+            assert(nb_labeling_non_monotone != 0)
+            Sankey_diagram_data["links"].append({"source":node_name_to_index["TETMESH_SUCCEEDED"],"target":node_name_to_index["LABELING_NON_MONOTONE"],"value":nb_meshing_succeeded_2_labeling_non_monotone})
+        if nb_meshing_succeeded_2_labeling_succeeded != 0:
+            assert(nb_labeling_succeeded != 0)
+            Sankey_diagram_data["links"].append({"source":node_name_to_index["TETMESH_SUCCEEDED"],"target":node_name_to_index["LABELING_SUCCEEDED"],"value":nb_meshing_succeeded_2_labeling_succeeded})
+        if nb_labeling_non_monotone_2_hexmesh_failed != 0:
+            assert(nb_hexmesh_failed != 0)
+            Sankey_diagram_data["links"].append({"source":node_name_to_index["LABELING_NON_MONOTONE"],"target":node_name_to_index["HEXMESH_FAILED"],"value":nb_labeling_non_monotone_2_hexmesh_failed})
+        if nb_labeling_non_monotone_2_hexmesh_negative_min_sj != 0:
+            assert(nb_hexmesh_negative_min_sj != 0)
+            Sankey_diagram_data["links"].append({"source":node_name_to_index["LABELING_NON_MONOTONE"],"target":node_name_to_index["HEXMESH_NEGATIVE_MIN_SJ"],"value":nb_labeling_non_monotone_2_hexmesh_negative_min_sj})
+        if nb_labeling_non_monotone_2_hexmesh_positive_min_sj != 0:
+            assert(nb_hexmesh_positive_min_sj != 0)
+            Sankey_diagram_data["links"].append({"source":node_name_to_index["LABELING_NON_MONOTONE"],"target":node_name_to_index["HEXMESH_POSITIVE_MIN_SJ"],"value":nb_labeling_non_monotone_2_hexmesh_positive_min_sj})
+        if nb_labeling_succeeded_2_hexmesh_failed != 0:
+            assert(nb_hexmesh_failed != 0)
+            Sankey_diagram_data["links"].append({"source":node_name_to_index["LABELING_SUCCEEDED"],"target":node_name_to_index["HEXMESH_FAILED"],"value":nb_labeling_succeeded_2_hexmesh_failed})
+        if nb_labeling_succeeded_2_hexmesh_negative_min_sj != 0:
+            assert(nb_hexmesh_negative_min_sj != 0)
+            Sankey_diagram_data["links"].append({"source":node_name_to_index["LABELING_SUCCEEDED"],"target":node_name_to_index["HEXMESH_NEGATIVE_MIN_SJ"],"value":nb_labeling_succeeded_2_hexmesh_negative_min_sj})
+        if nb_labeling_succeeded_2_hexmesh_positive_min_sj != 0:
+            assert(nb_hexmesh_positive_min_sj != 0)
+            Sankey_diagram_data["links"].append({"source":node_name_to_index["LABELING_SUCCEEDED"],"target":node_name_to_index["HEXMESH_POSITIVE_MIN_SJ"],"value":nb_labeling_succeeded_2_hexmesh_positive_min_sj})
 
         # Assemble the HTML file
 
@@ -1896,8 +2002,8 @@ class root(AbstractDataFolder):
                     ///////// Sankey diagram /////////////////////////////////
 
                     // set the dimensions and margins of the graph
-                    var margin = {top: 10, right: 10, bottom: 50, left: 10},
-                    width = 1200 - margin.left - margin.right,
+                    var margin = {top: 10, right: 200, bottom: 50, left: 200};
+                    width = window.screen.width - margin.left - margin.right,
                     height = 800 - margin.top - margin.bottom;
 
                     // append the svg object to the body of the page
