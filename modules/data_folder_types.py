@@ -911,7 +911,7 @@ class labeling(AbstractDataFolder):
         else:
             return False # unable to generate mesh stats file
         
-    def write_glb(self, with_polycube_deformation: bool):
+    def write_glb(self, with_polycube_deformation: bool = True):
         parent = AbstractDataFolder.instantiate(self.path.parent) # we need the parent folder to get the surface mesh
         assert(parent.type() == 'tet_mesh') # the parent folder should be of tet_mesh type
         if with_polycube_deformation:
@@ -1428,9 +1428,6 @@ class root(AbstractDataFolder):
                 total_feature_edges = labeling_stats['feature-edges']['removed'] + labeling_stats['feature-edges']['lost'] + labeling_stats['feature-edges']['preserved']
                 assert(total_feature_edges == surface_mesh_stats['edges']['nb'])
                 # copy the labeling as glTF
-                glb_labeling_file: Path = labeling_folder.get_file(labeling.FILENAMES.LABELED_MESH_GLB,True)
-                unlink(glb_labeling_file) # remove it to force re-generation
-                labeling_folder.write_glb(True) # write .glb with polycube deformation as animation
                 glb_labeling_file: Path = labeling_folder.get_file(labeling.FILENAMES.LABELED_MESH_GLB,True)
                 copyfile(glb_labeling_file, self.path / report_folder_name / 'glb' / (CAD_name + '_labeling.glb'))
                 # if there is an hex-mesh in the labeling folder, instantiate it and retreive mesh stats
