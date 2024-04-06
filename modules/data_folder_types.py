@@ -1323,8 +1323,9 @@ class root(AbstractDataFolder):
             labeling_subfolders_generated_by_automatic_polycube: list[Path] = tet_folder.get_subfolders_generated_by('automatic_polycube')
             assert(len(labeling_subfolders_generated_by_automatic_polycube) <= 1)
             if(len(labeling_subfolders_generated_by_automatic_polycube) == 1):
-                labeling_folder = AbstractDataFolder.instantiate(labeling_subfolders_generated_by_automatic_polycube[0])
-                if not (labeling_folder.path / 'polycube_withHexEx_1.3').exists():
+                labeling_folder: labeling = AbstractDataFolder.instantiate(labeling_subfolders_generated_by_automatic_polycube[0])
+                assert(not (labeling_folder.path / 'polycube_withHexEx_1.3').exists())
+                if labeling_folder.has_valid_labeling():
                     labeling_folder.polycube_withHexEx(1.3,False)
 
     def generate_report(self):
