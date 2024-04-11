@@ -1731,7 +1731,7 @@ class root(AbstractDataFolder):
                 </details>
                 <div id="myGrid" class="ag-theme-alpine-dark"></div>
                 <script src="js/ag-grid-community.min.js"></script>
-                <script src="js/clipboard.min.js"></script>
+                """ + ("""<script src="js/clipboard.min.js"></script>""" if export_command_copy_buttons else "") + """
                 <script src="js/d3.v4.min.js"></script>
                 <script src="js/sankey.js"></script>
                 <script type="module" src="js/model-viewer.min.js"></script>
@@ -2119,12 +2119,13 @@ class root(AbstractDataFolder):
             url='https://cdn.jsdelivr.net/npm/ag-grid-community@31.1.1/dist/ag-grid-community.min.js',
             filename = str(self.path / report_folder_name / 'js' / 'ag-grid-community.min.js')
         )
-        # clipboard.js https://clipboardjs.com/
-        logging.info('Downloading clipboard.js...')
-        request.urlretrieve(
-            url='https://cdn.jsdelivr.net/npm/clipboard@2.0.11/dist/clipboard.min.js',
-            filename = str(self.path / report_folder_name / 'js' / 'clipboard.min.js')
-        )
+        if export_command_copy_buttons:
+            # clipboard.js https://clipboardjs.com/
+            logging.info('Downloading clipboard.js...')
+            request.urlretrieve(
+                url='https://cdn.jsdelivr.net/npm/clipboard@2.0.11/dist/clipboard.min.js',
+                filename = str(self.path / report_folder_name / 'js' / 'clipboard.min.js')
+            )
         # D3 https://d3js.org/
         logging.info('Downloading D3...')
         request.urlretrieve(
