@@ -2145,19 +2145,20 @@ class root(AbstractDataFolder):
         )
 
     def compare_Evocube_with_ours(self):
-        CSV_rows = [[
-            "name",
-            "#vertices",
-            "#facets",
-            "invalid charts / total",
-            "invalid boundaries / total",
-            "invalid corners / total",
-            "min|avg fidelity",
-            "valid",
-            "#turning-points",
-            "duration (s) | speedup",
-            "min|avg SJ"
-        ]]
+        CSV_header = [
+            '"name"',
+            '"#vertices"',
+            '"#facets"',
+            '"invalid charts / total"',
+            '"invalid boundaries / total"',
+            '"invalid corners / total"',
+            '"min|avg fidelity"',
+            '"valid"',
+            '"#turning-points"',
+            '"duration (s) | speedup"',
+            '"min|avg SJ"'
+        ]
+        CSV_entries = dict()
 
         root_folder = root()
         for level_minus_1_folder in root_folder.get_subfolders_of_type('step'):
@@ -2181,19 +2182,18 @@ class root(AbstractDataFolder):
             if ( (len(labeling_subfolders_generated_by_evocube) == 0) or \
                 not (labeling_subfolders_generated_by_evocube[0] / labeling.FILENAMES.SURFACE_LABELING_TXT).exists() ):
                 # there is a tet mesh but no labeling was written
-                CSV_rows.append([
-                    f"{CAD_name} [ours]",
-                    str(surface_mesh_stats['vertices']['nb']),
-                    str(surface_mesh_stats['facets']['nb']),
-                    "- / -",
-                    "- / -",
-                    "- / -",
-                    "- | -",
-                    "-",
-                    "-",
-                    "- | -",
-                    "- | -"
-                ])
+                CSV_entries[f'"{CAD_name} [DPM*22]"'] = [
+                    f""" "{surface_mesh_stats['vertices']['nb']}" """,
+                    f""" "{surface_mesh_stats['facets']['nb']}" """,
+                    '"- / -"',
+                    '"- / -"',
+                    '"- / -"',
+                    '"- | -"',
+                    '"-"',
+                    '"-"',
+                    '"- | -"',
+                    '"- | -"'
+                ]
                 # do not continue, we need to analyse the Evocube labeling
             else:
                 # instantiate the labeling folder
@@ -2207,25 +2207,24 @@ class root(AbstractDataFolder):
                 assert(total_feature_edges == surface_mesh_stats['edges']['nb'])
                 
                 # if there is an hex-mesh in the labeling folder, instantiate it and retreive mesh stats
-                min_and_avg_SJ = "- | -"
+                min_and_avg_SJ = '"- | -"'
                 if (labeling_folder.path / 'polycube_withHexEx_1.3').exists():
                     hex_mesh_folder: hex_mesh = AbstractDataFolder.instantiate(labeling_folder.path / 'polycube_withHexEx_1.3')
                     if 'quality' in hex_mesh_folder.get_mesh_stats_dict()['cells']:
-                        min_and_avg_SJ = f"{hex_mesh_folder.get_mesh_stats_dict()['cells']['quality']['hex_SJ']['min']:.3f} | {hex_mesh_folder.get_mesh_stats_dict()['cells']['quality']['hex_SJ']['avg']:.3f}"
+                        min_and_avg_SJ = f""" "{hex_mesh_folder.get_mesh_stats_dict()['cells']['quality']['hex_SJ']['min']:.3f} | {hex_mesh_folder.get_mesh_stats_dict()['cells']['quality']['hex_SJ']['avg']:.3f}" """
                 Evocube_duration = labeling_folder.get_info_dict()[ISO_datetime]['duration'][0]
-                CSV_rows.append([
-                    f"{CAD_name} [DPM*22]",
-                    str(surface_mesh_stats['vertices']['nb']),
-                    str(surface_mesh_stats['facets']['nb']),
-                    f"{labeling_stats['charts']['invalid']} / {labeling_stats['charts']['nb']}",
-                    f"{labeling_stats['boundaries']['invalid']} / {labeling_stats['boundaries']['nb']}",
-                    f"{labeling_stats['corners']['invalid']} / {labeling_stats['corners']['nb']}",
-                    f"{labeling_stats['fidelity']['min']:.3f} | {labeling_stats['fidelity']['avg']:.3f}",
-                    "yes" if labeling_folder.has_valid_labeling() else "no",
-                    str(labeling_folder.nb_turning_points()),
-                    f"{Evocube_duration:.3f}",
+                CSV_entries[f'"{CAD_name} [DPM*22]"'] = [
+                    f""" "{surface_mesh_stats['vertices']['nb']}" """,
+                    f""" "{surface_mesh_stats['facets']['nb']}" """,
+                    f""" "{labeling_stats['charts']['invalid']} / {labeling_stats['charts']['nb']}" """,
+                    f""" "{labeling_stats['boundaries']['invalid']} / {labeling_stats['boundaries']['nb']}" """,
+                    f""" "{labeling_stats['corners']['invalid']} / {labeling_stats['corners']['nb']}" """,
+                    f""" "{labeling_stats['fidelity']['min']:.3f} | {labeling_stats['fidelity']['avg']:.3f}" """,
+                    '"yes"' if labeling_folder.has_valid_labeling() else '"no"',
+                    f""" "{labeling_folder.nb_turning_points()}" """,
+                    f""" "{Evocube_duration:.3f}" """,
                     min_and_avg_SJ
-                ])
+                ]
 
             # analyse the labeling generated by automatic_polycube
 
@@ -2234,19 +2233,18 @@ class root(AbstractDataFolder):
             if ( (len(labeling_subfolders_generated_by_automatic_polycube) == 0) or \
                 not (labeling_subfolders_generated_by_automatic_polycube[0] / labeling.FILENAMES.SURFACE_LABELING_TXT).exists() ):
                 # there is a tet mesh but no labeling was written
-                CSV_rows.append([
-                    f"{CAD_name} [ours]",
-                    str(surface_mesh_stats['vertices']['nb']),
-                    str(surface_mesh_stats['facets']['nb']),
-                    "- / -",
-                    "- / -",
-                    "- / -",
-                    "- | -",
-                    "-",
-                    "-",
-                    "- | -",
-                    "- | -"
-                ])
+                CSV_entries[f'"{CAD_name} [ours]"'] = [
+                    f""" "{surface_mesh_stats['vertices']['nb']}" """,
+                    f""" "{surface_mesh_stats['facets']['nb']}" """,
+                    '"- / -"',
+                    '"- / -"',
+                    '"- / -"',
+                    '"- | -"',
+                    '"-"',
+                    '"-"',
+                    '"- | -"',
+                    '"- | -"'
+                ]
                 # do not continue, we need to analyse the Evocube labeling
             else:
                 # instantiate the labeling folder
@@ -2260,31 +2258,34 @@ class root(AbstractDataFolder):
                 assert(total_feature_edges == surface_mesh_stats['edges']['nb'])
                 
                 # if there is an hex-mesh in the labeling folder, instantiate it and retreive mesh stats
-                min_and_avg_SJ = "- | -"
+                min_and_avg_SJ = '"- | -"'
                 if (labeling_folder.path / 'polycube_withHexEx_1.3').exists():
                     hex_mesh_folder: hex_mesh = AbstractDataFolder.instantiate(labeling_folder.path / 'polycube_withHexEx_1.3')
                     if 'quality' in hex_mesh_folder.get_mesh_stats_dict()['cells']:
-                        min_and_avg_SJ = f"{hex_mesh_folder.get_mesh_stats_dict()['cells']['quality']['hex_SJ']['min']:.3f} | {hex_mesh_folder.get_mesh_stats_dict()['cells']['quality']['hex_SJ']['avg']:.3f}"
+                        min_and_avg_SJ = f""" "{hex_mesh_folder.get_mesh_stats_dict()['cells']['quality']['hex_SJ']['min']:.3f} | {hex_mesh_folder.get_mesh_stats_dict()['cells']['quality']['hex_SJ']['avg']:.3f}" """
                 our_duration = labeling_folder.get_info_dict()[ISO_datetime]['duration'][0]
                 assert(Evocube_duration is not None)
                 speedup = Evocube_duration / our_duration
-                CSV_rows.append([
-                    f"{CAD_name} [ours]",
-                    str(surface_mesh_stats['vertices']['nb']),
-                    str(surface_mesh_stats['facets']['nb']),
-                    f"{labeling_stats['charts']['invalid']} / {labeling_stats['charts']['nb']}",
-                    f"{labeling_stats['boundaries']['invalid']} / {labeling_stats['boundaries']['nb']}",
-                    f"{labeling_stats['corners']['invalid']} / {labeling_stats['corners']['nb']}",
-                    f"{labeling_stats['fidelity']['min']:.3f} | {labeling_stats['fidelity']['avg']:.3f}",
-                    "yes" if labeling_folder.has_valid_labeling() else "no",
-                    str(labeling_folder.nb_turning_points()),
-                    f"{our_duration:.3f} | {speedup:.0f}",
+                CSV_entries[f'"{CAD_name} [ours]"'] = [
+                    f""" "{surface_mesh_stats['vertices']['nb']}" """,
+                    f""" "{surface_mesh_stats['facets']['nb']}" """,
+                    f""" "{labeling_stats['charts']['invalid']} / {labeling_stats['charts']['nb']}" """,
+                    f""" "{labeling_stats['boundaries']['invalid']} / {labeling_stats['boundaries']['nb']}" """,
+                    f""" "{labeling_stats['corners']['invalid']} / {labeling_stats['corners']['nb']}" """,
+                    f"""  "{labeling_stats['fidelity']['min']:.3f} | {labeling_stats['fidelity']['avg']:.3f}" """,
+                    '"yes"' if labeling_folder.has_valid_labeling() else '"no"',
+                    f""" "{labeling_folder.nb_turning_points()}" """,
+                    f""" "{our_duration:.3f} | {speedup:.0f}" """,
                     min_and_avg_SJ
-                ])
+                ]
         with open("comparison_with_Evocube.csv","w") as out_file:
-            for row in CSV_rows:
-                for value in row:
-                    out_file.write(value + ',')
+            for column_name in CSV_header:
+                out_file.write(column_name + ',  ')
+            out_file.write('\n')
+            for k,v in sorted(CSV_entries.items()):
+                out_file.write(k + ',  ')
+                for value in v:
+                    out_file.write(value + ',  ')
                 out_file.write('\n')
 
 
