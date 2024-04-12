@@ -13,8 +13,6 @@ from time import localtime, strftime
 from json import dumps
 import copy
 
-from icecream import ic
-
 # Add root of HexMeshWorkshop project folder in path
 project_root = str(Path(__file__).parent.parent.absolute())
 if path[-1] != project_root: path.append(project_root)
@@ -1336,7 +1334,6 @@ class root(AbstractDataFolder):
                 too_big_tet_meshes_for_PolyCut[step_object.path.name] = nb_tetrahedra
             mkdir(tet_meshes_for_PolyCut_dest / step_object.path.name)
             copyfile(coarse_tet_mesh.get_file(tet_mesh.FILENAMES.TET_MESH_MEDIT,True),tet_meshes_for_PolyCut_dest / step_object.path.name / 'tetra.mesh')
-        ic(too_big_tet_meshes_for_PolyCut)
 
     def generate_report(self):
         """
@@ -1776,30 +1773,30 @@ class root(AbstractDataFolder):
         assert(nb_CAD_2_meshing_failed['M'] == 0)
 
         for MAMBO_prefix in ['B','S','M']:
-            ic(f"on MAMBO {MAMBO_prefix}, method = Evocube")
-            ic(nb_meshing_succeeded_2_labeling_succeeded[MAMBO_prefix]['Evocube'] / nb_CAD[MAMBO_prefix] * 100)
-            ic(nb_meshing_succeeded_2_labeling_non_monotone[MAMBO_prefix]['Evocube'] / nb_CAD[MAMBO_prefix] * 100)
-            ic(nb_meshing_succeeded_2_labeling_invalid[MAMBO_prefix]['Evocube'] / nb_CAD[MAMBO_prefix] * 100)
-            ic(nb_meshing_succeeded_2_labeling_failed[MAMBO_prefix]['Evocube'] / nb_CAD[MAMBO_prefix] * 100)
-            ic(duration[MAMBO_prefix]['Evocube'])
+            print(f"-- on MAMBO {MAMBO_prefix}, method = Evocube -------------")
+            print(f"{nb_meshing_succeeded_2_labeling_succeeded[MAMBO_prefix]['Evocube'] / nb_CAD[MAMBO_prefix] * 100:.1f} %")
+            print(f"{nb_meshing_succeeded_2_labeling_non_monotone[MAMBO_prefix]['Evocube'] / nb_CAD[MAMBO_prefix] * 100:.1f} %")
+            print(f"{nb_meshing_succeeded_2_labeling_invalid[MAMBO_prefix]['Evocube'] / nb_CAD[MAMBO_prefix] * 100:.1f} %")
+            print(f"{nb_meshing_succeeded_2_labeling_failed[MAMBO_prefix]['Evocube'] / nb_CAD[MAMBO_prefix] * 100:.1f} %")
+            print(f"{duration[MAMBO_prefix]['Evocube']:.3f} s")
             nb_tried_hex_meshing = nb_meshing_succeeded_2_labeling_succeeded[MAMBO_prefix]['Evocube'] + nb_meshing_succeeded_2_labeling_non_monotone[MAMBO_prefix]['Evocube']
             nb_hex_meshes_with_positive_min_sj = nb_labeling_succeeded_2_hexmesh_positive_min_sj[MAMBO_prefix]['Evocube'] + nb_labeling_non_monotone_2_hexmesh_positive_min_sj[MAMBO_prefix]['Evocube']
-            ic(nb_hex_meshes_with_positive_min_sj / nb_tried_hex_meshing * 100)
-            ic(min_sj[MAMBO_prefix]['Evocube'])
-            ic(avg_sj_sum[MAMBO_prefix]['Evocube'] / nb_tried_hex_meshing)
+            print(f"{nb_hex_meshes_with_positive_min_sj / nb_tried_hex_meshing * 100:.1f} %")
+            print(f"{min_sj[MAMBO_prefix]['Evocube']:.3f}")
+            print(f"{avg_sj_sum[MAMBO_prefix]['Evocube'] / nb_tried_hex_meshing:.3f}")
 
-            ic(f"on MAMBO {MAMBO_prefix}, method = Ours")
-            ic(nb_meshing_succeeded_2_labeling_succeeded[MAMBO_prefix]['Ours'] / nb_CAD[MAMBO_prefix] * 100)
-            ic(nb_meshing_succeeded_2_labeling_non_monotone[MAMBO_prefix]['Ours'] / nb_CAD[MAMBO_prefix] * 100)
-            ic(nb_meshing_succeeded_2_labeling_invalid[MAMBO_prefix]['Ours'] / nb_CAD[MAMBO_prefix] * 100)
-            ic(nb_meshing_succeeded_2_labeling_failed[MAMBO_prefix]['Ours'] / nb_CAD[MAMBO_prefix] * 100)
-            ic(duration[MAMBO_prefix]['Ours'])
-            ic(duration[MAMBO_prefix]['Evocube'] / duration[MAMBO_prefix]['Ours'])
+            print(f"-- on MAMBO {MAMBO_prefix}, method = Ours -------------")
+            print(f"{nb_meshing_succeeded_2_labeling_succeeded[MAMBO_prefix]['Ours'] / nb_CAD[MAMBO_prefix] * 100:.1f} %")
+            print(f"{nb_meshing_succeeded_2_labeling_non_monotone[MAMBO_prefix]['Ours'] / nb_CAD[MAMBO_prefix] * 100:.1f} %")
+            print(f"{nb_meshing_succeeded_2_labeling_invalid[MAMBO_prefix]['Ours'] / nb_CAD[MAMBO_prefix] * 100:.1f} %")
+            print(f"{nb_meshing_succeeded_2_labeling_failed[MAMBO_prefix]['Ours'] / nb_CAD[MAMBO_prefix] * 100:.1f} %")
+            print(f"{duration[MAMBO_prefix]['Ours']:.3f} s")
+            print(f"speedup: {duration[MAMBO_prefix]['Evocube'] / duration[MAMBO_prefix]['Ours']:.1f}")
             nb_tried_hex_meshing = nb_meshing_succeeded_2_labeling_succeeded[MAMBO_prefix]['Ours'] + nb_meshing_succeeded_2_labeling_non_monotone[MAMBO_prefix]['Ours']
             nb_hex_meshes_with_positive_min_sj = nb_labeling_succeeded_2_hexmesh_positive_min_sj[MAMBO_prefix]['Ours'] + nb_labeling_non_monotone_2_hexmesh_positive_min_sj[MAMBO_prefix]['Ours']
-            ic(nb_hex_meshes_with_positive_min_sj / nb_tried_hex_meshing * 100)
-            ic(min_sj[MAMBO_prefix]['Ours'])
-            ic(avg_sj_sum[MAMBO_prefix]['Ours'] / nb_tried_hex_meshing)
+            print(f"{nb_hex_meshes_with_positive_min_sj / nb_tried_hex_meshing * 100:.1f} %")
+            print(f"{min_sj[MAMBO_prefix]['Ours']:.3f}")
+            print(f"{avg_sj_sum[MAMBO_prefix]['Ours'] / nb_tried_hex_meshing:.3f}")
         
         # Sankey diagram :
         # - consider our algorithm, ignore Evocube results
