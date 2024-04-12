@@ -2138,19 +2138,6 @@ class root(AbstractDataFolder):
                 }
             }
 
-            // thanks Bamdad Fard https://blog.ag-grid.com/formatting-numbers-strings-currency-in-ag-grid/
-            function floatingPointFormatter(params) {
-                return params.value == null ? null : params.value.toFixed(2);
-            }
-
-            function PercentageFormatter(params) {
-                return params.value == null ? null : floatingPointFormatter(params) + ' %';
-            }
-
-            function DurationSecondsFormatter(params) {
-                return params.value == null ? null : params.value.toFixed(3) + ' s';
-            }
-
             // Grid API: Access to Grid API methods
             let gridApi;
 
@@ -2167,7 +2154,7 @@ class root(AbstractDataFolder):
                         children: [
                             { field: "nb_vertices",         headerName: "#vertices",    cellDataType: 'number', filter: true },
                             { field: "nb_facets",           headerName: "#facets",      cellDataType: 'number', filter: true },
-                            { field: "area_sd",             headerName: "sd(area)",     cellDataType: 'number', filter: true, valueFormatter: floatingPointFormatter },
+                            { field: "area_sd",             headerName: "sd(area)",     cellDataType: 'number', filter: true, valueFormatter: p => p.value == null ? null : p.value.toFixed(2) },
                         ]
                     },
                     {
@@ -2179,28 +2166,28 @@ class root(AbstractDataFolder):
                             { field: "nb_invalid_charts",       headerName: "#invalid-charts",      cellDataType: 'number',  filter: true },
                             { field: "nb_invalid_boundaries",   headerName: "#invalid-boundaries",  cellDataType: 'number',  filter: true },
                             { field: "nb_invalid_corners",      headerName: "#invalid-corners",     cellDataType: 'number',  filter: true },
-                            { field: "min_fidelity",            headerName: "min(fidelity)",        cellDataType: 'number',  filter: true, valueFormatter: floatingPointFormatter },
-                            { field: "avg_fidelity",            headerName: "avg(fidelity)",        cellDataType: 'number',  filter: true, valueFormatter: floatingPointFormatter },
+                            { field: "min_fidelity",            headerName: "min(fidelity)",        cellDataType: 'number',  filter: true, valueFormatter: p => p.value == null ? null : p.value.toFixed(3) },
+                            { field: "avg_fidelity",            headerName: "avg(fidelity)",        cellDataType: 'number',  filter: true, valueFormatter: p => p.value == null ? null : p.value.toFixed(3) },
                             { field: "valid",                   headerName: "valid",                cellDataType: 'boolean', filter: true },
                             { field: "nb_turning_points",       headerName: "#turning-points",      cellDataType: 'number',  filter: true },
-                            { field: "duration",                headerName: "duration",             cellDataType: 'number',  filter: true, valueFormatter: DurationSecondsFormatter },
-                            { field: "speedup",                 headerName: "speedup",             cellDataType: 'number',   filter: true, valueFormatter: floatingPointFormatter },
+                            { field: "duration",                headerName: "duration",             cellDataType: 'number',  filter: true, valueFormatter: p => p.value == null ? null : p.value.toFixed(3) + ' s' },
+                            { field: "speedup",                 headerName: "speedup",              cellDataType: 'number',  filter: true, valueFormatter: p => p.value == null ? null : p.value.toFixed(1) },
                             { field: "glb_labeling",            headerName: "open",                 cellRenderer: openLabelingViewerButton },
                         ]
                     },
                     {
                         headerName: 'feature edges',
                         children: [
-                            { field: "percentage_removed",      headerName: "removed",     cellDataType: 'number', filter: true, valueFormatter: PercentageFormatter },
-                            { field: "percentage_lost",         headerName: "lost",        cellDataType: 'number', filter: true, valueFormatter: PercentageFormatter },
-                            { field: "percentage_preserved",    headerName: "preserved",   cellDataType: 'number', filter: true, valueFormatter: PercentageFormatter },
+                            { field: "percentage_removed",      headerName: "removed",     cellDataType: 'number', filter: true, valueFormatter: p => p.value == null ? null : p.value.toFixed(2) + ' %' },
+                            { field: "percentage_lost",         headerName: "lost",        cellDataType: 'number', filter: true, valueFormatter: p => p.value == null ? null : p.value.toFixed(2) + ' %' },
+                            { field: "percentage_preserved",    headerName: "preserved",   cellDataType: 'number', filter: true, valueFormatter: p => p.value == null ? null : p.value.toFixed(2) + ' %' },
                         ]
                     },
                     {
                         headerName: 'hex-mesh',
                         children: [
-                            { field: "minSJ",       headerName: "min(SJ)", cellDataType: 'number', filter: true, valueFormatter: floatingPointFormatter },
-                            { field: "avgSJ",       headerName: "avg(SJ)", cellDataType: 'number', filter: true, valueFormatter: floatingPointFormatter },
+                            { field: "minSJ",       headerName: "min(SJ)", cellDataType: 'number', filter: true, valueFormatter: p => p.value == null ? null : p.value.toFixed(3) },
+                            { field: "avgSJ",       headerName: "avg(SJ)", cellDataType: 'number', filter: true, valueFormatter: p => p.value == null ? null : p.value.toFixed(3) },
                             { field: "glb_hexmesh", headerName: "open",    cellRenderer: openHexMeshViewerButton },
                         ]
                     },
