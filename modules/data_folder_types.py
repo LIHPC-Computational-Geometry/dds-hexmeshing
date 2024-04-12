@@ -2083,7 +2083,7 @@ class root(AbstractDataFolder):
                 let model_viewer = dialog.appendChild(document.createElement("model-viewer"));
                 model_viewer.setAttribute("alt","labeling 3D viewer");
                 model_viewer.setAttribute("src", "glb/" + filename);
-                model_viewer.setAttribute("shadow-intensity", "1");
+                model_viewer.setAttribute("shadow-intensity", "0"); // no shadow
                 model_viewer.setAttribute("exposure","1");
                 model_viewer.setAttribute("tone-mapping","commerce");
                 model_viewer.setAttribute("camera-controls",true);
