@@ -11,6 +11,7 @@ from rich.tree import Tree
 from sys import path
 from time import localtime, strftime
 from json import dumps
+import copy
 
 from icecream import ic
 
@@ -103,7 +104,7 @@ class AbstractDataFolder(ABC):
     @staticmethod
     def get_generative_algorithm(path: Path) -> str:
         algo_str = ''
-        # the generative algo name could be retreived after instanciation, with get_info_dict()
+        # the generative algo name could be retrieved after instanciation, with get_info_dict()
         # BUT an info.json file may exist while the folder is not recognized (no type)
         # -> read info.json before instantiate()
         if (path / 'info.json').exists():
@@ -1337,7 +1338,7 @@ class root(AbstractDataFolder):
             copyfile(coarse_tet_mesh.get_file(tet_mesh.FILENAMES.TET_MESH_MEDIT,True),tet_meshes_for_PolyCut_dest / step_object.path.name / 'tetra.mesh')
         ic(too_big_tet_meshes_for_PolyCut)
 
-    def generate_report(self, export_datetime: bool = False, export_command_copy_buttons: bool = False):
+    def generate_report(self):
         """
         What was `batch_processing_analysis.py`. Parse the data folder and create an HTML report with stats.
         """
@@ -1349,23 +1350,172 @@ class root(AbstractDataFolder):
         mkdir(self.path / report_folder_name / 'glb')
         mkdir(self.path / report_folder_name / 'js')
 
-        nb_CAD = 0
+        nb_CAD = dict()
+        nb_CAD['B'] = 0
+        nb_CAD['S'] = 0
+        nb_CAD['M'] = 0
 
-        nb_CAD_2_meshing_failed     = 0
-        nb_CAD_2_meshing_succeeded  = 0
+        # tet-mesh outcomes
 
-        nb_meshing_succeeded_2_labeling_failed          = 0
-        nb_meshing_succeeded_2_labeling_invalid         = 0
-        nb_meshing_succeeded_2_labeling_non_monotone    = 0
-        nb_meshing_succeeded_2_labeling_succeeded       = 0
+        nb_CAD_2_meshing_failed = dict()
+        nb_CAD_2_meshing_failed['B'] = 0
+        nb_CAD_2_meshing_failed['S'] = 0
+        nb_CAD_2_meshing_failed['M'] = 0
+        nb_CAD_2_meshing_succeeded = dict()
+        nb_CAD_2_meshing_succeeded['B'] = 0
+        nb_CAD_2_meshing_succeeded['S'] = 0
+        nb_CAD_2_meshing_succeeded['M'] = 0
 
-        nb_labeling_non_monotone_2_hexmesh_failed           = 0
-        nb_labeling_non_monotone_2_hexmesh_negative_min_sj  = 0
-        nb_labeling_non_monotone_2_hexmesh_positive_min_sj  = 0
+        # labeling outcomes
 
-        nb_labeling_succeeded_2_hexmesh_failed          = 0
-        nb_labeling_succeeded_2_hexmesh_negative_min_sj = 0
-        nb_labeling_succeeded_2_hexmesh_positive_min_sj = 0
+        nb_meshing_succeeded_2_labeling_failed = dict()
+        nb_meshing_succeeded_2_labeling_failed['B'] = dict()
+        nb_meshing_succeeded_2_labeling_failed['B']['Evocube'] = 0
+        nb_meshing_succeeded_2_labeling_failed['B']['Ours'] = 0
+        nb_meshing_succeeded_2_labeling_failed['S'] = dict()
+        nb_meshing_succeeded_2_labeling_failed['S']['Evocube'] = 0
+        nb_meshing_succeeded_2_labeling_failed['S']['Ours'] = 0
+        nb_meshing_succeeded_2_labeling_failed['M'] = dict()
+        nb_meshing_succeeded_2_labeling_failed['M']['Evocube'] = 0
+        nb_meshing_succeeded_2_labeling_failed['M']['Ours'] = 0
+
+        nb_meshing_succeeded_2_labeling_invalid = dict()
+        nb_meshing_succeeded_2_labeling_invalid['B'] = dict()
+        nb_meshing_succeeded_2_labeling_invalid['B']['Evocube'] = 0
+        nb_meshing_succeeded_2_labeling_invalid['B']['Ours'] = 0
+        nb_meshing_succeeded_2_labeling_invalid['S'] = dict()
+        nb_meshing_succeeded_2_labeling_invalid['S']['Evocube'] = 0
+        nb_meshing_succeeded_2_labeling_invalid['S']['Ours'] = 0
+        nb_meshing_succeeded_2_labeling_invalid['M'] = dict()
+        nb_meshing_succeeded_2_labeling_invalid['M']['Evocube'] = 0
+        nb_meshing_succeeded_2_labeling_invalid['M']['Ours'] = 0
+
+        nb_meshing_succeeded_2_labeling_non_monotone = dict()
+        nb_meshing_succeeded_2_labeling_non_monotone['B'] = dict()
+        nb_meshing_succeeded_2_labeling_non_monotone['B']['Evocube'] = 0
+        nb_meshing_succeeded_2_labeling_non_monotone['B']['Ours'] = 0
+        nb_meshing_succeeded_2_labeling_non_monotone['S'] = dict()
+        nb_meshing_succeeded_2_labeling_non_monotone['S']['Evocube'] = 0
+        nb_meshing_succeeded_2_labeling_non_monotone['S']['Ours'] = 0
+        nb_meshing_succeeded_2_labeling_non_monotone['M'] = dict()
+        nb_meshing_succeeded_2_labeling_non_monotone['M']['Evocube'] = 0
+        nb_meshing_succeeded_2_labeling_non_monotone['M']['Ours'] = 0
+
+        nb_meshing_succeeded_2_labeling_succeeded = dict()
+        nb_meshing_succeeded_2_labeling_succeeded['B'] = dict()
+        nb_meshing_succeeded_2_labeling_succeeded['B']['Evocube'] = 0
+        nb_meshing_succeeded_2_labeling_succeeded['B']['Ours'] = 0
+        nb_meshing_succeeded_2_labeling_succeeded['S'] = dict()
+        nb_meshing_succeeded_2_labeling_succeeded['S']['Evocube'] = 0
+        nb_meshing_succeeded_2_labeling_succeeded['S']['Ours'] = 0
+        nb_meshing_succeeded_2_labeling_succeeded['M'] = dict()
+        nb_meshing_succeeded_2_labeling_succeeded['M']['Evocube'] = 0
+        nb_meshing_succeeded_2_labeling_succeeded['M']['Ours'] = 0
+
+        # labeling generation durations
+
+        duration = dict()
+        duration['B'] = dict()
+        duration['B']['Evocube'] = 0.0
+        duration['B']['Ours'] = 0.0
+        duration['S'] = dict()
+        duration['S']['Evocube'] = 0.0
+        duration['S']['Ours'] = 0.0
+        duration['M'] = dict()
+        duration['M']['Evocube'] = 0.0
+        duration['M']['Ours'] = 0.0
+
+        # hex-meshing outcomes
+
+        nb_labeling_non_monotone_2_hexmesh_failed = dict()
+        nb_labeling_non_monotone_2_hexmesh_failed['B'] = dict()
+        nb_labeling_non_monotone_2_hexmesh_failed['B']['Evocube'] = 0
+        nb_labeling_non_monotone_2_hexmesh_failed['B']['Ours'] = 0
+        nb_labeling_non_monotone_2_hexmesh_failed['S'] = dict()
+        nb_labeling_non_monotone_2_hexmesh_failed['S']['Evocube'] = 0
+        nb_labeling_non_monotone_2_hexmesh_failed['S']['Ours'] = 0
+        nb_labeling_non_monotone_2_hexmesh_failed['M'] = dict()
+        nb_labeling_non_monotone_2_hexmesh_failed['M']['Evocube'] = 0
+        nb_labeling_non_monotone_2_hexmesh_failed['M']['Ours'] = 0
+
+        nb_labeling_non_monotone_2_hexmesh_negative_min_sj = dict()
+        nb_labeling_non_monotone_2_hexmesh_negative_min_sj['B'] = dict()
+        nb_labeling_non_monotone_2_hexmesh_negative_min_sj['B']['Evocube'] = 0
+        nb_labeling_non_monotone_2_hexmesh_negative_min_sj['B']['Ours'] = 0
+        nb_labeling_non_monotone_2_hexmesh_negative_min_sj['S'] = dict()
+        nb_labeling_non_monotone_2_hexmesh_negative_min_sj['S']['Evocube'] = 0
+        nb_labeling_non_monotone_2_hexmesh_negative_min_sj['S']['Ours'] = 0
+        nb_labeling_non_monotone_2_hexmesh_negative_min_sj['M'] = dict()
+        nb_labeling_non_monotone_2_hexmesh_negative_min_sj['M']['Evocube'] = 0
+        nb_labeling_non_monotone_2_hexmesh_negative_min_sj['M']['Ours'] = 0
+
+        nb_labeling_non_monotone_2_hexmesh_positive_min_sj = dict()
+        nb_labeling_non_monotone_2_hexmesh_positive_min_sj['B'] = dict()
+        nb_labeling_non_monotone_2_hexmesh_positive_min_sj['B']['Evocube'] = 0
+        nb_labeling_non_monotone_2_hexmesh_positive_min_sj['B']['Ours'] = 0
+        nb_labeling_non_monotone_2_hexmesh_positive_min_sj['S'] = dict()
+        nb_labeling_non_monotone_2_hexmesh_positive_min_sj['S']['Evocube'] = 0
+        nb_labeling_non_monotone_2_hexmesh_positive_min_sj['S']['Ours'] = 0
+        nb_labeling_non_monotone_2_hexmesh_positive_min_sj['M'] = dict()
+        nb_labeling_non_monotone_2_hexmesh_positive_min_sj['M']['Evocube'] = 0
+        nb_labeling_non_monotone_2_hexmesh_positive_min_sj['M']['Ours'] = 0
+
+        nb_labeling_succeeded_2_hexmesh_failed = dict()
+        nb_labeling_succeeded_2_hexmesh_failed['B'] = dict()
+        nb_labeling_succeeded_2_hexmesh_failed['B']['Evocube'] = 0
+        nb_labeling_succeeded_2_hexmesh_failed['B']['Ours'] = 0
+        nb_labeling_succeeded_2_hexmesh_failed['S'] = dict()
+        nb_labeling_succeeded_2_hexmesh_failed['S']['Evocube'] = 0
+        nb_labeling_succeeded_2_hexmesh_failed['S']['Ours'] = 0
+        nb_labeling_succeeded_2_hexmesh_failed['M'] = dict()
+        nb_labeling_succeeded_2_hexmesh_failed['M']['Evocube'] = 0
+        nb_labeling_succeeded_2_hexmesh_failed['M']['Ours'] = 0
+
+        nb_labeling_succeeded_2_hexmesh_negative_min_sj = dict()
+        nb_labeling_succeeded_2_hexmesh_negative_min_sj['B'] = dict()
+        nb_labeling_succeeded_2_hexmesh_negative_min_sj['B']['Evocube'] = 0
+        nb_labeling_succeeded_2_hexmesh_negative_min_sj['B']['Ours'] = 0
+        nb_labeling_succeeded_2_hexmesh_negative_min_sj['S'] = dict()
+        nb_labeling_succeeded_2_hexmesh_negative_min_sj['S']['Evocube'] = 0
+        nb_labeling_succeeded_2_hexmesh_negative_min_sj['S']['Ours'] = 0
+        nb_labeling_succeeded_2_hexmesh_negative_min_sj['M'] = dict()
+        nb_labeling_succeeded_2_hexmesh_negative_min_sj['M']['Evocube'] = 0
+        nb_labeling_succeeded_2_hexmesh_negative_min_sj['M']['Ours'] = 0
+
+        nb_labeling_succeeded_2_hexmesh_positive_min_sj = dict()
+        nb_labeling_succeeded_2_hexmesh_positive_min_sj['B'] = dict()
+        nb_labeling_succeeded_2_hexmesh_positive_min_sj['B']['Evocube'] = 0
+        nb_labeling_succeeded_2_hexmesh_positive_min_sj['B']['Ours'] = 0
+        nb_labeling_succeeded_2_hexmesh_positive_min_sj['S'] = dict()
+        nb_labeling_succeeded_2_hexmesh_positive_min_sj['S']['Evocube'] = 0
+        nb_labeling_succeeded_2_hexmesh_positive_min_sj['S']['Ours'] = 0
+        nb_labeling_succeeded_2_hexmesh_positive_min_sj['M'] = dict()
+        nb_labeling_succeeded_2_hexmesh_positive_min_sj['M']['Evocube'] = 0
+        nb_labeling_succeeded_2_hexmesh_positive_min_sj['M']['Ours'] = 0
+
+        min_sj = dict()
+        min_sj['B'] = dict()
+        min_sj['B']['Evocube'] = 0.0
+        min_sj['B']['Ours'] = 0.0
+        min_sj['S'] = dict()
+        min_sj['S']['Evocube'] = 0.0
+        min_sj['S']['Ours'] = 0.0
+        min_sj['M'] = dict()
+        min_sj['M']['Evocube'] = 0.0
+        min_sj['M']['Ours'] = 0.0
+
+        avg_sj_sum = dict()
+        avg_sj_sum['B'] = dict()
+        avg_sj_sum['B']['Evocube'] = 0.0
+        avg_sj_sum['B']['Ours'] = 0.0
+        avg_sj_sum['S'] = dict()
+        avg_sj_sum['S']['Evocube'] = 0.0
+        avg_sj_sum['S']['Ours'] = 0.0
+        avg_sj_sum['M'] = dict()
+        avg_sj_sum['M']['Evocube'] = 0.0
+        avg_sj_sum['M']['Ours'] = 0.0
+        # To have the global average, divide by the number of tried hex-mesh computations,
+        # that is the number of valid but non-monotone boundaries + number of succeeded
 
         AG_Grid_rowData = list()
 
@@ -1376,192 +1526,354 @@ class root(AbstractDataFolder):
         root_folder = root()
         for level_minus_1_folder in root_folder.get_subfolders_of_type('step'):
             CAD_name = level_minus_1_folder.name
+            MAMBO_subset = CAD_name[0]
             if not (level_minus_1_folder / step.FILENAMES.STEP).exists():
                 logging.warning(f"Folder {level_minus_1_folder} has no {step.FILENAMES.STEP}")
                 continue
-            nb_CAD += 1
-            if (level_minus_1_folder / 'Gmsh_0.1/').exists() and (level_minus_1_folder / 'Gmsh_0.1' / tet_mesh.FILENAMES.SURFACE_MESH_OBJ).exists():
-                tet_folder: tet_mesh = AbstractDataFolder.instantiate(level_minus_1_folder / 'Gmsh_0.1')
-                nb_CAD_2_meshing_succeeded += 1
-                surface_mesh_stats = tet_folder.get_surface_mesh_stats_dict()
-                labeling_subfolders_generated_by_automatic_polycube: list[Path] = tet_folder.get_subfolders_generated_by('automatic_polycube')
-                assert(len(labeling_subfolders_generated_by_automatic_polycube) <= 1)
-                if ( (len(labeling_subfolders_generated_by_automatic_polycube) == 0) or \
-                    not (labeling_subfolders_generated_by_automatic_polycube[0] / labeling.FILENAMES.SURFACE_LABELING_TXT).exists() ):
-                    # there is a tet mesh but no labeling was written
-                    nb_meshing_succeeded_2_labeling_failed += 1
-                    # export the surface mesh to glTF binary format
-                    glb_labeling_file: Path = tet_folder.get_file(tet_folder.FILENAMES.SURFACE_MESH_GLB, True) # will be autocomputed
-                    copyfile(glb_labeling_file, self.path / report_folder_name / 'glb' / (CAD_name + '_labeling.glb'))
-                    current_row = dict()
-                    current_row['CAD_name']                 = CAD_name
-                    if export_command_copy_buttons:
-                        current_row['CAD_path']             = str(level_minus_1_folder.absolute())
-                    current_row['nb_vertices']              = surface_mesh_stats['vertices']['nb']
-                    current_row['nb_facets']                = surface_mesh_stats['facets']['nb']
-                    current_row['area_sd']                  = surface_mesh_stats['facets']['area']['sd']
-                    if export_command_copy_buttons:
-                        current_row['tet_mesh_subfolder']   = 'Gmsh_0.1' # subfolder relative to the STEP data folder
-                    current_row['nb_charts']                = None # will be converted to JSON/Javascript 'null'
-                    current_row['nb_boundaries']            = None
-                    current_row['nb_corners']               = None
-                    current_row['nb_invalid_charts']        = None
-                    current_row['nb_invalid_boundaries']    = None
-                    current_row['nb_invalid_corners']       = None
-                    current_row['min_fidelity']             = None
-                    current_row['avg_fidelity']             = None
-                    current_row['valid']                    = None
-                    current_row['nb_turning_points']        = None
-                    if export_datetime:
-                        current_row['datetime']             = None
-                    current_row['duration']                 = None
-                    current_row['glb_labeling']             = CAD_name + '_labeling.glb' # no labeling can be viewed, but at least the user will be able to view the input mesh
-                    if export_command_copy_buttons:
-                        current_row['labeling_subfolder']   = None # subfolder relative to the tet_mesh data folder
-                    current_row['percentage_removed']       = None
-                    current_row['percentage_lost']          = None
-                    current_row['percentage_preserved']     = None
-                    current_row['minSJ']                    = None
-                    current_row['avgSJ']                    = None
-                    current_row['glb_hexmesh']              = None
-                    AG_Grid_rowData.append(current_row)
-                    continue
+            nb_CAD[MAMBO_subset] += 1
+
+            # prepare the current AG Grid row
+            ours_row = dict()
+            ours_row['CAD_name']                 = CAD_name
+            ours_row['nb_vertices']              = None
+            ours_row['nb_facets']                = None
+            ours_row['area_sd']                  = None
+            ours_row['algo']                     = None
+            ours_row['nb_charts']                = None
+            ours_row['nb_boundaries']            = None
+            ours_row['nb_corners']               = None
+            ours_row['nb_invalid_charts']        = None
+            ours_row['nb_invalid_boundaries']    = None
+            ours_row['nb_invalid_corners']       = None
+            ours_row['min_fidelity']             = None
+            ours_row['avg_fidelity']             = None
+            ours_row['valid']                    = None
+            ours_row['nb_turning_points']        = None
+            ours_row['duration']                 = None
+            ours_row['speedup']                  = None
+            ours_row['glb_labeling']             = None
+            ours_row['percentage_removed']       = None
+            ours_row['percentage_lost']          = None
+            ours_row['percentage_preserved']     = None
+            ours_row['minSJ']                    = None
+            ours_row['avgSJ']                    = None
+            ours_row['glb_hexmesh']              = None
+
+            if not (level_minus_1_folder / 'Gmsh_0.1/').exists() or not (level_minus_1_folder / 'Gmsh_0.1' / tet_mesh.FILENAMES.SURFACE_MESH_OBJ).exists():
+                # not even a surface mesh
+                nb_CAD_2_meshing_failed[MAMBO_subset] += 1
+                AG_Grid_rowData.append(ours_row)
+                continue
+            tet_folder: tet_mesh = AbstractDataFolder.instantiate(level_minus_1_folder / 'Gmsh_0.1')
+            nb_CAD_2_meshing_succeeded[MAMBO_subset] += 1
+            surface_mesh_stats = tet_folder.get_surface_mesh_stats_dict()
+            ours_row['nb_vertices']              = surface_mesh_stats['vertices']['nb']
+            ours_row['nb_facets']                = surface_mesh_stats['facets']['nb']
+            ours_row['area_sd']                  = surface_mesh_stats['facets']['area']['sd']
+
+            # analyse the labeling generated by evocube
+            Evocube_duration = None # in seconds
+            evocube_row = copy.deepcopy(ours_row)
+            evocube_row['algo'] = 'Evocube'
+
+            labeling_subfolders_generated_by_evocube: list[Path] = tet_folder.get_subfolders_generated_by('evocube')
+            assert(len(labeling_subfolders_generated_by_evocube) <= 1)
+            if ( (len(labeling_subfolders_generated_by_evocube) == 0) or \
+                not (labeling_subfolders_generated_by_evocube[0] / labeling.FILENAMES.SURFACE_LABELING_TXT).exists() ):
+                # there is a tet mesh but no labeling was written
+                nb_meshing_succeeded_2_labeling_failed[MAMBO_subset]['Evocube'] += 1
+                # export the surface mesh to glTF binary format
+                glb_tet_mesh_file: Path = tet_folder.get_file(tet_folder.FILENAMES.SURFACE_MESH_GLB, True) # will be autocomputed
+                glb_tet_mesh_filename = CAD_name + '_tet-mesh.glb'
+                copyfile(glb_tet_mesh_file, self.path / report_folder_name / 'glb' / glb_tet_mesh_filename)
+                evocube_row['glb_labeling']             = glb_tet_mesh_filename # no labeling can be viewed, but at least the user will be able to view the input mesh
+            else:
                 # instantiate the labeling folder
-                labeling_folder: labeling = AbstractDataFolder.instantiate(labeling_subfolders_generated_by_automatic_polycube[0])
+                labeling_folder: labeling = AbstractDataFolder.instantiate(labeling_subfolders_generated_by_evocube[0])
                 assert(labeling_folder.type() == 'labeling')
-                # retreive datetime, labeling stats and feature edges info
-                ISO_datetime = labeling_folder.get_datetime_key_of_algo_in_info_file('automatic_polycube')
+                
+                # retrieve datetime, labeling stats and feature edges info
+                ISO_datetime = labeling_folder.get_datetime_key_of_algo_in_info_file('evocube')
                 assert(ISO_datetime is not None)
+                Evocube_duration = labeling_folder.get_info_dict()[ISO_datetime]['duration'][0]
                 labeling_stats = labeling_folder.get_labeling_stats_dict()
+                evocube_row['nb_charts']                = labeling_stats['charts']['nb']
+                evocube_row['nb_boundaries']            = labeling_stats['boundaries']['nb']
+                evocube_row['nb_corners']               = labeling_stats['corners']['nb']
+                evocube_row['nb_invalid_charts']        = labeling_stats['charts']['invalid']
+                evocube_row['nb_invalid_boundaries']    = labeling_stats['boundaries']['invalid']
+                evocube_row['nb_invalid_corners']       = labeling_stats['corners']['invalid']
+                evocube_row['min_fidelity']             = labeling_stats['fidelity']['min']
+                evocube_row['avg_fidelity']             = labeling_stats['fidelity']['avg']
+                evocube_row['valid']                    = labeling_folder.has_valid_labeling()
+                evocube_row['nb_turning_points']        = labeling_folder.nb_turning_points() # == labeling_stats['turning-points']['nb']
+                evocube_row['duration']                 = Evocube_duration
                 total_feature_edges = labeling_stats['feature-edges']['removed'] + labeling_stats['feature-edges']['lost'] + labeling_stats['feature-edges']['preserved']
                 assert(total_feature_edges == surface_mesh_stats['edges']['nb'])
+                evocube_row['percentage_removed']       = labeling_stats['feature-edges']['removed']/total_feature_edges*100
+                evocube_row['percentage_lost']          = labeling_stats['feature-edges']['lost']/total_feature_edges*100
+                evocube_row['percentage_preserved']     = labeling_stats['feature-edges']['preserved']/total_feature_edges*100
+
+                # update duration sum
+                duration[MAMBO_subset]['Evocube'] += Evocube_duration
+
                 # copy the labeling as glTF
                 glb_labeling_file: Path = labeling_folder.get_file(labeling.FILENAMES.LABELED_MESH_GLB,True)
-                copyfile(glb_labeling_file, self.path / report_folder_name / 'glb' / (CAD_name + '_labeling.glb'))
-                # if there is an hex-mesh in the labeling folder, instantiate it and retreive mesh stats
-                minSJ = None
-                avgSJ = None
-                glb_hexmesh_filename = None
+                glb_labeling_filename = CAD_name + '_labeling_evocube.glb'
+                copyfile(glb_labeling_file, self.path / report_folder_name / 'glb' / glb_labeling_filename)
+                evocube_row['glb_labeling']             = glb_labeling_filename
+
+                # if there is an hex-mesh in the labeling folder, instantiate it and retrieve mesh stats
                 if (labeling_folder.path / 'polycube_withHexEx_1.3').exists():
                     hex_mesh_folder: hex_mesh = AbstractDataFolder.instantiate(labeling_folder.path / 'polycube_withHexEx_1.3')
-                    if 'quality' not in hex_mesh_folder.get_mesh_stats_dict()['cells']:
-                        logging.error(f"no 'quality' in hex mesh stats, path={hex_mesh_folder.path}")
-                        # can happen when HexEx fails to generate a volume mesh, only exports vertices
-                    else:
-                        minSJ = hex_mesh_folder.get_mesh_stats_dict()['cells']['quality']['hex_SJ']['min']
-                        avgSJ = hex_mesh_folder.get_mesh_stats_dict()['cells']['quality']['hex_SJ']['avg']
+                    if 'quality' in hex_mesh_folder.get_mesh_stats_dict()['cells']:
+                        evocube_row['minSJ'] = hex_mesh_folder.get_mesh_stats_dict()['cells']['quality']['hex_SJ']['min']
+                        evocube_row['avgSJ'] = hex_mesh_folder.get_mesh_stats_dict()['cells']['quality']['hex_SJ']['avg']
+
                         # copy the hex-mesh surface as glTF
                         glb_hexmesh_file: Path = hex_mesh_folder.get_file(hex_mesh.FILENAMES.HEX_MESH_SURFACE_GLB,True) # will be autocomputed
-                        glb_hexmesh_filename = CAD_name + '_hexmesh.glb'
+                        glb_hexmesh_filename = CAD_name + '_hexmesh_evocube.glb'
                         copyfile(glb_hexmesh_file, self.path / report_folder_name / 'glb' / glb_hexmesh_filename)
-                        
-                current_row = dict()
-                current_row['CAD_name']                 = CAD_name
-                if export_command_copy_buttons:
-                    current_row['CAD_path']             = str(level_minus_1_folder.absolute())
-                current_row['nb_vertices']              = surface_mesh_stats['vertices']['nb']
-                current_row['nb_facets']                = surface_mesh_stats['facets']['nb']
-                current_row['area_sd']                  = surface_mesh_stats['facets']['area']['sd']
-                if export_command_copy_buttons:
-                    current_row['tet_mesh_subfolder']   = 'Gmsh_0.1' # subfolder relative to the STEP data folder
-                current_row['nb_charts']                = labeling_stats['charts']['nb']
-                current_row['nb_boundaries']            = labeling_stats['boundaries']['nb']
-                current_row['nb_corners']               = labeling_stats['corners']['nb']
-                current_row['nb_invalid_charts']        = labeling_stats['charts']['invalid']
-                current_row['nb_invalid_boundaries']    = labeling_stats['boundaries']['invalid']
-                current_row['nb_invalid_corners']       = labeling_stats['corners']['invalid']
-                current_row['min_fidelity']             = labeling_stats['fidelity']['min']
-                current_row['avg_fidelity']             = labeling_stats['fidelity']['avg']
-                current_row['valid']                    = labeling_folder.has_valid_labeling()
-                current_row['nb_turning_points']        = labeling_folder.nb_turning_points() # == labeling_stats['turning-points']['nb']
-                if export_datetime:
-                    current_row['datetime']             = ISO_datetime_to_readable_datetime(ISO_datetime)
-                current_row['duration']                 = labeling_folder.get_info_dict()[ISO_datetime]['duration'][0]
-                current_row['glb_labeling']             = CAD_name + '_labeling.glb'
-                if export_command_copy_buttons:
-                    current_row['labeling_subfolder']   = labeling_subfolders_generated_by_automatic_polycube[0].name
-                current_row['percentage_removed']       = labeling_stats['feature-edges']['removed']/total_feature_edges*100
-                current_row['percentage_lost']          = labeling_stats['feature-edges']['lost']/total_feature_edges*100
-                current_row['percentage_preserved']     = labeling_stats['feature-edges']['preserved']/total_feature_edges*100
-                current_row['minSJ']                    = minSJ
-                current_row['avgSJ']                    = avgSJ
-                current_row['glb_hexmesh']              = glb_hexmesh_filename
-                AG_Grid_rowData.append(current_row)
+                        evocube_row['glb_hexmesh'] = glb_hexmesh_filename
+
+                        avg_sj_sum[MAMBO_subset]['Evocube'] += evocube_row['avgSJ']
+                        min_sj[MAMBO_subset]['Evocube'] = min(evocube_row['minSJ'], min_sj[MAMBO_subset]['Evocube'])
+                    else:
+                        # HexEx failed, no cells in output file
+                        avg_sj_sum[MAMBO_subset]['Evocube'] += -1.0 # assume worse value
+                
+                # update the counters for the Sankey diagram
                 if not labeling_folder.has_valid_labeling():
-                    nb_meshing_succeeded_2_labeling_invalid += 1
-                    continue
-                if labeling_folder.nb_turning_points() != 0:
-                    nb_meshing_succeeded_2_labeling_non_monotone += 1
-                    if glb_hexmesh_filename is not None:
+                    nb_meshing_succeeded_2_labeling_invalid[MAMBO_subset]['Evocube'] += 1
+                elif labeling_folder.nb_turning_points() != 0:
+                    nb_meshing_succeeded_2_labeling_non_monotone[MAMBO_subset]['Evocube'] += 1
+                    if evocube_row['glb_hexmesh'] is not None:
                         # an hex-mesh was successully generated
-                        if minSJ < 0.0:
-                            nb_labeling_non_monotone_2_hexmesh_negative_min_sj += 1
+                        if evocube_row['minSJ'] < 0.0:
+                            nb_labeling_non_monotone_2_hexmesh_negative_min_sj[MAMBO_subset]['Evocube'] += 1
                         else:
-                            nb_labeling_non_monotone_2_hexmesh_positive_min_sj += 1
+                            nb_labeling_non_monotone_2_hexmesh_positive_min_sj[MAMBO_subset]['Evocube'] += 1
                     else:
                         # no hex-mesh
-                        nb_labeling_non_monotone_2_hexmesh_failed += 1
-                    continue
-                # so we have a valid labeling with no turning-points
-                nb_meshing_succeeded_2_labeling_succeeded += 1
-                if glb_hexmesh_filename is not None:
-                    # an hex-mesh was successully generated
-                    if minSJ < 0.0:
-                        nb_labeling_succeeded_2_hexmesh_negative_min_sj += 1
-                    else:
-                        nb_labeling_succeeded_2_hexmesh_positive_min_sj += 1
+                        nb_labeling_non_monotone_2_hexmesh_failed[MAMBO_subset]['Evocube'] += 1
                 else:
-                    # no hex-mesh
-                    nb_labeling_succeeded_2_hexmesh_failed += 1
+                    nb_meshing_succeeded_2_labeling_succeeded[MAMBO_subset]['Evocube'] += 1
+                    if evocube_row['glb_hexmesh'] is not None:
+                        # an hex-mesh was successully generated
+                        if evocube_row['minSJ'] < 0.0:
+                            nb_labeling_succeeded_2_hexmesh_negative_min_sj[MAMBO_subset]['Evocube'] += 1
+                        else:
+                            nb_labeling_succeeded_2_hexmesh_positive_min_sj[MAMBO_subset]['Evocube'] += 1
+                    else:
+                        # no hex-mesh
+                        nb_labeling_succeeded_2_hexmesh_failed[MAMBO_subset]['Evocube'] += 1
+            AG_Grid_rowData.append(evocube_row)
+
+            # analyse the labeling generated by automatic_polycube
+            ours_row['algo'] = 'Ours'
+
+            labeling_subfolders_generated_by_ours: list[Path] = tet_folder.get_subfolders_generated_by('automatic_polycube')
+            assert(len(labeling_subfolders_generated_by_ours) <= 1)
+            if ( (len(labeling_subfolders_generated_by_ours) == 0) or \
+                not (labeling_subfolders_generated_by_ours[0] / labeling.FILENAMES.SURFACE_LABELING_TXT).exists() ):
+                # there is a tet mesh but no labeling was written
+                nb_meshing_succeeded_2_labeling_failed[MAMBO_subset]['Ours'] += 1
+                # export the surface mesh to glTF binary format
+                glb_tet_mesh_file: Path = tet_folder.get_file(tet_folder.FILENAMES.SURFACE_MESH_GLB, True) # will be autocomputed
+                glb_tet_mesh_filename = CAD_name + '_tet-mesh.glb'
+                copyfile(glb_tet_mesh_file, self.path / report_folder_name / 'glb' / glb_tet_mesh_filename)
+                ours_row['glb_labeling']             = glb_tet_mesh_filename # no labeling can be viewed, but at least the user will be able to view the input mesh
             else:
-                # not even a surface mesh
-                nb_CAD_2_meshing_failed += 1
-                current_row = dict()
-                current_row['CAD_name']                 = CAD_name
-                if export_command_copy_buttons:
-                    current_row['CAD_path']             = str(level_minus_1_folder.absolute())
-                current_row['nb_vertices']              = None
-                current_row['nb_facets']                = None
-                current_row['area_sd']                  = None
-                if export_command_copy_buttons:
-                    current_row['tet_mesh_subfolder']   = None
-                current_row['nb_charts']                = None
-                current_row['nb_boundaries']            = None
-                current_row['nb_corners']               = None
-                current_row['nb_invalid_charts']        = None
-                current_row['nb_invalid_boundaries']    = None
-                current_row['nb_invalid_corners']       = None
-                current_row['min_fidelity']             = None
-                current_row['avg_fidelity']             = None
-                current_row['valid']                    = None
-                current_row['nb_turning_points']        = None
-                if export_datetime:
-                    current_row['datetime']             = None
-                current_row['duration']                 = None
-                current_row['glb_labeling']             = None
-                if export_command_copy_buttons:
-                    current_row['labeling_subfolder']   = None
-                current_row['percentage_removed']       = None
-                current_row['percentage_lost']          = None
-                current_row['percentage_preserved']     = None
-                current_row['minSJ']                    = None
-                current_row['avgSJ']                    = None
-                current_row['glb_hexmesh']              = None
-                AG_Grid_rowData.append(current_row)
+                # instantiate the labeling folder
+                labeling_folder: labeling = AbstractDataFolder.instantiate(labeling_subfolders_generated_by_ours[0])
+                assert(labeling_folder.type() == 'labeling')
+                
+                # retrieve datetime, labeling stats and feature edges info
+                ISO_datetime = labeling_folder.get_datetime_key_of_algo_in_info_file('automatic_polycube')
+                assert(ISO_datetime is not None)
+                ours_duration = labeling_folder.get_info_dict()[ISO_datetime]['duration'][0]
+                labeling_stats = labeling_folder.get_labeling_stats_dict()
+                ours_row['nb_charts']                = labeling_stats['charts']['nb']
+                ours_row['nb_boundaries']            = labeling_stats['boundaries']['nb']
+                ours_row['nb_corners']               = labeling_stats['corners']['nb']
+                ours_row['nb_invalid_charts']        = labeling_stats['charts']['invalid']
+                ours_row['nb_invalid_boundaries']    = labeling_stats['boundaries']['invalid']
+                ours_row['nb_invalid_corners']       = labeling_stats['corners']['invalid']
+                ours_row['min_fidelity']             = labeling_stats['fidelity']['min']
+                ours_row['avg_fidelity']             = labeling_stats['fidelity']['avg']
+                ours_row['valid']                    = labeling_folder.has_valid_labeling()
+                ours_row['nb_turning_points']        = labeling_folder.nb_turning_points() # == labeling_stats['turning-points']['nb']
+                ours_row['duration']                 = ours_duration
+                ours_row['speedup']                  = None if Evocube_duration is None else (Evocube_duration / ours_duration)
+                total_feature_edges = labeling_stats['feature-edges']['removed'] + labeling_stats['feature-edges']['lost'] + labeling_stats['feature-edges']['preserved']
+                assert(total_feature_edges == surface_mesh_stats['edges']['nb'])
+                ours_row['percentage_removed']       = labeling_stats['feature-edges']['removed']/total_feature_edges*100
+                ours_row['percentage_lost']          = labeling_stats['feature-edges']['lost']/total_feature_edges*100
+                ours_row['percentage_preserved']     = labeling_stats['feature-edges']['preserved']/total_feature_edges*100
+
+                # update duration sum
+                duration[MAMBO_subset]['Ours'] += ours_duration
+
+                # copy the labeling as glTF
+                glb_labeling_file: Path = labeling_folder.get_file(labeling.FILENAMES.LABELED_MESH_GLB,True)
+                glb_labeling_filename = CAD_name + '_labeling_ours.glb'
+                copyfile(glb_labeling_file, self.path / report_folder_name / 'glb' / glb_labeling_filename)
+                ours_row['glb_labeling']             = glb_labeling_filename
+
+                # if there is an hex-mesh in the labeling folder, instantiate it and retrieve mesh stats
+                if (labeling_folder.path / 'polycube_withHexEx_1.3').exists():
+                    hex_mesh_folder: hex_mesh = AbstractDataFolder.instantiate(labeling_folder.path / 'polycube_withHexEx_1.3')
+                    if 'quality' in hex_mesh_folder.get_mesh_stats_dict()['cells']:
+                        ours_row['minSJ'] = hex_mesh_folder.get_mesh_stats_dict()['cells']['quality']['hex_SJ']['min']
+                        ours_row['avgSJ'] = hex_mesh_folder.get_mesh_stats_dict()['cells']['quality']['hex_SJ']['avg']
+
+                        # copy the hex-mesh surface as glTF
+                        glb_hexmesh_file: Path = hex_mesh_folder.get_file(hex_mesh.FILENAMES.HEX_MESH_SURFACE_GLB,True) # will be autocomputed
+                        glb_hexmesh_filename = CAD_name + '_hexmesh_ours.glb'
+                        copyfile(glb_hexmesh_file, self.path / report_folder_name / 'glb' / glb_hexmesh_filename)
+                        ours_row['glb_hexmesh'] = glb_hexmesh_filename
+
+                        avg_sj_sum[MAMBO_subset]['Ours'] += ours_row['avgSJ']
+                        min_sj[MAMBO_subset]['Ours'] = min(ours_row['minSJ'], min_sj[MAMBO_subset]['Ours'])
+                    else:
+                        # HexEx failed, no cells in output file
+                        avg_sj_sum[MAMBO_subset]['Ours'] += -1.0 # assume worse value
+                
+                # update the counters for the Sankey diagram
+                if not labeling_folder.has_valid_labeling():
+                    nb_meshing_succeeded_2_labeling_invalid[MAMBO_subset]['Ours'] += 1
+                elif labeling_folder.nb_turning_points() != 0:
+                    nb_meshing_succeeded_2_labeling_non_monotone[MAMBO_subset]['Ours'] += 1
+                    if ours_row['glb_hexmesh'] is not None:
+                        # an hex-mesh was successully generated
+                        if ours_row['minSJ'] < 0.0:
+                            nb_labeling_non_monotone_2_hexmesh_negative_min_sj[MAMBO_subset]['Ours'] += 1
+                        else:
+                            nb_labeling_non_monotone_2_hexmesh_positive_min_sj[MAMBO_subset]['Ours'] += 1
+                    else:
+                        # no hex-mesh
+                        nb_labeling_non_monotone_2_hexmesh_failed[MAMBO_subset]['Ours'] += 1
+                else:
+                    # so we have a valid labeling with no turning-points
+                    nb_meshing_succeeded_2_labeling_succeeded[MAMBO_subset]['Ours'] += 1
+                    if ours_row['glb_hexmesh'] is not None:
+                        # an hex-mesh was successully generated
+                        if ours_row['minSJ'] < 0.0:
+                            nb_labeling_succeeded_2_hexmesh_negative_min_sj[MAMBO_subset]['Ours'] += 1
+                        else:
+                            nb_labeling_succeeded_2_hexmesh_positive_min_sj[MAMBO_subset]['Ours'] += 1
+                    else:
+                        # no hex-mesh
+                        nb_labeling_succeeded_2_hexmesh_failed[MAMBO_subset]['Ours'] += 1
+            AG_Grid_rowData.append(ours_row)
+        
+        # end of data folder parsing
+
+        # print high level stats for the table in the paper
+
+        assert(nb_CAD_2_meshing_failed['B'] == 0)
+        assert(nb_CAD_2_meshing_failed['S'] == 0)
+        assert(nb_CAD_2_meshing_failed['M'] == 0)
+
+        for MAMBO_prefix in ['B','S','M']:
+            ic(f"on MAMBO {MAMBO_prefix}, method = Evocube")
+            ic(nb_meshing_succeeded_2_labeling_succeeded[MAMBO_prefix]['Evocube'] / nb_CAD[MAMBO_prefix] * 100)
+            ic(nb_meshing_succeeded_2_labeling_non_monotone[MAMBO_prefix]['Evocube'] / nb_CAD[MAMBO_prefix] * 100)
+            ic(nb_meshing_succeeded_2_labeling_invalid[MAMBO_prefix]['Evocube'] / nb_CAD[MAMBO_prefix] * 100)
+            ic(nb_meshing_succeeded_2_labeling_failed[MAMBO_prefix]['Evocube'] / nb_CAD[MAMBO_prefix] * 100)
+            ic(duration[MAMBO_prefix]['Evocube'])
+            nb_tried_hex_meshing = nb_meshing_succeeded_2_labeling_succeeded[MAMBO_prefix]['Evocube'] + nb_meshing_succeeded_2_labeling_non_monotone[MAMBO_prefix]['Evocube']
+            nb_hex_meshes_with_positive_min_sj = nb_labeling_succeeded_2_hexmesh_positive_min_sj[MAMBO_prefix]['Evocube'] + nb_labeling_non_monotone_2_hexmesh_positive_min_sj[MAMBO_prefix]['Evocube']
+            ic(nb_hex_meshes_with_positive_min_sj / nb_tried_hex_meshing * 100)
+            ic(min_sj[MAMBO_prefix]['Evocube'])
+            ic(avg_sj_sum[MAMBO_prefix]['Evocube'] / nb_tried_hex_meshing)
+
+            ic(f"on MAMBO {MAMBO_prefix}, method = Ours")
+            ic(nb_meshing_succeeded_2_labeling_succeeded[MAMBO_prefix]['Ours'] / nb_CAD[MAMBO_prefix] * 100)
+            ic(nb_meshing_succeeded_2_labeling_non_monotone[MAMBO_prefix]['Ours'] / nb_CAD[MAMBO_prefix] * 100)
+            ic(nb_meshing_succeeded_2_labeling_invalid[MAMBO_prefix]['Ours'] / nb_CAD[MAMBO_prefix] * 100)
+            ic(nb_meshing_succeeded_2_labeling_failed[MAMBO_prefix]['Ours'] / nb_CAD[MAMBO_prefix] * 100)
+            ic(duration[MAMBO_prefix]['Ours'])
+            ic(duration[MAMBO_prefix]['Evocube'] / duration[MAMBO_prefix]['Ours'])
+            nb_tried_hex_meshing = nb_meshing_succeeded_2_labeling_succeeded[MAMBO_prefix]['Ours'] + nb_meshing_succeeded_2_labeling_non_monotone[MAMBO_prefix]['Ours']
+            nb_hex_meshes_with_positive_min_sj = nb_labeling_succeeded_2_hexmesh_positive_min_sj[MAMBO_prefix]['Ours'] + nb_labeling_non_monotone_2_hexmesh_positive_min_sj[MAMBO_prefix]['Ours']
+            ic(nb_hex_meshes_with_positive_min_sj / nb_tried_hex_meshing * 100)
+            ic(min_sj[MAMBO_prefix]['Ours'])
+            ic(avg_sj_sum[MAMBO_prefix]['Ours'] / nb_tried_hex_meshing)
+        
+        # Sankey diagram :
+        # - consider our algorithm, ignore Evocube results
+        # - no MAMBO subsets granularity
+
+        # aggregate MAMBO subsets counters
+        nb_CAD_whole_dataset =  nb_CAD['B'] +  nb_CAD['S'] +  nb_CAD['M']
+        nb_CAD_2_meshing_failed_whole_dataset = nb_CAD_2_meshing_failed['B'] + nb_CAD_2_meshing_failed['S'] + nb_CAD_2_meshing_failed['M']
+        nb_CAD_2_meshing_succeeded_whole_dataset = nb_CAD_2_meshing_succeeded['B'] + nb_CAD_2_meshing_succeeded['S'] + nb_CAD_2_meshing_succeeded['M']
+
+        nb_meshing_succeeded_2_labeling_failed_whole_dataset = \
+            nb_meshing_succeeded_2_labeling_failed['B']['Ours'] + \
+            nb_meshing_succeeded_2_labeling_failed['S']['Ours'] + \
+            nb_meshing_succeeded_2_labeling_failed['M']['Ours']
+
+        nb_meshing_succeeded_2_labeling_invalid_whole_dataset = \
+            nb_meshing_succeeded_2_labeling_invalid['B']['Ours'] + \
+            nb_meshing_succeeded_2_labeling_invalid['S']['Ours'] + \
+            nb_meshing_succeeded_2_labeling_invalid['M']['Ours']
+
+        nb_meshing_succeeded_2_labeling_non_monotone_whole_dataset = \
+            nb_meshing_succeeded_2_labeling_non_monotone['B']['Ours'] + \
+            nb_meshing_succeeded_2_labeling_non_monotone['S']['Ours'] + \
+            nb_meshing_succeeded_2_labeling_non_monotone['M']['Ours']
+
+        nb_meshing_succeeded_2_labeling_succeeded_whole_dataset = \
+            nb_meshing_succeeded_2_labeling_succeeded['B']['Ours'] + \
+            nb_meshing_succeeded_2_labeling_succeeded['S']['Ours'] + \
+            nb_meshing_succeeded_2_labeling_succeeded['M']['Ours']
+        
+        nb_labeling_non_monotone_2_hexmesh_failed_whole_dataset = \
+            nb_labeling_non_monotone_2_hexmesh_failed['B']['Ours'] + \
+            nb_labeling_non_monotone_2_hexmesh_failed['S']['Ours'] + \
+            nb_labeling_non_monotone_2_hexmesh_failed['M']['Ours']
+
+        nb_labeling_non_monotone_2_hexmesh_negative_min_sj_whole_dataset = \
+            nb_labeling_non_monotone_2_hexmesh_negative_min_sj['B']['Ours'] + \
+            nb_labeling_non_monotone_2_hexmesh_negative_min_sj['S']['Ours'] + \
+            nb_labeling_non_monotone_2_hexmesh_negative_min_sj['M']['Ours']
+
+        nb_labeling_non_monotone_2_hexmesh_positive_min_sj_whole_dataset = \
+            nb_labeling_non_monotone_2_hexmesh_positive_min_sj['B']['Ours'] + \
+            nb_labeling_non_monotone_2_hexmesh_positive_min_sj['S']['Ours'] + \
+            nb_labeling_non_monotone_2_hexmesh_positive_min_sj['M']['Ours']
+
+        nb_labeling_succeeded_2_hexmesh_failed_whole_dataset = \
+            nb_labeling_succeeded_2_hexmesh_failed['B']['Ours'] + \
+            nb_labeling_succeeded_2_hexmesh_failed['S']['Ours'] + \
+            nb_labeling_succeeded_2_hexmesh_failed['M']['Ours']
+
+        nb_labeling_succeeded_2_hexmesh_negative_min_sj_whole_dataset = \
+            nb_labeling_succeeded_2_hexmesh_negative_min_sj['B']['Ours'] + \
+            nb_labeling_succeeded_2_hexmesh_negative_min_sj['S']['Ours'] + \
+            nb_labeling_succeeded_2_hexmesh_negative_min_sj['M']['Ours']
+
+        nb_labeling_succeeded_2_hexmesh_positive_min_sj_whole_dataset = \
+            nb_labeling_succeeded_2_hexmesh_positive_min_sj['B']['Ours'] + \
+            nb_labeling_succeeded_2_hexmesh_positive_min_sj['S']['Ours'] + \
+            nb_labeling_succeeded_2_hexmesh_positive_min_sj['M']['Ours']
 
         # from links values (flow) to node values (containers)
-        nb_meshing_failed = nb_CAD_2_meshing_failed
-        nb_meshing_succeeded = nb_CAD_2_meshing_succeeded
-        nb_labeling_failed = nb_meshing_succeeded_2_labeling_failed
-        nb_labeling_invalid = nb_meshing_succeeded_2_labeling_invalid
-        nb_labeling_non_monotone = nb_meshing_succeeded_2_labeling_non_monotone
-        nb_labeling_succeeded = nb_meshing_succeeded_2_labeling_succeeded
+        nb_meshing_failed = nb_CAD_2_meshing_failed_whole_dataset
+        nb_meshing_succeeded = nb_CAD_2_meshing_succeeded_whole_dataset
+        nb_labeling_failed = nb_meshing_succeeded_2_labeling_failed_whole_dataset
+        nb_labeling_invalid = nb_meshing_succeeded_2_labeling_invalid_whole_dataset
+        nb_labeling_non_monotone = nb_meshing_succeeded_2_labeling_non_monotone_whole_dataset
+        nb_labeling_succeeded = nb_meshing_succeeded_2_labeling_succeeded_whole_dataset
         max_nb_hexmeshes = nb_labeling_non_monotone + nb_labeling_succeeded # other cases cannot lead to an hex-mesh
-        nb_hexmesh_failed = nb_labeling_non_monotone_2_hexmesh_failed + nb_labeling_succeeded_2_hexmesh_failed
-        nb_hexmesh_negative_min_sj = nb_labeling_non_monotone_2_hexmesh_negative_min_sj + nb_labeling_succeeded_2_hexmesh_negative_min_sj
-        nb_hexmesh_positive_min_sj = nb_labeling_non_monotone_2_hexmesh_positive_min_sj + nb_labeling_succeeded_2_hexmesh_positive_min_sj
+        nb_hexmesh_failed = nb_labeling_non_monotone_2_hexmesh_failed_whole_dataset + nb_labeling_succeeded_2_hexmesh_failed_whole_dataset
+        nb_hexmesh_negative_min_sj = nb_labeling_non_monotone_2_hexmesh_negative_min_sj_whole_dataset + nb_labeling_succeeded_2_hexmesh_negative_min_sj_whole_dataset
+        nb_hexmesh_positive_min_sj = nb_labeling_non_monotone_2_hexmesh_positive_min_sj_whole_dataset + nb_labeling_succeeded_2_hexmesh_positive_min_sj_whole_dataset
 
-        assert(nb_meshing_failed + nb_meshing_succeeded == nb_CAD)
+        assert(nb_meshing_failed == 0)
+        assert(nb_meshing_failed + nb_meshing_succeeded == nb_CAD_whole_dataset)
         assert(nb_labeling_failed + nb_labeling_invalid + nb_labeling_non_monotone + nb_labeling_succeeded == nb_meshing_succeeded)
         assert(nb_hexmesh_failed + nb_hexmesh_negative_min_sj + nb_hexmesh_positive_min_sj == max_nb_hexmeshes)
 
@@ -1575,15 +1887,15 @@ class root(AbstractDataFolder):
 
         Sankey_diagram_data = dict()
         Sankey_diagram_data["nodes"] = list()
-        Sankey_diagram_data["nodes"].append({"node":node_name_to_index["CAD"],"name":f"{nb_CAD} CAD models"})
+        Sankey_diagram_data["nodes"].append({"node":node_name_to_index["CAD"],"name":f"{nb_CAD_whole_dataset} CAD models"})
         if nb_meshing_failed != 0:
             node_name_to_index["TETMESH_FAILED"] = nb_nodes
             nb_nodes += 1
-            Sankey_diagram_data["nodes"].append({"node":node_name_to_index["TETMESH_FAILED"],"name":f"tet-meshing failed : {nb_meshing_failed/nb_CAD*100:.2f} %"})
+            Sankey_diagram_data["nodes"].append({"node":node_name_to_index["TETMESH_FAILED"],"name":f"tet-meshing failed : {nb_meshing_failed/nb_CAD_whole_dataset*100:.2f} %"})
         if nb_meshing_succeeded != 0:
             node_name_to_index["TETMESH_SUCCEEDED"] = nb_nodes
             nb_nodes += 1
-            Sankey_diagram_data["nodes"].append({"node":node_name_to_index["TETMESH_SUCCEEDED"],"name":f"tet-meshing succeeded : {nb_meshing_succeeded/nb_CAD*100:.2f} %"})
+            Sankey_diagram_data["nodes"].append({"node":node_name_to_index["TETMESH_SUCCEEDED"],"name":f"tet-meshing succeeded : {nb_meshing_succeeded/nb_CAD_whole_dataset*100:.2f} %"})
         if nb_labeling_failed != 0:
             node_name_to_index["LABELING_FAILED"] = nb_nodes
             nb_nodes += 1
@@ -1614,42 +1926,42 @@ class root(AbstractDataFolder):
             Sankey_diagram_data["nodes"].append({"node":node_name_to_index["HEXMESH_POSITIVE_MIN_SJ"],"name":f"hex-mesh w/ minSJ>=0 : {nb_hexmesh_positive_min_sj/max_nb_hexmeshes*100:.2f} %"})
         
         Sankey_diagram_data["links"] = list()
-        if nb_CAD_2_meshing_failed != 0:
+        if nb_CAD_2_meshing_failed_whole_dataset != 0:
             assert(nb_meshing_failed != 0)
-            Sankey_diagram_data["nodes"].append({"source":node_name_to_index["CAD"],"target":node_name_to_index["TETMESH_FAILED"],"value":nb_CAD_2_meshing_failed})
-        if nb_CAD_2_meshing_succeeded != 0:
+            Sankey_diagram_data["nodes"].append({"source":node_name_to_index["CAD"],"target":node_name_to_index["TETMESH_FAILED"],"value":nb_CAD_2_meshing_failed_whole_dataset})
+        if nb_CAD_2_meshing_succeeded_whole_dataset != 0:
             assert(nb_meshing_succeeded != 0)
-            Sankey_diagram_data["links"].append({"source":node_name_to_index["CAD"],"target":node_name_to_index["TETMESH_SUCCEEDED"],"value":nb_CAD_2_meshing_succeeded})
-        if nb_meshing_succeeded_2_labeling_failed != 0:
+            Sankey_diagram_data["links"].append({"source":node_name_to_index["CAD"],"target":node_name_to_index["TETMESH_SUCCEEDED"],"value":nb_CAD_2_meshing_succeeded_whole_dataset})
+        if nb_meshing_succeeded_2_labeling_failed_whole_dataset != 0:
             assert(nb_labeling_failed != 0)
-            Sankey_diagram_data["links"].append({"source":node_name_to_index["TETMESH_SUCCEEDED"],"target":node_name_to_index["LABELING_FAILED"],"value":nb_meshing_succeeded_2_labeling_failed})
-        if nb_meshing_succeeded_2_labeling_invalid != 0:
+            Sankey_diagram_data["links"].append({"source":node_name_to_index["TETMESH_SUCCEEDED"],"target":node_name_to_index["LABELING_FAILED"],"value":nb_meshing_succeeded_2_labeling_failed_whole_dataset})
+        if nb_meshing_succeeded_2_labeling_invalid_whole_dataset != 0:
             assert(nb_labeling_invalid != 0)
-            Sankey_diagram_data["links"].append({"source":node_name_to_index["TETMESH_SUCCEEDED"],"target":node_name_to_index["LABELING_INVALID"],"value":nb_meshing_succeeded_2_labeling_invalid})
-        if nb_meshing_succeeded_2_labeling_non_monotone != 0:
+            Sankey_diagram_data["links"].append({"source":node_name_to_index["TETMESH_SUCCEEDED"],"target":node_name_to_index["LABELING_INVALID"],"value":nb_meshing_succeeded_2_labeling_invalid_whole_dataset})
+        if nb_meshing_succeeded_2_labeling_non_monotone_whole_dataset != 0:
             assert(nb_labeling_non_monotone != 0)
-            Sankey_diagram_data["links"].append({"source":node_name_to_index["TETMESH_SUCCEEDED"],"target":node_name_to_index["LABELING_NON_MONOTONE"],"value":nb_meshing_succeeded_2_labeling_non_monotone})
-        if nb_meshing_succeeded_2_labeling_succeeded != 0:
+            Sankey_diagram_data["links"].append({"source":node_name_to_index["TETMESH_SUCCEEDED"],"target":node_name_to_index["LABELING_NON_MONOTONE"],"value":nb_meshing_succeeded_2_labeling_non_monotone_whole_dataset})
+        if nb_meshing_succeeded_2_labeling_succeeded_whole_dataset != 0:
             assert(nb_labeling_succeeded != 0)
-            Sankey_diagram_data["links"].append({"source":node_name_to_index["TETMESH_SUCCEEDED"],"target":node_name_to_index["LABELING_SUCCEEDED"],"value":nb_meshing_succeeded_2_labeling_succeeded})
-        if nb_labeling_non_monotone_2_hexmesh_failed != 0:
+            Sankey_diagram_data["links"].append({"source":node_name_to_index["TETMESH_SUCCEEDED"],"target":node_name_to_index["LABELING_SUCCEEDED"],"value":nb_meshing_succeeded_2_labeling_succeeded_whole_dataset})
+        if nb_labeling_non_monotone_2_hexmesh_failed_whole_dataset != 0:
             assert(nb_hexmesh_failed != 0)
-            Sankey_diagram_data["links"].append({"source":node_name_to_index["LABELING_NON_MONOTONE"],"target":node_name_to_index["HEXMESH_FAILED"],"value":nb_labeling_non_monotone_2_hexmesh_failed})
-        if nb_labeling_non_monotone_2_hexmesh_negative_min_sj != 0:
+            Sankey_diagram_data["links"].append({"source":node_name_to_index["LABELING_NON_MONOTONE"],"target":node_name_to_index["HEXMESH_FAILED"],"value":nb_labeling_non_monotone_2_hexmesh_failed_whole_dataset})
+        if nb_labeling_non_monotone_2_hexmesh_negative_min_sj_whole_dataset != 0:
             assert(nb_hexmesh_negative_min_sj != 0)
-            Sankey_diagram_data["links"].append({"source":node_name_to_index["LABELING_NON_MONOTONE"],"target":node_name_to_index["HEXMESH_NEGATIVE_MIN_SJ"],"value":nb_labeling_non_monotone_2_hexmesh_negative_min_sj})
-        if nb_labeling_non_monotone_2_hexmesh_positive_min_sj != 0:
+            Sankey_diagram_data["links"].append({"source":node_name_to_index["LABELING_NON_MONOTONE"],"target":node_name_to_index["HEXMESH_NEGATIVE_MIN_SJ"],"value":nb_labeling_non_monotone_2_hexmesh_negative_min_sj_whole_dataset})
+        if nb_labeling_non_monotone_2_hexmesh_positive_min_sj_whole_dataset != 0:
             assert(nb_hexmesh_positive_min_sj != 0)
-            Sankey_diagram_data["links"].append({"source":node_name_to_index["LABELING_NON_MONOTONE"],"target":node_name_to_index["HEXMESH_POSITIVE_MIN_SJ"],"value":nb_labeling_non_monotone_2_hexmesh_positive_min_sj})
-        if nb_labeling_succeeded_2_hexmesh_failed != 0:
+            Sankey_diagram_data["links"].append({"source":node_name_to_index["LABELING_NON_MONOTONE"],"target":node_name_to_index["HEXMESH_POSITIVE_MIN_SJ"],"value":nb_labeling_non_monotone_2_hexmesh_positive_min_sj_whole_dataset})
+        if nb_labeling_succeeded_2_hexmesh_failed_whole_dataset != 0:
             assert(nb_hexmesh_failed != 0)
-            Sankey_diagram_data["links"].append({"source":node_name_to_index["LABELING_SUCCEEDED"],"target":node_name_to_index["HEXMESH_FAILED"],"value":nb_labeling_succeeded_2_hexmesh_failed})
-        if nb_labeling_succeeded_2_hexmesh_negative_min_sj != 0:
+            Sankey_diagram_data["links"].append({"source":node_name_to_index["LABELING_SUCCEEDED"],"target":node_name_to_index["HEXMESH_FAILED"],"value":nb_labeling_succeeded_2_hexmesh_failed_whole_dataset})
+        if nb_labeling_succeeded_2_hexmesh_negative_min_sj_whole_dataset != 0:
             assert(nb_hexmesh_negative_min_sj != 0)
-            Sankey_diagram_data["links"].append({"source":node_name_to_index["LABELING_SUCCEEDED"],"target":node_name_to_index["HEXMESH_NEGATIVE_MIN_SJ"],"value":nb_labeling_succeeded_2_hexmesh_negative_min_sj})
-        if nb_labeling_succeeded_2_hexmesh_positive_min_sj != 0:
+            Sankey_diagram_data["links"].append({"source":node_name_to_index["LABELING_SUCCEEDED"],"target":node_name_to_index["HEXMESH_NEGATIVE_MIN_SJ"],"value":nb_labeling_succeeded_2_hexmesh_negative_min_sj_whole_dataset})
+        if nb_labeling_succeeded_2_hexmesh_positive_min_sj_whole_dataset != 0:
             assert(nb_hexmesh_positive_min_sj != 0)
-            Sankey_diagram_data["links"].append({"source":node_name_to_index["LABELING_SUCCEEDED"],"target":node_name_to_index["HEXMESH_POSITIVE_MIN_SJ"],"value":nb_labeling_succeeded_2_hexmesh_positive_min_sj})
+            Sankey_diagram_data["links"].append({"source":node_name_to_index["LABELING_SUCCEEDED"],"target":node_name_to_index["HEXMESH_POSITIVE_MIN_SJ"],"value":nb_labeling_succeeded_2_hexmesh_positive_min_sj_whole_dataset})
 
         # Assemble the HTML file
 
@@ -1731,14 +2043,10 @@ class root(AbstractDataFolder):
                 </details>
                 <div id="myGrid" class="ag-theme-alpine-dark"></div>
                 <script src="js/ag-grid-community.min.js"></script>
-                """ + ("""<script src="js/clipboard.min.js"></script>""" if export_command_copy_buttons else "") + """
                 <script src="js/d3.v4.min.js"></script>
                 <script src="js/sankey.js"></script>
                 <script type="module" src="js/model-viewer.min.js"></script>
                 <script>
-                    // clipboard.js
-                    new ClipboardJS('.btn');
-
                     // open/close 3D model viewer
                     const dialog = document.querySelector("dialog");
                     const closeButton = document.querySelector("dialog #close-viewer");
@@ -1760,128 +2068,6 @@ class root(AbstractDataFolder):
                         model_viewer.setAttribute("autoplay",true);
                         dialog.showModal();
                     }
-                    """ + ("""
-
-                    function getViewStepCommand(params) {
-                        return (params.data.CAD_path == null) ? null : ("./view -i " + params.data.CAD_path);
-                    }
-
-                    function getViewTetMeshCommand(params) {
-                        return ((params.data.CAD_path == null) || (params.data.tet_mesh_subfolder == null)) ? null : ("./view -i " + params.data.CAD_path + "/" + params.data.tet_mesh_subfolder);
-                    }
-
-                    function getViewLabelingCommand(params) {
-                        return ((params.data.CAD_path == null) || (params.data.tet_mesh_subfolder == null) || (params.data.labeling_subfolder == null)) ? null : ("./view -i " + params.data.CAD_path + "/" + params.data.tet_mesh_subfolder + "/" + params.data.labeling_subfolder);
-                    }
-
-                    function getLaunchGuiCommand(params) {
-                        return ((params.data.CAD_path == null) || (params.data.tet_mesh_subfolder == null)) ? null : ("./automatic_polycube -i " + params.data.CAD_path + "/" + params.data.tet_mesh_subfolder + " --gui --auto-remove-if-empty");
-                    }
-
-                    class ViewStepButton {
-                        eGui;
-                        eButton;
-
-                        init(params) {
-                            this.eGui = document.createElement('div');
-                            this.eGui.classList.add('custom-element');
-                            let command = getViewStepCommand(params);
-                            if(command != null) {
-                                this.eGui.innerHTML = `
-                                    <button class="btn" data-clipboard-text="${command}">
-                                        Copy
-                                    </button>
-                                `;
-                            }
-                        }
-
-                        getGui() {
-                            return this.eGui;
-                        }
-
-                        refresh(params) {
-                            return false;
-                        }
-                    }
-
-                    class ViewTetMeshButton {
-                        eGui;
-                        eButton;
-
-                        init(params) {
-                            this.eGui = document.createElement('div');
-                            this.eGui.classList.add('custom-element');
-                            let command = getViewTetMeshCommand(params);
-                            if(command != null) {
-                                this.eGui.innerHTML = `
-                                    <button class="btn" data-clipboard-text="${command}">
-                                        Copy
-                                    </button>
-                                `;
-                            }
-                        }
-
-                        getGui() {
-                            return this.eGui;
-                        }
-
-                        refresh(params) {
-                            return false;
-                        }
-                    }
-
-                    class ViewLabelingButton {
-                        eGui;
-                        eButton;
-
-                        init(params) {
-                            this.eGui = document.createElement('div');
-                            this.eGui.classList.add('custom-element');
-                            let command = getViewLabelingCommand(params);
-                            if(command != null) {
-                                this.eGui.innerHTML = `
-                                <button class="btn" data-clipboard-text="${command}">
-                                    Copy
-                                </button>
-                            `;
-                            }
-                        }
-
-                        getGui() {
-                            return this.eGui;
-                        }
-
-                        refresh(params) {
-                            return false;
-                        }
-                    }
-
-                    class ViewLaunchGuiButton {
-                        eGui;
-                        eButton;
-
-                        init(params) {
-                            this.eGui = document.createElement('div');
-                            this.eGui.classList.add('custom-element');
-                            let command = getLaunchGuiCommand(params);
-                            if(command != null) {
-                                this.eGui.innerHTML = `
-                                    <button class="btn" data-clipboard-text="${command}">
-                                        Copy
-                                    </button>
-                                `;
-                            }
-                        }
-
-                        getGui() {
-                            return this.eGui;
-                        }
-
-                        refresh(params) {
-                            return false;
-                        }
-                    }
-                    """ if export_command_copy_buttons else "") + """
 
                     class openLabelingViewerButton {
                         eGui;
@@ -1952,19 +2138,18 @@ class root(AbstractDataFolder):
                         // Column Definitions: Defines & controls grid columns.
                         columnDefs: [
                             { field: "CAD_name", headerName: "CAD model", cellDataType: 'text', filter: true, pinned: 'left' },
-                            """ + ("""{ field: "view_CAD_command", headerName: "view CAD", cellRenderer: ViewStepButton },""" if export_command_copy_buttons else "") + """
                             {
                                 headerName: 'surface mesh',
                                 children: [
                                     { field: "nb_vertices",         headerName: "#vertices",    cellDataType: 'number', filter: true },
                                     { field: "nb_facets",           headerName: "#facets",      cellDataType: 'number', filter: true },
                                     { field: "area_sd",             headerName: "sd(area)",     cellDataType: 'number', filter: true, valueFormatter: floatingPointFormatter },
-                                    """ + ("""{ field: "view_mesh_command", headerName: "view mesh", cellRenderer: ViewTetMeshButton },""" if export_command_copy_buttons else "") + """
                                 ]
                             },
                             {
                                 headerName: 'labeling',
                                 children: [
+                                    { field: "algo",                    headerName: "algorithm",            cellDataType: 'text',    filter: true },
                                     { field: "nb_charts",               headerName: "#charts",              cellDataType: 'number',  filter: true },
                                     { field: "nb_boundaries",           headerName: "#boundaries",          cellDataType: 'number',  filter: true },
                                     { field: "nb_corners",              headerName: "#corners",             cellDataType: 'number',  filter: true },
@@ -1975,10 +2160,9 @@ class root(AbstractDataFolder):
                                     { field: "avg_fidelity",            headerName: "avg(fidelity)",        cellDataType: 'number',  filter: true, valueFormatter: floatingPointFormatter },
                                     { field: "valid",                   headerName: "valid",                cellDataType: 'boolean', filter: true },
                                     { field: "nb_turning_points",       headerName: "#turning-points",      cellDataType: 'number',  filter: true },
-                                    """ + ("""{ field: "datetime", headerName: "date & time", cellDataType: 'text', filter: true },""" if export_datetime else "") + """
                                     { field: "duration",                headerName: "duration",             cellDataType: 'number',  filter: true, valueFormatter: DurationSecondsFormatter },
+                                    { field: "speedup",                 headerName: "speedup",             cellDataType: 'number',   filter: true, valueFormatter: floatingPointFormatter },
                                     { field: "glb_labeling",            headerName: "open",                 cellRenderer: openLabelingViewerButton },
-                                    """ + ("""{ field: "view_labeling_command",   headerName: "view labeling",        cellRenderer: ViewLabelingButton },""" if export_command_copy_buttons else "") + """
                                 ]
                             },
                             {
@@ -1997,7 +2181,6 @@ class root(AbstractDataFolder):
                                     { field: "glb_hexmesh", headerName: "open",    cellRenderer: openHexMeshViewerButton },
                                 ]
                             },
-                            """ + ("""{ field: "launch_GUI", headerName: "launch GUI", cellRenderer: ViewLaunchGuiButton },""" if export_command_copy_buttons else "") + """
                         ],
                         autoSizeStrategy: {
                             type: "fitCellContents"
@@ -2119,13 +2302,6 @@ class root(AbstractDataFolder):
             url='https://cdn.jsdelivr.net/npm/ag-grid-community@31.1.1/dist/ag-grid-community.min.js',
             filename = str(self.path / report_folder_name / 'js' / 'ag-grid-community.min.js')
         )
-        if export_command_copy_buttons:
-            # clipboard.js https://clipboardjs.com/
-            logging.info('Downloading clipboard.js...')
-            request.urlretrieve(
-                url='https://cdn.jsdelivr.net/npm/clipboard@2.0.11/dist/clipboard.min.js',
-                filename = str(self.path / report_folder_name / 'js' / 'clipboard.min.js')
-            )
         # D3 https://d3js.org/
         logging.info('Downloading D3...')
         request.urlretrieve(
@@ -2144,151 +2320,6 @@ class root(AbstractDataFolder):
             url='https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js',
             filename = str(self.path / report_folder_name / 'js' / 'model-viewer.min.js')
         )
-
-    def compare_Evocube_with_ours(self):
-        CSV_header = [
-            '"name"',
-            '"#vertices"',
-            '"#facets"',
-            '"invalid charts / total"',
-            '"invalid boundaries / total"',
-            '"invalid corners / total"',
-            '"min|avg fidelity"',
-            '"valid"',
-            '"#turning-points"',
-            '"duration (s) | speedup"',
-            '"min|avg SJ"'
-        ]
-        CSV_entries = dict()
-
-        root_folder = root()
-        for level_minus_1_folder in root_folder.get_subfolders_of_type('step'):
-            CAD_name = level_minus_1_folder.name
-            if not (level_minus_1_folder / step.FILENAMES.STEP).exists():
-                logging.warning(f"Folder {level_minus_1_folder} has no {step.FILENAMES.STEP}")
-                continue
-            if not (level_minus_1_folder / 'Gmsh_0.1/').exists() or not (level_minus_1_folder / 'Gmsh_0.1' / tet_mesh.FILENAMES.SURFACE_MESH_OBJ).exists():
-                # not even a surface mesh
-                logging.error(f"No 'Gmsh_0.1/' inside {CAD_name}")
-                continue
-            tet_folder: tet_mesh = AbstractDataFolder.instantiate(level_minus_1_folder / 'Gmsh_0.1')
-            surface_mesh_stats = tet_folder.get_surface_mesh_stats_dict()
-
-            # analyse the labeling generated by evocube
-
-            Evocube_duration = None # in seconds
-
-            labeling_subfolders_generated_by_evocube: list[Path] = tet_folder.get_subfolders_generated_by('evocube')
-            assert(len(labeling_subfolders_generated_by_evocube) <= 1)
-            if ( (len(labeling_subfolders_generated_by_evocube) == 0) or \
-                not (labeling_subfolders_generated_by_evocube[0] / labeling.FILENAMES.SURFACE_LABELING_TXT).exists() ):
-                # there is a tet mesh but no labeling was written
-                CSV_entries[f'"{CAD_name} [DPM*22]"'] = [
-                    f""" "{surface_mesh_stats['vertices']['nb']}" """,
-                    f""" "{surface_mesh_stats['facets']['nb']}" """,
-                    '"- / -"',
-                    '"- / -"',
-                    '"- / -"',
-                    '"- | -"',
-                    '"-"',
-                    '"-"',
-                    '"- | -"',
-                    '"- | -"'
-                ]
-                # do not continue, we need to analyse the Evocube labeling
-            else:
-                # instantiate the labeling folder
-                labeling_folder: labeling = AbstractDataFolder.instantiate(labeling_subfolders_generated_by_evocube[0])
-                assert(labeling_folder.type() == 'labeling')
-                # retreive datetime, labeling stats and feature edges info
-                ISO_datetime = labeling_folder.get_datetime_key_of_algo_in_info_file('evocube')
-                assert(ISO_datetime is not None)
-                labeling_stats = labeling_folder.get_labeling_stats_dict()
-                total_feature_edges = labeling_stats['feature-edges']['removed'] + labeling_stats['feature-edges']['lost'] + labeling_stats['feature-edges']['preserved']
-                assert(total_feature_edges == surface_mesh_stats['edges']['nb'])
-                
-                # if there is an hex-mesh in the labeling folder, instantiate it and retreive mesh stats
-                min_and_avg_SJ = '"- | -"'
-                if (labeling_folder.path / 'polycube_withHexEx_1.3').exists():
-                    hex_mesh_folder: hex_mesh = AbstractDataFolder.instantiate(labeling_folder.path / 'polycube_withHexEx_1.3')
-                    if 'quality' in hex_mesh_folder.get_mesh_stats_dict()['cells']:
-                        min_and_avg_SJ = f""" "{hex_mesh_folder.get_mesh_stats_dict()['cells']['quality']['hex_SJ']['min']:.3f} | {hex_mesh_folder.get_mesh_stats_dict()['cells']['quality']['hex_SJ']['avg']:.3f}" """
-                Evocube_duration = labeling_folder.get_info_dict()[ISO_datetime]['duration'][0]
-                CSV_entries[f'"{CAD_name} [DPM*22]"'] = [
-                    f""" "{surface_mesh_stats['vertices']['nb']}" """,
-                    f""" "{surface_mesh_stats['facets']['nb']}" """,
-                    f""" "{labeling_stats['charts']['invalid']} / {labeling_stats['charts']['nb']}" """,
-                    f""" "{labeling_stats['boundaries']['invalid']} / {labeling_stats['boundaries']['nb']}" """,
-                    f""" "{labeling_stats['corners']['invalid']} / {labeling_stats['corners']['nb']}" """,
-                    f""" "{labeling_stats['fidelity']['min']:.3f} | {labeling_stats['fidelity']['avg']:.3f}" """,
-                    '"yes"' if labeling_folder.has_valid_labeling() else '"no"',
-                    f""" "{labeling_folder.nb_turning_points()}" """,
-                    f""" "{Evocube_duration:.3f}" """,
-                    min_and_avg_SJ
-                ]
-
-            # analyse the labeling generated by automatic_polycube
-
-            labeling_subfolders_generated_by_automatic_polycube: list[Path] = tet_folder.get_subfolders_generated_by('automatic_polycube')
-            assert(len(labeling_subfolders_generated_by_automatic_polycube) <= 1)
-            if ( (len(labeling_subfolders_generated_by_automatic_polycube) == 0) or \
-                not (labeling_subfolders_generated_by_automatic_polycube[0] / labeling.FILENAMES.SURFACE_LABELING_TXT).exists() ):
-                # there is a tet mesh but no labeling was written
-                CSV_entries[f'"{CAD_name} [ours]"'] = [
-                    f""" "{surface_mesh_stats['vertices']['nb']}" """,
-                    f""" "{surface_mesh_stats['facets']['nb']}" """,
-                    '"- / -"',
-                    '"- / -"',
-                    '"- / -"',
-                    '"- | -"',
-                    '"-"',
-                    '"-"',
-                    '"- | -"',
-                    '"- | -"'
-                ]
-                # do not continue, we need to analyse the Evocube labeling
-            else:
-                # instantiate the labeling folder
-                labeling_folder: labeling = AbstractDataFolder.instantiate(labeling_subfolders_generated_by_automatic_polycube[0])
-                assert(labeling_folder.type() == 'labeling')
-                # retreive datetime, labeling stats and feature edges info
-                ISO_datetime = labeling_folder.get_datetime_key_of_algo_in_info_file('automatic_polycube')
-                assert(ISO_datetime is not None)
-                labeling_stats = labeling_folder.get_labeling_stats_dict()
-                total_feature_edges = labeling_stats['feature-edges']['removed'] + labeling_stats['feature-edges']['lost'] + labeling_stats['feature-edges']['preserved']
-                assert(total_feature_edges == surface_mesh_stats['edges']['nb'])
-                
-                # if there is an hex-mesh in the labeling folder, instantiate it and retreive mesh stats
-                min_and_avg_SJ = '"- | -"'
-                if (labeling_folder.path / 'polycube_withHexEx_1.3').exists():
-                    hex_mesh_folder: hex_mesh = AbstractDataFolder.instantiate(labeling_folder.path / 'polycube_withHexEx_1.3')
-                    if 'quality' in hex_mesh_folder.get_mesh_stats_dict()['cells']:
-                        min_and_avg_SJ = f""" "{hex_mesh_folder.get_mesh_stats_dict()['cells']['quality']['hex_SJ']['min']:.3f} | {hex_mesh_folder.get_mesh_stats_dict()['cells']['quality']['hex_SJ']['avg']:.3f}" """
-                our_duration = labeling_folder.get_info_dict()[ISO_datetime]['duration'][0]
-                assert(Evocube_duration is not None)
-                speedup = Evocube_duration / our_duration
-                CSV_entries[f'"{CAD_name} [ours]"'] = [
-                    f""" "{surface_mesh_stats['vertices']['nb']}" """,
-                    f""" "{surface_mesh_stats['facets']['nb']}" """,
-                    f""" "{labeling_stats['charts']['invalid']} / {labeling_stats['charts']['nb']}" """,
-                    f""" "{labeling_stats['boundaries']['invalid']} / {labeling_stats['boundaries']['nb']}" """,
-                    f""" "{labeling_stats['corners']['invalid']} / {labeling_stats['corners']['nb']}" """,
-                    f"""  "{labeling_stats['fidelity']['min']:.3f} | {labeling_stats['fidelity']['avg']:.3f}" """,
-                    '"yes"' if labeling_folder.has_valid_labeling() else '"no"',
-                    f""" "{labeling_folder.nb_turning_points()}" """,
-                    f""" "{our_duration:.3f} | {speedup:.0f}" """,
-                    min_and_avg_SJ
-                ]
-        with open("comparison_with_Evocube.csv","w") as out_file:
-            for column_name in CSV_header:
-                out_file.write(column_name + ',  ')
-            out_file.write('\n')
-            for k,v in sorted(CSV_entries.items()):
-                out_file.write(k + ',  ')
-                for value in v:
-                    out_file.write(value + ',  ')
-                out_file.write('\n')
-
 
 class report(AbstractDataFolder):
     """
