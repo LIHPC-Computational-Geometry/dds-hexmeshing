@@ -1965,333 +1965,334 @@ class root(AbstractDataFolder):
 
         # Assemble the HTML file
 
-        HTML_report = """<!DOCTYPE html>
-        <html lang="en">
-            <head>
-                <title>""" + report_name + """</title>
-                <meta charSet="UTF-8"/>
-                <meta name="viewport" content="width=device-width, initial-scale=1"/>
-                <style media="only screen">
-                    html, body {
-                        height: 100%;
-                        width: 100%;
-                        margin: 0;
-                        box-sizing: border-box;
-                        -webkit-overflow-scrolling: touch;
+        HTML_report = """
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>""" + report_name + """</title>
+        <meta charSet="UTF-8"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1"/>
+        <style media="only screen">
+            html, body {
+                height: 100%;
+                width: 100%;
+                margin: 0;
+                box-sizing: border-box;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            html {
+                position: absolute;
+                top: 0;
+                left: 0;
+                padding: 0;
+                overflow: auto;
+            }
+
+            body {
+                padding: 16px;
+                overflow: auto;
+                background-color: #181d1f;
+                font-family: sans-serif;
+            }
+
+            body details {
+                color: white;
+                text-align: center;
+            }
+
+            /* for the AG Grid */
+            #myGrid {
+                width: 100%;
+                height: 98%;
+            }
+
+            /* for the Sankey diagram */
+            .link {
+                fill: none;
+                stroke: white;
+                stroke-opacity: .2;
+            }
+            .link:hover {
+                stroke-opacity: .5;
+            }
+
+            dialog {
+                height: calc(100% - 100px);
+                width: calc(100% - 100px);
+                text-align: center;
+                background-color: #181d1f;
+                border: none;
+                border-radius: 5px;
+                box-shadow: 0px 0px 10px white;
+            }
+            
+            dialog model-viewer{
+                height: calc(100% - 25px);
+                width: 100%;
+                background-color: #181d1f;
+            }
+            </style>
+    </head>
+    <body>
+        <dialog>
+            <button autofocus id="close-viewer">Close</button>
+        </dialog>
+        <details>
+            <summary>Sankey diagram</summary>
+            <div id="sankey"></div>
+        </details>
+        <div id="myGrid" class="ag-theme-alpine-dark"></div>
+        <script src="js/ag-grid-community.min.js"></script>
+        <script src="js/d3.v4.min.js"></script>
+        <script src="js/sankey.js"></script>
+        <script type="module" src="js/model-viewer.min.js"></script>
+        <script>
+            // open/close 3D model viewer
+            const dialog = document.querySelector("dialog");
+            const closeButton = document.querySelector("dialog #close-viewer");
+            // The "Close" button closes the dialog
+            closeButton.addEventListener("click", () => {
+                dialog.close();
+                dialog.removeChild(document.querySelector("dialog model-viewer"));
+            });
+            // fill the dialog with a <model-viewer>
+            function make_dialog(filename) {
+                let model_viewer = dialog.appendChild(document.createElement("model-viewer"));
+                model_viewer.setAttribute("alt","labeling 3D viewer");
+                model_viewer.setAttribute("src", "glb/" + filename);
+                model_viewer.setAttribute("shadow-intensity", "1");
+                model_viewer.setAttribute("exposure","1");
+                model_viewer.setAttribute("tone-mapping","commerce");
+                model_viewer.setAttribute("camera-controls",true);
+                model_viewer.setAttribute("touch-action","pan-y");
+                model_viewer.setAttribute("autoplay",true);
+                dialog.showModal();
+            }
+
+            class openLabelingViewerButton {
+                eGui;
+                eButton;
+
+                init(params) {
+                    this.eGui = document.createElement('div');
+                    this.eGui.classList.add('custom-element');
+                    if(params.data.glb_labeling != null) {
+                        this.eGui.innerHTML = `
+                            <button class="open-viewer" onclick="make_dialog('${params.data.glb_labeling}')">Open</button>
+                        `;
                     }
+                }
 
-                    html {
-                        position: absolute;
-                        top: 0;
-                        left: 0;
-                        padding: 0;
-                        overflow: auto;
+                getGui() {
+                    return this.eGui;
+                }
+
+                refresh(params) {
+                    return false;
+                }
+            }
+
+            class openHexMeshViewerButton {
+                eGui;
+                eButton;
+
+                init(params) {
+                    this.eGui = document.createElement('div');
+                    this.eGui.classList.add('custom-element');
+                    if(params.data.glb_hexmesh != null) {
+                        this.eGui.innerHTML = `
+                            <button class="open-viewer" onclick="make_dialog('${params.data.glb_hexmesh}')">Open</button>
+                        `;
                     }
+                }
 
-                    body {
-                        padding: 16px;
-                        overflow: auto;
-                        background-color: #181d1f;
-                        font-family: sans-serif;
-                    }
+                getGui() {
+                    return this.eGui;
+                }
 
-                    body details {
-                        color: white;
-                        text-align: center;
-                    }
+                refresh(params) {
+                    return false;
+                }
+            }
 
-                    /* for the AG Grid */
-                    #myGrid {
-                        width: 100%;
-                        height: 98%;
-                    }
+            // thanks Bamdad Fard https://blog.ag-grid.com/formatting-numbers-strings-currency-in-ag-grid/
+            function floatingPointFormatter(params) {
+                return params.value == null ? null : params.value.toFixed(2);
+            }
 
-                    /* for the Sankey diagram */
-                    .link {
-                        fill: none;
-                        stroke: white;
-                        stroke-opacity: .2;
-                    }
-                    .link:hover {
-                        stroke-opacity: .5;
-                    }
+            function PercentageFormatter(params) {
+                return params.value == null ? null : floatingPointFormatter(params) + ' %';
+            }
 
-                    dialog {
-                        height: calc(100% - 100px);
-                        width: calc(100% - 100px);
-                        text-align: center;
-                        background-color: #181d1f;
-                        border: none;
-                        border-radius: 5px;
-                        box-shadow: 0px 0px 10px white;
-                    }
-                    
-                    dialog model-viewer{
-                        height: calc(100% - 25px);
-                        width: 100%;
-                        background-color: #181d1f;
-                    }
-                    </style>
-            </head>
-            <body>
-                <dialog>
-                    <button autofocus id="close-viewer">Close</button>
-                </dialog>
-                <details>
-                    <summary>Sankey diagram</summary>
-                    <div id="sankey"></div>
-                </details>
-                <div id="myGrid" class="ag-theme-alpine-dark"></div>
-                <script src="js/ag-grid-community.min.js"></script>
-                <script src="js/d3.v4.min.js"></script>
-                <script src="js/sankey.js"></script>
-                <script type="module" src="js/model-viewer.min.js"></script>
-                <script>
-                    // open/close 3D model viewer
-                    const dialog = document.querySelector("dialog");
-                    const closeButton = document.querySelector("dialog #close-viewer");
-                    // The "Close" button closes the dialog
-                    closeButton.addEventListener("click", () => {
-                        dialog.close();
-                        dialog.removeChild(document.querySelector("dialog model-viewer"));
-                    });
-                    // fill the dialog with a <model-viewer>
-                    function make_dialog(filename) {
-                        let model_viewer = dialog.appendChild(document.createElement("model-viewer"));
-                        model_viewer.setAttribute("alt","labeling 3D viewer");
-                        model_viewer.setAttribute("src", "glb/" + filename);
-                        model_viewer.setAttribute("shadow-intensity", "1");
-                        model_viewer.setAttribute("exposure","1");
-                        model_viewer.setAttribute("tone-mapping","commerce");
-                        model_viewer.setAttribute("camera-controls",true);
-                        model_viewer.setAttribute("touch-action","pan-y");
-                        model_viewer.setAttribute("autoplay",true);
-                        dialog.showModal();
-                    }
+            function DurationSecondsFormatter(params) {
+                return params.value == null ? null : params.value.toFixed(3) + ' s';
+            }
 
-                    class openLabelingViewerButton {
-                        eGui;
-                        eButton;
+            // Grid API: Access to Grid API methods
+            let gridApi;
 
-                        init(params) {
-                            this.eGui = document.createElement('div');
-                            this.eGui.classList.add('custom-element');
-                            if(params.data.glb_labeling != null) {
-                                this.eGui.innerHTML = `
-                                    <button class="open-viewer" onclick="make_dialog('${params.data.glb_labeling}')">Open</button>
-                                `;
-                            }
-                        }
+            // Grid Options: Contains all of the grid configurations
+            const gridOptions = {
+                // Row Data: The data to be displayed.
+                rowData: """ + dumps(AG_Grid_rowData) + """,
+                // Column Definitions: Defines & controls grid columns.
+                columnDefs: [
+                    { field: "CAD_name", headerName: "CAD model", cellDataType: 'text', filter: true, pinned: 'left' },
+                    { field: "method",   headerName: "method",    cellDataType: 'text', filter: true, pinned: 'left' },
+                    {
+                        headerName: 'surface mesh',
+                        children: [
+                            { field: "nb_vertices",         headerName: "#vertices",    cellDataType: 'number', filter: true },
+                            { field: "nb_facets",           headerName: "#facets",      cellDataType: 'number', filter: true },
+                            { field: "area_sd",             headerName: "sd(area)",     cellDataType: 'number', filter: true, valueFormatter: floatingPointFormatter },
+                        ]
+                    },
+                    {
+                        headerName: 'labeling',
+                        children: [
+                            { field: "nb_charts",               headerName: "#charts",              cellDataType: 'number',  filter: true },
+                            { field: "nb_boundaries",           headerName: "#boundaries",          cellDataType: 'number',  filter: true },
+                            { field: "nb_corners",              headerName: "#corners",             cellDataType: 'number',  filter: true },
+                            { field: "nb_invalid_charts",       headerName: "#invalid-charts",      cellDataType: 'number',  filter: true },
+                            { field: "nb_invalid_boundaries",   headerName: "#invalid-boundaries",  cellDataType: 'number',  filter: true },
+                            { field: "nb_invalid_corners",      headerName: "#invalid-corners",     cellDataType: 'number',  filter: true },
+                            { field: "min_fidelity",            headerName: "min(fidelity)",        cellDataType: 'number',  filter: true, valueFormatter: floatingPointFormatter },
+                            { field: "avg_fidelity",            headerName: "avg(fidelity)",        cellDataType: 'number',  filter: true, valueFormatter: floatingPointFormatter },
+                            { field: "valid",                   headerName: "valid",                cellDataType: 'boolean', filter: true },
+                            { field: "nb_turning_points",       headerName: "#turning-points",      cellDataType: 'number',  filter: true },
+                            { field: "duration",                headerName: "duration",             cellDataType: 'number',  filter: true, valueFormatter: DurationSecondsFormatter },
+                            { field: "speedup",                 headerName: "speedup",             cellDataType: 'number',   filter: true, valueFormatter: floatingPointFormatter },
+                            { field: "glb_labeling",            headerName: "open",                 cellRenderer: openLabelingViewerButton },
+                        ]
+                    },
+                    {
+                        headerName: 'feature edges',
+                        children: [
+                            { field: "percentage_removed",      headerName: "removed",     cellDataType: 'number', filter: true, valueFormatter: PercentageFormatter },
+                            { field: "percentage_lost",         headerName: "lost",        cellDataType: 'number', filter: true, valueFormatter: PercentageFormatter },
+                            { field: "percentage_preserved",    headerName: "preserved",   cellDataType: 'number', filter: true, valueFormatter: PercentageFormatter },
+                        ]
+                    },
+                    {
+                        headerName: 'hex-mesh',
+                        children: [
+                            { field: "minSJ",       headerName: "min(SJ)", cellDataType: 'number', filter: true, valueFormatter: floatingPointFormatter },
+                            { field: "avgSJ",       headerName: "avg(SJ)", cellDataType: 'number', filter: true, valueFormatter: floatingPointFormatter },
+                            { field: "glb_hexmesh", headerName: "open",    cellRenderer: openHexMeshViewerButton },
+                        ]
+                    },
+                ],
+                autoSizeStrategy: {
+                    type: "fitCellContents"
+                }
+            };
 
-                        getGui() {
-                            return this.eGui;
-                        }
+            // Create Grid: Create new grid within the #myGrid div, using the Grid Options object
+            gridApi = agGrid.createGrid(document.querySelector('#myGrid'), gridOptions);
 
-                        refresh(params) {
-                            return false;
-                        }
-                    }
+            ///////// Sankey diagram /////////////////////////////////
 
-                    class openHexMeshViewerButton {
-                        eGui;
-                        eButton;
+            // set the dimensions and margins of the graph
+            var margin = {top: 10, right: 200, bottom: 50, left: 200};
+            width = window.screen.width - margin.left - margin.right,
+            height = 800 - margin.top - margin.bottom;
 
-                        init(params) {
-                            this.eGui = document.createElement('div');
-                            this.eGui.classList.add('custom-element');
-                            if(params.data.glb_hexmesh != null) {
-                                this.eGui.innerHTML = `
-                                    <button class="open-viewer" onclick="make_dialog('${params.data.glb_hexmesh}')">Open</button>
-                                `;
-                            }
-                        }
+            // append the svg object to the body of the page
+            var svg = d3.select("#sankey").append("svg")
+                .attr("width", width + margin.left + margin.right)
+                .attr("height", height + margin.top + margin.bottom)
+                .append("g")
+                .attr("transform",
+                    "translate(" + margin.left + "," + margin.top + ")");
 
-                        getGui() {
-                            return this.eGui;
-                        }
+            // Color scale used
+            var color = d3.scaleOrdinal(d3.schemeCategory20);
 
-                        refresh(params) {
-                            return false;
-                        }
-                    }
+            // Set the sankey diagram properties
+            var sankey = d3.sankey()
+                .nodeWidth(36)
+                .nodePadding(50)
+                .size([width, height]);
 
-                    // thanks Bamdad Fard https://blog.ag-grid.com/formatting-numbers-strings-currency-in-ag-grid/
-                    function floatingPointFormatter(params) {
-                        return params.value == null ? null : params.value.toFixed(2);
-                    }
+            graph = """ + dumps(Sankey_diagram_data) + """
 
-                    function PercentageFormatter(params) {
-                        return params.value == null ? null : floatingPointFormatter(params) + ' %';
-                    }
+            // Constructs a new Sankey generator with the default settings.
+            sankey
+                .nodes(graph.nodes)
+                .links(graph.links)
+                .layout(1);
 
-                    function DurationSecondsFormatter(params) {
-                        return params.value == null ? null : params.value.toFixed(3) + ' s';
-                    }
+            // add in the links
+            var link = svg.append("g")
+                .selectAll(".link")
+                .data(graph.links)
+                .enter()
+                .append("path")
+                .attr("class", "link")
+                .attr("d", sankey.link() )
+                .style("stroke-width", function(d) { return Math.max(1, d.dy); })
+                .sort(function(a, b) { return b.dy - a.dy; });
 
-                    // Grid API: Access to Grid API methods
-                    let gridApi;
+            // add in the nodes
+            var node = svg.append("g")
+                .selectAll(".node")
+                .data(graph.nodes)
+                .enter().append("g")
+                .attr("class", "node")
+                .attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; })
+                .call(d3.drag()
+                    .subject(function(d) { return d; })
+                    .on("start", function() { this.parentNode.appendChild(this); })
+                    .on("drag", dragmove));
 
-                    // Grid Options: Contains all of the grid configurations
-                    const gridOptions = {
-                        // Row Data: The data to be displayed.
-                        rowData: """ + dumps(AG_Grid_rowData) + """,
-                        // Column Definitions: Defines & controls grid columns.
-                        columnDefs: [
-                            { field: "CAD_name", headerName: "CAD model", cellDataType: 'text', filter: true, pinned: 'left' },
-                            { field: "method",   headerName: "method",    cellDataType: 'text', filter: true, pinned: 'left' },
-                            {
-                                headerName: 'surface mesh',
-                                children: [
-                                    { field: "nb_vertices",         headerName: "#vertices",    cellDataType: 'number', filter: true },
-                                    { field: "nb_facets",           headerName: "#facets",      cellDataType: 'number', filter: true },
-                                    { field: "area_sd",             headerName: "sd(area)",     cellDataType: 'number', filter: true, valueFormatter: floatingPointFormatter },
-                                ]
-                            },
-                            {
-                                headerName: 'labeling',
-                                children: [
-                                    { field: "nb_charts",               headerName: "#charts",              cellDataType: 'number',  filter: true },
-                                    { field: "nb_boundaries",           headerName: "#boundaries",          cellDataType: 'number',  filter: true },
-                                    { field: "nb_corners",              headerName: "#corners",             cellDataType: 'number',  filter: true },
-                                    { field: "nb_invalid_charts",       headerName: "#invalid-charts",      cellDataType: 'number',  filter: true },
-                                    { field: "nb_invalid_boundaries",   headerName: "#invalid-boundaries",  cellDataType: 'number',  filter: true },
-                                    { field: "nb_invalid_corners",      headerName: "#invalid-corners",     cellDataType: 'number',  filter: true },
-                                    { field: "min_fidelity",            headerName: "min(fidelity)",        cellDataType: 'number',  filter: true, valueFormatter: floatingPointFormatter },
-                                    { field: "avg_fidelity",            headerName: "avg(fidelity)",        cellDataType: 'number',  filter: true, valueFormatter: floatingPointFormatter },
-                                    { field: "valid",                   headerName: "valid",                cellDataType: 'boolean', filter: true },
-                                    { field: "nb_turning_points",       headerName: "#turning-points",      cellDataType: 'number',  filter: true },
-                                    { field: "duration",                headerName: "duration",             cellDataType: 'number',  filter: true, valueFormatter: DurationSecondsFormatter },
-                                    { field: "speedup",                 headerName: "speedup",             cellDataType: 'number',   filter: true, valueFormatter: floatingPointFormatter },
-                                    { field: "glb_labeling",            headerName: "open",                 cellRenderer: openLabelingViewerButton },
-                                ]
-                            },
-                            {
-                                headerName: 'feature edges',
-                                children: [
-                                    { field: "percentage_removed",      headerName: "removed",     cellDataType: 'number', filter: true, valueFormatter: PercentageFormatter },
-                                    { field: "percentage_lost",         headerName: "lost",        cellDataType: 'number', filter: true, valueFormatter: PercentageFormatter },
-                                    { field: "percentage_preserved",    headerName: "preserved",   cellDataType: 'number', filter: true, valueFormatter: PercentageFormatter },
-                                ]
-                            },
-                            {
-                                headerName: 'hex-mesh',
-                                children: [
-                                    { field: "minSJ",       headerName: "min(SJ)", cellDataType: 'number', filter: true, valueFormatter: floatingPointFormatter },
-                                    { field: "avgSJ",       headerName: "avg(SJ)", cellDataType: 'number', filter: true, valueFormatter: floatingPointFormatter },
-                                    { field: "glb_hexmesh", headerName: "open",    cellRenderer: openHexMeshViewerButton },
-                                ]
-                            },
-                        ],
-                        autoSizeStrategy: {
-                            type: "fitCellContents"
-                        }
-                    };
+            // add the rectangles for the nodes
+            node
+                .append("rect")
+                .attr("height", function(d) { return d.dy; })
+                .attr("width", sankey.nodeWidth())
+                .style("fill", function(d) { return d.color = color(d.name.replace(/ .*/, "")); })
+                .style("stroke", function(d) { return d3.rgb(d.color).darker(2); })
+                // Add hover text
+                .append("title")
+                .text(function(d) { return d.name + """ + r'"\n"' + """ + "There is " + d.value + " items in this node"; });
 
-                    // Create Grid: Create new grid within the #myGrid div, using the Grid Options object
-                    gridApi = agGrid.createGrid(document.querySelector('#myGrid'), gridOptions);
+            // add in the title for the nodes
+                node
+                .append("text")
+                .style("fill", "white")
+                .attr("x", -6)
+                .attr("y", function(d) { return d.dy / 2; })
+                .attr("dy", ".35em")
+                .attr("text-anchor", "end")
+                .attr("transform", null)
+                .text(function(d) { return d.name; })
+                .filter(function(d) { return d.x < width / 2; })
+                .attr("x", 6 + sankey.nodeWidth())
+                .attr("text-anchor", "start");
 
-                    ///////// Sankey diagram /////////////////////////////////
+            // the function for moving the nodes
+            function dragmove(d) {
+                d3.select(this)
+                .attr("transform",
+                        "translate("
+                        + d.x + ","
+                        + (d.y = Math.max(
+                            0, Math.min(height - d.dy, d3.event.y))
+                            ) + ")");
+                sankey.relayout();
+                link.attr("d", sankey.link() );
+            }
 
-                    // set the dimensions and margins of the graph
-                    var margin = {top: 10, right: 200, bottom: 50, left: 200};
-                    width = window.screen.width - margin.left - margin.right,
-                    height = 800 - margin.top - margin.bottom;
+            SankeyChart({nodes,links})
 
-                    // append the svg object to the body of the page
-                    var svg = d3.select("#sankey").append("svg")
-                        .attr("width", width + margin.left + margin.right)
-                        .attr("height", height + margin.top + margin.bottom)
-                        .append("g")
-                        .attr("transform",
-                            "translate(" + margin.left + "," + margin.top + ")");
-
-                    // Color scale used
-                    var color = d3.scaleOrdinal(d3.schemeCategory20);
-
-                    // Set the sankey diagram properties
-                    var sankey = d3.sankey()
-                        .nodeWidth(36)
-                        .nodePadding(50)
-                        .size([width, height]);
-
-                    graph = """ + dumps(Sankey_diagram_data) + """
-
-                    // Constructs a new Sankey generator with the default settings.
-                    sankey
-                        .nodes(graph.nodes)
-                        .links(graph.links)
-                        .layout(1);
-
-                    // add in the links
-                    var link = svg.append("g")
-                        .selectAll(".link")
-                        .data(graph.links)
-                        .enter()
-                        .append("path")
-                        .attr("class", "link")
-                        .attr("d", sankey.link() )
-                        .style("stroke-width", function(d) { return Math.max(1, d.dy); })
-                        .sort(function(a, b) { return b.dy - a.dy; });
-
-                    // add in the nodes
-                    var node = svg.append("g")
-                        .selectAll(".node")
-                        .data(graph.nodes)
-                        .enter().append("g")
-                        .attr("class", "node")
-                        .attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; })
-                        .call(d3.drag()
-                            .subject(function(d) { return d; })
-                            .on("start", function() { this.parentNode.appendChild(this); })
-                            .on("drag", dragmove));
-
-                    // add the rectangles for the nodes
-                    node
-                        .append("rect")
-                        .attr("height", function(d) { return d.dy; })
-                        .attr("width", sankey.nodeWidth())
-                        .style("fill", function(d) { return d.color = color(d.name.replace(/ .*/, "")); })
-                        .style("stroke", function(d) { return d3.rgb(d.color).darker(2); })
-                        // Add hover text
-                        .append("title")
-                        .text(function(d) { return d.name + """ + r'"\n"' + """ + "There is " + d.value + " items in this node"; });
-
-                    // add in the title for the nodes
-                        node
-                        .append("text")
-                        .style("fill", "white")
-                        .attr("x", -6)
-                        .attr("y", function(d) { return d.dy / 2; })
-                        .attr("dy", ".35em")
-                        .attr("text-anchor", "end")
-                        .attr("transform", null)
-                        .text(function(d) { return d.name; })
-                        .filter(function(d) { return d.x < width / 2; })
-                        .attr("x", 6 + sankey.nodeWidth())
-                        .attr("text-anchor", "start");
-
-                    // the function for moving the nodes
-                    function dragmove(d) {
-                        d3.select(this)
-                        .attr("transform",
-                                "translate("
-                                + d.x + ","
-                                + (d.y = Math.max(
-                                    0, Math.min(height - d.dy, d3.event.y))
-                                    ) + ")");
-                        sankey.relayout();
-                        link.attr("d", sankey.link() );
-                    }
-
-                    SankeyChart({nodes,links})
-
-                </script>
-            </body>
-        </html>
+        </script>
+    </body>
+</html>
         """
 
         with open(self.path / report_folder_name / 'report.html','w') as HTML_file:
-            logging.info(f'Writing {report_name}.html...')
+            logging.info(f'Writing report.html...')
             HTML_file.write(HTML_report)
 
         # Download Javascript libraries, so the report can be opened offline
@@ -2320,6 +2321,145 @@ class root(AbstractDataFolder):
             url='https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js',
             filename = str(self.path / report_folder_name / 'js' / 'model-viewer.min.js')
         )
+
+        # write README.md
+
+        README = """
+This folder contains the inputs & outputs of our algorithm, on the [MAMBO](https://gitlab.com/franck.ledoux/mambo/) dataset.
+
+Contrary to a supplemental material in the PDF format where the ordering is fixed and the 3D models are compressed into a set of 2D images, 
+you will be able to sort/filter by any column, and visualize the results in a 3D viewer.
+
+# Important : Allow the access to local files
+
+However, for security reasons, internet navigators do not allow HTML files from accessing local files 
+([CORS error](https://developer.mozilla.org/en-US/docs/Web/Security/Same-origin_policy#file_origins)), 
+such as the 3D models. You have 2 solutions:
+
+## 1. Temporarily change the security policy of your internet navigator
+
+### Firefox
+
+Open `about:config` and change the value of `security.fileuri.strict_origin_policy` from `true` to `false`
+
+Then open `report.html`
+
+### Chrome
+
+Execute
+
+```bash
+google-chrome report.html --allow-file-access-from-files
+```
+
+## 2. Launch an HTTP server
+
+For example with Python:
+
+```bash
+python3 -m http.server
+```
+
+Then open http://0.0.0.0:8000/ with your internet navigator and open `report.html`
+
+# Sankey diagram
+
+Above the interactive grid, there is a collapsed section hiding a Sankey diagram, which gives high level stats about the batch execution 
+(for our method only, Evocube results are ignored).  
+You can adjust the vertical position of the nodes, and hovering them gives the number of models.
+
+# Column filters
+
+To see only labelings generated by our method : hamburger button of the 'method' column → select Equals 'Ours' 
+([Set Filters](https://www.ag-grid.com/javascript-data-grid/filter-set/) are not available in the community edition of the library)
+
+To see only invalid labelings : hamburger button of the 'valid' column → choose 'False'
+
+To see only failed labeling generations : for ex. hamburger button of the '#charts' column → choose 'Blank'. To reset, choose 'Equals' and leave empty
+
+# Column sort
+
+You can click on the name of a column to switch between ascending, descending and default order.
+
+# Columns description
+
+- CAD model : name of the 3D model
+
+- method : if the polycube labeling was generated using Evocube (Dumery et al. 2022) or our algorithm
+
+"surface mesh" group
+
+- #vertices : number of vertices in the triangle mesh
+
+- #facets : number of facets in the triangle mesh
+
+- sd(area) : standard deviation of the facets area
+
+"labeling" group
+
+- #charts : number of charts
+
+- #boundaries : number of boundaries
+
+- #corners : number of corners
+
+- #invalid-charts : number of invalid charts
+
+- #invalid-boundaries : number of invalid boundaries
+
+- #invalid-corners : number of invalid corners
+
+- min(fidelity) : minimal (worse) per-triangle fidelity (closeness between the facet normal and the assigned direction). In [0,1]
+
+- avg(fidelity) : average per-triangle fidelity, in [0,1]
+
+- valid : if the labeling corresponds to a polycube topology or not
+
+- #turning-points : number of turning-points (high turns along boundaries)
+
+- duration : execution duration, of the labeling algorithm only, in seconds
+
+- speedup : duration of Evocube divided by the duration of our algorithm
+
+- open : open the 3D viewer. After 5s, the 3D model switches between the labeled mesh and a fast polycube estimation. If no labeling was generated, the triangle mesh is displayed instead.
+
+"feature edges" group
+
+- removed : percentage of CAD lines not considered feature edges because of their low dihedral angle
+
+- lost : percentage of lost feature edges because the same direction (label) is assigned on the 2 adjacent facets
+
+- preserved : percentage of preserved feature edge (between 2 different labels)
+
+"hex-mesh" group
+
+- min(SJ) : minimal (worse) per-hexahedron scaled jacobian
+
+- avg(SJ) : average per-hexahedron scaled jacobian
+
+- open : open the 3D viewer
+
+# Comparison with PolyCut
+
+We wanted to compare our algorithm with PolyCut (Livesu et al. 2013). 
+However, we were unable to successfully run the executable provided by the authors (polycut.exe). 
+We did not get any output file and the logs were empty. 
+Following executables in pipeline.bat failed and printed "Input file missing".
+We contacted the corresponding author and did not get an answer before the submission deadline.
+
+# Acknowledgment
+
+The authors would like to thank contributors to the [AG Grid](https://github.com/ag-grid/ag-grid), 
+[d3-sankey](https://github.com/d3/d3-sankey), [model-viewer](https://github.com/google/model-viewer) 
+and [tinygltf](https://github.com/syoyo/tinygltf) libraries, as well as Khronos Group for the 
+standardization of the [glTF](https://www.khronos.org/gltf/) file format.
+
+Like our algorithm, data processing and the report generation will be made open-source.
+        """
+
+        with open(self.path / report_folder_name / 'README.md','w') as README_file:
+            logging.info(f'Writing README.md...')
+            README_file.write(README)
 
 class report(AbstractDataFolder):
     """
