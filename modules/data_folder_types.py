@@ -1409,6 +1409,21 @@ class root(AbstractDataFolder):
         nb_meshing_succeeded_2_labeling_succeeded['M']['Evocube'] = 0
         nb_meshing_succeeded_2_labeling_succeeded['M']['Ours'] = 0
 
+        # sum of average fidelities
+
+        sum_avg_fidelities = dict()
+        sum_avg_fidelities['B'] = dict()
+        sum_avg_fidelities['B']['Evocube'] = 0.0
+        sum_avg_fidelities['B']['Ours'] = 0.0
+        sum_avg_fidelities['S'] = dict()
+        sum_avg_fidelities['S']['Evocube'] = 0.0
+        sum_avg_fidelities['S']['Ours'] = 0.0
+        sum_avg_fidelities['M'] = dict()
+        sum_avg_fidelities['M']['Evocube'] = 0.0
+        sum_avg_fidelities['M']['Ours'] = 0.0
+        # To have the global average, divide by the number of generated labelings,
+        # that is the number of invalid + number of valid but non-monotone boundaries + number of succeeded
+
         # labeling generation durations
 
         duration = dict()
@@ -1611,6 +1626,9 @@ class root(AbstractDataFolder):
                 evocube_row['percentage_lost']          = labeling_stats['feature-edges']['lost']/total_feature_edges*100
                 evocube_row['percentage_preserved']     = labeling_stats['feature-edges']['preserved']/total_feature_edges*100
 
+                # update avg fidelity sum
+                sum_avg_fidelities[MAMBO_subset]['Evocube'] += evocube_row['avg_fidelity']
+
                 # update duration sum
                 duration[MAMBO_subset]['Evocube'] += Evocube_duration
 
@@ -1708,6 +1726,9 @@ class root(AbstractDataFolder):
                 ours_row['percentage_lost']          = labeling_stats['feature-edges']['lost']/total_feature_edges*100
                 ours_row['percentage_preserved']     = labeling_stats['feature-edges']['preserved']/total_feature_edges*100
 
+                # update avg fidelity sum
+                sum_avg_fidelities[MAMBO_subset]['Ours'] += ours_row['avg_fidelity']
+
                 # update duration sum
                 duration[MAMBO_subset]['Ours'] += ours_duration
 
@@ -1778,7 +1799,9 @@ class root(AbstractDataFolder):
             print(f"{nb_meshing_succeeded_2_labeling_non_monotone[MAMBO_prefix]['Evocube'] / nb_CAD[MAMBO_prefix] * 100:.1f} %")
             print(f"{nb_meshing_succeeded_2_labeling_invalid[MAMBO_prefix]['Evocube'] / nb_CAD[MAMBO_prefix] * 100:.1f} %")
             print(f"{nb_meshing_succeeded_2_labeling_failed[MAMBO_prefix]['Evocube'] / nb_CAD[MAMBO_prefix] * 100:.1f} %")
-            print(f"{duration[MAMBO_prefix]['Evocube']:.3f} s")
+            nb_labeling_generated = nb_meshing_succeeded_2_labeling_succeeded[MAMBO_prefix]['Evocube'] + nb_meshing_succeeded_2_labeling_non_monotone[MAMBO_prefix]['Evocube'] + nb_meshing_succeeded_2_labeling_invalid[MAMBO_prefix]['Evocube']
+            print(f"avg fidelity = {sum_avg_fidelities[MAMBO_prefix]['Evocube'] / nb_labeling_generated:.3f}")
+            print(f"duration = {duration[MAMBO_prefix]['Evocube']:.3f} s")
             nb_tried_hex_meshing = nb_meshing_succeeded_2_labeling_succeeded[MAMBO_prefix]['Evocube'] + nb_meshing_succeeded_2_labeling_non_monotone[MAMBO_prefix]['Evocube']
             nb_hex_meshes_with_positive_min_sj = nb_labeling_succeeded_2_hexmesh_positive_min_sj[MAMBO_prefix]['Evocube'] + nb_labeling_non_monotone_2_hexmesh_positive_min_sj[MAMBO_prefix]['Evocube']
             print(f"{nb_hex_meshes_with_positive_min_sj / nb_tried_hex_meshing * 100:.1f} %")
@@ -1790,8 +1813,10 @@ class root(AbstractDataFolder):
             print(f"{nb_meshing_succeeded_2_labeling_non_monotone[MAMBO_prefix]['Ours'] / nb_CAD[MAMBO_prefix] * 100:.1f} %")
             print(f"{nb_meshing_succeeded_2_labeling_invalid[MAMBO_prefix]['Ours'] / nb_CAD[MAMBO_prefix] * 100:.1f} %")
             print(f"{nb_meshing_succeeded_2_labeling_failed[MAMBO_prefix]['Ours'] / nb_CAD[MAMBO_prefix] * 100:.1f} %")
-            print(f"{duration[MAMBO_prefix]['Ours']:.3f} s")
-            print(f"speedup: {duration[MAMBO_prefix]['Evocube'] / duration[MAMBO_prefix]['Ours']:.1f}")
+            nb_labeling_generated = nb_meshing_succeeded_2_labeling_succeeded[MAMBO_prefix]['Ours'] + nb_meshing_succeeded_2_labeling_non_monotone[MAMBO_prefix]['Ours'] + nb_meshing_succeeded_2_labeling_invalid[MAMBO_prefix]['Ours']
+            print(f"avg fidelity = {sum_avg_fidelities[MAMBO_prefix]['Ours'] / nb_labeling_generated:.3f}")
+            print(f"duration = {duration[MAMBO_prefix]['Ours']:.3f} s")
+            print(f"speedup = {duration[MAMBO_prefix]['Evocube'] / duration[MAMBO_prefix]['Ours']:.1f}")
             nb_tried_hex_meshing = nb_meshing_succeeded_2_labeling_succeeded[MAMBO_prefix]['Ours'] + nb_meshing_succeeded_2_labeling_non_monotone[MAMBO_prefix]['Ours']
             nb_hex_meshes_with_positive_min_sj = nb_labeling_succeeded_2_hexmesh_positive_min_sj[MAMBO_prefix]['Ours'] + nb_labeling_non_monotone_2_hexmesh_positive_min_sj[MAMBO_prefix]['Ours']
             print(f"{nb_hex_meshes_with_positive_min_sj / nb_tried_hex_meshing * 100:.1f} %")
