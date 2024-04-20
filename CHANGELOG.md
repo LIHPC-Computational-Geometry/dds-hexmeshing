@@ -5,18 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+*Note to myself: don't forget to update the version number in `pyproject.toml` and `CITATION.cff`*
+
+## [0.6.0] - 2024-04-20
 
 ### Added
 
-- `from_cli/datafolder` : print, clear or change the current data folder
+- `CITATION.cff` : make how to cite this repo explicit
+- `from_cli/datafolder` : print, clear or change the current data folder (merging `from_cli/current_datafolder` and `from_cli/clear_testdata`). When clearing the data folder, the content is printed as a tree and a confirmation is asked.
+- `labeling` class has 3 new methods : `labeling_stats()` wrapping `labeling_stats` executable from [LIHPC-Computational-Geometry/automatic_polycube](https://github.com/LIHPC-Computational-Geometry/automatic_polycube) (not exposed in `from_cli/`), `has_valid_labeling()` and `nb_turning_points()`
+- `AbstractDataFolder` has two new methods : `get_subfolders_of_type()` and `get_subfolders_generated_by()`
+- `from_cli/write_glb.py` : export a binary glTF file by wrapping `to_glTF` from [LIHPC-Computational-Geometry/automatic_polycube](https://github.com/LIHPC-Computational-Geometry/automatic_polycube)
+- `from_cli/batch_processing.py` processes all the CAD models with auto-tetrahedrization & execution of `automatic_polycube`, `evocube` (updated from commit to commit)
+- `from_cli/generate_report.py` parse generated folders to compute stats and assemble an HTML/JS report with an interactive grid, a Sankey diagram and a 3D viewer (labeling and hex-meshes)
 
 ### Changed
 
-- new in-file and in-memory structures for collections
+- new in-file and in-memory structures for collections. attempt to store both sub-collections (contained by the current collection) and onward collections (output collection after a given algorithm). Define `VirtualCollection` (has sub-collection) and `ConcreteCollection` (no sub-collection, directly lists folders)
 - `from_cli/list_collections` is now `from_cli/collections print`
 - all scripts in `from_cli/` use the colored Python traceback provided by [Rich](https://rich.readthedocs.io/en/latest/traceback.html)
+- captured outputs are fenced between 2 horizontal lines, printing the path to the executable
+- instead of the default Python traceback, use the colored one of [Rich](https://github.com/Textualize/rich)
+- instead of each `AbstractDataFolder` specializing `get_file()`, they only have to specialize `auto_generate_missing_file()` (transparent to users)
 - `from_cli/Gmsh` as a new optional argument `-nt` for the number of threads
+- `from_cli/import_MAMBO` creates collections `MAMBO.Basic`, `MAMBO.Simple`, `MAMBO.Medium` and `MAMBO`
+- `from_cli/print_mesh_stats` on `tet_mesh` folders can compute stats on either the surface or the volume mesh. The script can also be called on `hex_mesh` folders
 
 ### Removed
 
