@@ -29,11 +29,5 @@ parser.add_argument(
 
 args = parser.parse_args()
 
-root_folder = root()
-if args.input in root_folder.collections_manager.collections_names():
-    print('input is a collection -> batch mode')
-    print('NOT IMPLEMENTED')
-    exit(0)
-
 input = AbstractDataFolder.instantiate(Path(args.input))
 input.HexBox()

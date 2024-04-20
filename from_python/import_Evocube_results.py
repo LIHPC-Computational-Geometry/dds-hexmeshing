@@ -134,29 +134,6 @@ input_folder = Path(args.input)
 if not input_folder.exists():
     raise Exception(f'{input_folder} does not exist')
 
-# TODO create collections:
-# - Evocube_12_Avril_CAD_ABC
-# - Evocube_12_Avril_CAD_MAMBO
-# - Evocube_12_Avril_CAD
-# - Evocube_12_Avril_tet_meshes_ABC
-# - Evocube_12_Avril_tet_meshes_MAMBO
-# - Evocube_12_Avril_tet_meshes_OM_CAD
-# - Evocube_12_Avril_tet_meshes_OM_smooth
-# - Evocube_12_Avril_tet_meshes_OM
-# - Evocube_12_Avril_tet_meshes
-# - Evocube_12_Avril_labelings_ABC
-# - Evocube_12_Avril_labelings_MAMBO
-# - Evocube_12_Avril_labelings_OM_CAD
-# - Evocube_12_Avril_labelings_OM_smooth
-# - Evocube_12_Avril_labelings_OM
-# - Evocube_12_Avril_labelings
-# - Evocube_12_Avril_hex_meshes_ABC
-# - Evocube_12_Avril_hex_meshes_MAMBO
-# - Evocube_12_Avril_hex_meshes_OM_CAD
-# - Evocube_12_Avril_hex_meshes_OM_smooth
-# - Evocube_12_Avril_hex_meshes_OM
-# - Evocube_12_Avril_hex_meshes
-
 for input_dataset_group in ['abc','basic_mambo','simple_mambo','medium_mambo']:
     if not (input_folder / input_dataset_group).exists():
         logging.error(f'\'{input_dataset_group}\' subfolder not found in {input_folder}')

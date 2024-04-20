@@ -20,7 +20,6 @@ if path[-1] != project_root: path.append(project_root)
 # own modules
 from modules.settings import *
 from modules.algorithms import *
-from modules.collections_manager import *
 from modules.user_input import *
 from modules.print_folder_as_tree import *
 
@@ -1204,14 +1203,15 @@ class root(AbstractDataFolder):
     Interface to the root folder of the database
     """
 
-    class FILENAMES(SimpleNamespace):
-        COLLECTIONS = 'collections.json' # store (nested) lists of subfolders, for batch execution. JSON format
-
     DEFAULT_VIEW = 'print_path'
 
     @staticmethod
     def is_instance(path: Path) -> bool:
-        return (path / root.FILENAMES.COLLECTIONS).exists()
+        return not step.is_instance(path) and \
+               not tet_mesh.is_instance(path) and \
+               not marchinghex_grid.is_instance(path) and \
+               not labeling.is_instance(path) and \
+               not hex_mesh.is_instance(path)
     
     def __init__(self,path: Path = Settings.path('data_folder')):
         assert(path == Settings.path('data_folder')) # only accept instanciation of the folder given by the settings file. 2nd argument required by abstract class
@@ -1219,10 +1219,6 @@ class root(AbstractDataFolder):
             logging.warning(f'Data folder {path} does not exist and will be created')
             # create the data folder
             mkdir(path) # TODO manage failure case
-            # write empty collections file
-            with open(path / root.FILENAMES.COLLECTIONS,'w') as file:
-                dump(dict(), file, sort_keys=True, indent=4)
-        self.collections_manager = CollectionsManager(path)
         AbstractDataFolder.__init__(self,path)
     
     def view(self, what = None):
@@ -1230,8 +1226,6 @@ class root(AbstractDataFolder):
             what = self.DEFAULT_VIEW
         if what == 'print_path':
             print(str(self.path.absolute()))
-        elif what == 'collections':
-            self.collections_manager.pprint()
         else:
             raise Exception(f"root.view() does not recognize 'what' value: '{what}'")
         
@@ -1307,9 +1301,6 @@ class root(AbstractDataFolder):
             for file in [x for x in subfolder.iterdir() if x.suffix == '.step']:
                 self.import_STEP(file.stem,file)
                 print(file.stem + ' imported')
-                self.collections_manager.append_folder_to_collection(['MAMBO',subfolder.name],[],str(file.stem)) # 'MAMBO_Basic', 'MAMBO_Simple' & 'MAMBO_Medium' collections
-            self.collections_manager.append_collection_to_collection(['MAMBO'],[],subfolder.name)
-        self.collections_manager.save()
 
         if tmp_dir_used:
             # delete the temporary directory

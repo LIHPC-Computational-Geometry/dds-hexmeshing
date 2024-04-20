@@ -40,7 +40,6 @@ assert(input.exists())
 root_folder = root()
 root_folder.import_STEP(input.stem, input)
 print(input.stem + ' imported')
-# TODO allow to append to a collection
 
 if args.view_output:
     step_folder = AbstractDataFolder.instantiate(root_folder.path / input.stem)

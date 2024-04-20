@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 *Note to myself: don't forget to update the version number in `pyproject.toml` and `CITATION.cff`*
 
+## [Unreleased]
+
+### Removed
+
+- All code related to collections of folders. If you want to successively process several data folders, edit/duplicate `root.batch_processing()` and describe the procedure
+
 ## [0.6.0] - 2024-04-20
 
 ### Added
