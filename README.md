@@ -233,3 +233,33 @@ Repository structure:
 - [`glue_code`](glue_code/): pieces of code for other softwares
 - [`img`](img/): images displayed in the README
 - [`modules`](modules/): Python modules internal to the project
+
+<details>
+<summary>Yet another architecture revision</summary>
+
+Idea: declarative approach, infrastructure-as-code (like Terraform).
+Instead of editing Python scripts to describe data subfolder types and algorithms,
+we would rely on YAML files :
+- `data_subfolder_types/*.yml` : a type of data subfolder. interpret a folder as an object. description of the expected filenames inside
+- `algorithms/*.yml` : an wrapper around an executable, working on a specific data subfolder type
+
+There will be Python script for optional pre- and post-processing for algorithms, as well as for custom algorithms (not based on an external executable)
+
+Then we would have a `HexMeshWorkshop.py` that parse the necessary YAML files for the given instructions, eg:
+- run an algorithm: `./HexMeshWorkshop.py run Gmsh -i ~/data/3D_model/`
+- get info about current data folder: `./HexMeshWorkshop.py datafolder print`
+- print children of a given data subfolder: `./HexMeshWorkshop.py children ~/data/3D_model/`
+
+Remaining design choices:
+- (algorithms) When the output file is written to stdout : special YAML entry? post-processing Python script to rename `<algo>.stdout.txt`? update the executable code so that an output filename is always specifiable ?
+- (algorithms) How to remove redundancy between `algorithms/write_labeling_as_geogram.yml` and `algorithms/write_polycube_as_geogram.yml`, between `algorithms/automatic_polycube.yml` and `algorithms/automatic_polycube_gui.yml`?
+- (algorithms) how to define (meta)algorithms that calls several algorithms? eg `robustPolycube` (`rb_generate_deformation` + `rb_generate_quantization`) or `marchinghex` (`gridgenerator` + the actual `marchinghex`)
+- (algorithms) how to transmit CLI arguments to pre/post processing Python script? In order to choose between keeping/deleting debug files
+- (data subfolder types) how to describe views? A `<data-subfolder-type>.<view-name>.yml` next to the `<data-subfolder-type>.yml`?
+- (data subfolder types) how to have an equivalent of `labeling.get_labeling_stats_dict()`, `labeling.has_valid_labeling()`... Some algorithms should be defined as a Python script
+
+Note:
+- (algorithms) to access a file in the (grand)parent folder, we no longer specify the reverse depth. We need to go up until the filename in found, and potentially restrict 2 data subfolder types to use the same filename and filename keyword.
+- (paths) we should migrate from `settings.json` to a `paths.yml`, with path keywords in uppercase to indicate the strings are mentioned as it is in other files (`algorithms/*.yml`)
+
+</details>

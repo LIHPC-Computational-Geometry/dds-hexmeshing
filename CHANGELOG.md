@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `algorithms/*` and `data_subfolder_types/*` : prospective study for a new code architecture, based on YAML files
+
 ### Removed
 
 - All code related to collections of folders. If you want to successively process several data folders, edit/duplicate `root.batch_processing()` and describe the procedure

@@ -1,0 +1,17 @@
+tet-mesh: { # case of 'automatic_polycube' applied on a 'tet-mesh' subfolder
+  executable: {
+    path: automatic_polycube,
+    filename: automatic_polycube,
+    command_line: '{mesh} {labeling} gui=false'
+  },
+  tee: true,
+  output_folder: 'automatic_polycube_%d',
+  arguments: {
+    input_files: {
+      surface_mesh: SURFACE_MESH_OBJ
+    },
+    output_files: {
+      labeling: SURFACE_LABELING_TXT
+    }
+  }
+}

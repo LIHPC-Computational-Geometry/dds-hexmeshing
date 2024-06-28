@@ -581,9 +581,7 @@ class tet_mesh(AbstractDataFolder):
             '{mesh}', # arguments template
             True,
             'HexBox_%d',
-            ['labeling'],
-            mesh        = str(self.get_file(self.FILENAMES.SURFACE_MESH_OBJ,    True)),
-            labeling    = labeling.FILENAMES.SURFACE_LABELING_TXT
+            mesh = str(self.get_file(self.FILENAMES.SURFACE_MESH_OBJ,    True)),
         )
 
     def AlgoHex(self):

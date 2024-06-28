@@ -1,0 +1,16 @@
+hex-mesh: { # case of 'hex_mesh_stats' applied on a 'hex-mesh' subfolder
+  executable: {
+    path: automatic_polycube,
+    filename: mesh_stats,
+    command_line: '{mesh}'
+  },
+  tee: true,
+  # no `output_folder` -> transformative algorithm
+  arguments: {
+    input_files: {
+      mesh: HEX_MESH_MEDIT
+    }
+  }
+}
+# TODO rename stdout file as HEX_MESH_STATS_JSON is post-processing
+# or edit the executable so that an output filename is read

@@ -1,0 +1,18 @@
+labeling: { # case of 'write_polycube_as_geogram' applied on a 'labeling' subfolder
+  executable: {
+    path: automatic_polycube,
+    filename: labeling_viewer,
+    command_line: '{mesh} {labeling} {dot_geogram}'
+  },
+  tee: true,
+  # no `output_folder` -> transformative algorithm
+  arguments: {
+    input_files: {
+      mesh: POLYCUBE_SURFACE_MESH_OBJ,
+      labeling: SURFACE_LABELING_TXT
+    },
+    output_files: {
+      dot_geogram: POLYCUBE_LABELING_MESH_GEOGRAM
+    }
+  }
+}

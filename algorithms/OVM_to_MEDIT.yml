@@ -1,0 +1,16 @@
+hex-mesh: { # case of 'OVM_to_MEDIT' applied on a 'hex-mesh' subfolder
+  executable: {
+    path: ovm.io,
+    command_line: '{input} {output}'
+  },
+  tee: true,
+  # no `output_folder` -> transformative algorithm
+  arguments: {
+    input_files: {
+      input: HEX_MESH_OVM
+    },
+    output_files: {
+      output: HEX_MESH_MEDIT
+    }
+  }
+}

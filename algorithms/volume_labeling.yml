@@ -1,0 +1,18 @@
+labeling: { # case of 'volume_labeling' applied on a 'labeling' subfolder
+  executable: {
+    path: automatic_polycube,
+    filename: volume_labeling,
+    command_line: '{surface_labeling} {surface_map} {tetra_labeling}'
+  },
+  tee: true,
+  # no `output_folder` -> transformative algorithm
+  arguments: {
+    input_files: {
+      surface_labeling: SURFACE_LABELING_TXT,
+      surface_map: SURFACE_MAP_TXT
+    },
+    output_files: {
+      tetra_labeling: VOLUME_LABELING_TXT
+    }
+  }
+}

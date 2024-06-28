@@ -1,0 +1,13 @@
+tet-mesh: { # case of 'evocube' applied on a 'tet-mesh' subfolder
+  executable: {
+    path: evocube,
+    command_line: '{mesh} {output_folder}'
+  },
+  tee: true,
+  output_folder: 'evocube_%d',
+  arguments: {
+    input_files: {
+      mesh: SURFACE_MESH_OBJ
+    }
+  }
+}

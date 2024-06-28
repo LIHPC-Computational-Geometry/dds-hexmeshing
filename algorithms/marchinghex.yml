@@ -1,0 +1,18 @@
+marchinghex_grid: { # case of 'marchinghex' applied on a 'marchinghex_grid' subfolder
+  executable: {
+    path: marchinghex,
+    filename: marchinghex_hexmeshing,
+    command_line: '{grid_mesh} {tet_mesh} {hex_mesh}'
+  },
+  tee: true,
+  # no `output_folder` -> transformative algorithm
+  arguments: {
+    input_files: {
+      grid_mesh: GRID_MESH_MEDIT,
+      tet_mesh: TET_MESH_MEDIT
+    },
+    output_files: { # will be emplaced inside the 'output_folder'
+      hex_mesh: HEX_MESH_MEDIT
+    }
+  }
+}

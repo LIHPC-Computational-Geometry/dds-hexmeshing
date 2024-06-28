@@ -1,0 +1,23 @@
+tet-mesh: { # case of 'gridgenerator' applied on a 'tet-mesh' subfolder
+  executable: {
+    path: marchinghex,
+    filename: gridgenerator,
+    command_line: '{input_mesh} {grid_mesh} {scale}'
+  },
+  tee: true,
+  output_folder: 'marchinghex_{scale}',
+  arguments: {
+    input_files: {
+      input_mesh: TET_MESH_MEDIT
+    },
+    output_files: { # will be emplaced inside the 'output_folder'
+      grid_mesh: GRID_MESH_MEDIT
+    },
+    others: {
+      scale: {
+        default: 1.0,
+        description: "scale of the grid. 5 is very fine grid, 0.1 is very coarse"
+      }
+    }
+  }
+}

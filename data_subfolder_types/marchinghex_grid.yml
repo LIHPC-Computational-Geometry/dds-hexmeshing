@@ -1,0 +1,4 @@
+filenames: {
+  GRID_MESH_MEDIT: grid.mesh # regular hex mesh of the bounding box, in the GMF/MEDIT ASCII format
+},
+distinctive_content: [GRID_MESH_MEDIT]

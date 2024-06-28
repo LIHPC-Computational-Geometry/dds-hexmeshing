@@ -1,0 +1,36 @@
+STEP: { # case of 'Gmsh' applied on a 'STEP' subfolder
+  #
+  # input                               output
+  # files    ┌────────[Gmsh]────────┐    files
+  #          │                      │
+  # STEP --▶ │step          tet_mesh│ --▶ TET_MESH_MEDIT
+  #          └──────────────────────┘
+  #                ▲          ▲
+  #                |          |
+  #        nb_threads        characteristic_length_factor
+  #
+  executable: {
+    path: Gmsh,
+    command_line: '{step} -3 -format mesh -o {mesh} -setnumber Mesh.CharacteristicLengthFactor {characteristic_length_factor} -nt {nb_threads}', # 'Mesh.MeshSizeFactor' or '-clscale' instead ?
+  },
+  tee: true,
+  output_folder: 'Gmsh_{characteristic_length_factor}',
+  arguments: {
+    input_files: {
+      step: STEP
+    },
+    output_files: { # will be emplaced inside the 'output_folder'
+      mesh: TET_MESH_MEDIT
+    },
+    others: {
+      characteristic_length_factor: {
+        default: 0.05,
+        description: "Mesh.CharacteristicLengthFactor option of Gmsh http://gmsh.info/doc/texinfo/gmsh.html"
+      },
+      nb_threads: {
+        default: 8,
+        description: "Number of threads used for the mesh computation. See '-nt' in http://gmsh.info/doc/texinfo/gmsh.html#Gmsh-command_002dline-interface"
+      }
+    }
+  }
+}
