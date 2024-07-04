@@ -350,9 +350,11 @@ class tet_mesh(AbstractDataFolder):
             self.Gmsh_convert_to_VTKv2()
             return True
         elif filename == self.FILENAMES.TET_MESH_STATS_JSON:
-            return self.tet_mesh_stats()
+            self.tet_mesh_stats()
+            return True
         elif filename == self.FILENAMES.SURFACE_MESH_STATS_JSON:
-            return self.surface_mesh_stats()
+            self.surface_mesh_stats()
+            return True
         elif filename == self.FILENAMES.SURFACE_MESH_GLB:
             self.write_glb()
             return True
@@ -398,41 +400,27 @@ class tet_mesh(AbstractDataFolder):
             output  = str(self.get_file(self.FILENAMES.TET_MESH_VTK         )),
         )
 
-    def tet_mesh_stats(self) -> bool:
+    def tet_mesh_stats(self):
         TransformativeAlgorithm(
             'mesh_stats',
             self.path,
             Settings.path('automatic_polycube') / 'mesh_stats',
-            '{mesh}',
-            False, # disable tee mode
-            mesh = str(self.get_file(self.FILENAMES.TET_MESH_MEDIT,  True)),
+            '{mesh} {output_JSON}',
+            True,
+            mesh        = str(self.get_file(self.FILENAMES.TET_MESH_MEDIT,          True)),
+            output_JSON = str(self.get_file(self.FILENAMES.TET_MESH_STATS_JSON          )),
         )
-        # TODO check if the return code is 0
-        if (self.path / 'mesh_stats.stdout.txt').exists():
-            # stdout should be a valid JSON file
-            # use rename_file() to keep track of the operation in info.json
-            rename_file(self.path,'mesh_stats.stdout.txt',self.FILENAMES.TET_MESH_STATS_JSON)
-            return True
-        else:
-            return False # unable to generate mesh stats file
     
-    def surface_mesh_stats(self) -> bool:
+    def surface_mesh_stats(self):
         TransformativeAlgorithm(
             'mesh_stats',
             self.path,
             Settings.path('automatic_polycube') / 'mesh_stats',
-            '{mesh}',
-            False, # disable tee mode
-            mesh = str(self.get_file(self.FILENAMES.SURFACE_MESH_OBJ,  True)),
+            '{mesh} {output_JSON}',
+            True,
+            mesh        = str(self.get_file(self.FILENAMES.SURFACE_MESH_OBJ,            True)),
+            output_JSON = str(self.get_file(self.FILENAMES.SURFACE_MESH_STATS_JSON          )),
         )
-        # TODO check if the return code is 0
-        if (self.path / 'mesh_stats.stdout.txt').exists():
-            # stdout should be a valid JSON file
-            # use rename_file() to keep track of the operation in info.json
-            rename_file(self.path,'mesh_stats.stdout.txt',self.FILENAMES.SURFACE_MESH_STATS_JSON)
-            return True
-        else:
-            return False # unable to generate mesh stats file
     
     def write_glb(self):
         TransformativeAlgorithm(
@@ -797,7 +785,8 @@ class labeling(AbstractDataFolder):
             self.write_geogram(surface_mesh,self.FILENAMES.POLYCUBE_LABELING_MESH_GEOGRAM) # write labeled polycube mesh
             return True
         elif filename == self.FILENAMES.LABELING_STATS_JSON:
-            return self.labeling_stats()
+            self.labeling_stats()
+            return True
         elif filename == self.FILENAMES.LABELED_MESH_GLB:
             self.write_glb()
             return True
@@ -889,26 +878,19 @@ class labeling(AbstractDataFolder):
             volume_labeling         = str(self.get_file(self.FILENAMES.VOLUME_LABELING_TXT,     True))
         )
 
-    def labeling_stats(self) -> bool:
+    def labeling_stats(self):
         parent = AbstractDataFolder.instantiate(self.path.parent) # we need the parent folder to get the surface mesh
         assert(parent.type() == 'tet_mesh') # the parent folder should be of tet_mesh type
         TransformativeAlgorithm(
             'labeling_stats',
             self.path,
             Settings.path('automatic_polycube') / 'labeling_stats',
-            '{surface_mesh} {surface_labeling}',
-            False, # disable tee mode
-            surface_mesh = str(parent.get_file(tet_mesh.FILENAMES.SURFACE_MESH_OBJ,  True)),
-            surface_labeling = str(self.get_file(self.FILENAMES.SURFACE_LABELING_TXT,  True)),
+            '{surface_mesh} {surface_labeling} {output_JSON}',
+            True,
+            surface_mesh     = str(parent.get_file(tet_mesh.FILENAMES.SURFACE_MESH_OBJ, True)),
+            surface_labeling = str(self.get_file(self.FILENAMES.SURFACE_LABELING_TXT,   True)),
+            output_JSON      = str(self.get_file(self.FILENAMES.LABELING_STATS_JSON         )),
         )
-        # TODO check if the return code is 0
-        if (self.path / 'labeling_stats.stdout.txt').exists():
-            # stdout should be a valid JSON file
-            # use rename_file() to keep track of the operation in info.json
-            rename_file(self.path,'labeling_stats.stdout.txt',self.FILENAMES.LABELING_STATS_JSON)
-            return True
-        else:
-            return False # unable to generate mesh stats file
         
     def write_glb(self, with_polycube_deformation: bool = True):
         parent = AbstractDataFolder.instantiate(self.path.parent) # we need the parent folder to get the surface mesh
@@ -1095,7 +1077,8 @@ class hex_mesh(AbstractDataFolder):
             self.OVM_to_MEDIT()
             return True
         elif filename == self.FILENAMES.HEX_MESH_STATS_JSON:
-            return self.mesh_stats()
+            self.mesh_stats()
+            return True
         elif filename == self.FILENAMES.HEX_MESH_SURFACE_GLB:
             self.write_glb()
             return True
@@ -1122,23 +1105,16 @@ class hex_mesh(AbstractDataFolder):
             output  = str(self.get_file(self.FILENAMES.HEX_MESH_MEDIT       )),
         )
     
-    def mesh_stats(self) -> bool:
+    def mesh_stats(self):
         TransformativeAlgorithm(
             'mesh_stats',
             self.path,
             Settings.path('automatic_polycube') / 'mesh_stats',
-            '{mesh}',
-            False, # disable tee mode
-            mesh = str(self.get_file(self.FILENAMES.HEX_MESH_MEDIT,  True)),
+            '{mesh} {output_JSON}',
+            True,
+            mesh        = str(self.get_file(self.FILENAMES.HEX_MESH_MEDIT,      True)),
+            output_JSON = str(self.get_file(self.FILENAMES.HEX_MESH_STATS_JSON      ))
         )
-        # TODO check if the return code is 0
-        if (self.path / 'mesh_stats.stdout.txt').exists():
-            # stdout should be a valid JSON file
-            # use rename_file() to keep track of the operation in info.json
-            rename_file(self.path,'mesh_stats.stdout.txt',self.FILENAMES.HEX_MESH_STATS_JSON)
-            return True
-        else:
-            return False # unable to generate mesh stats file
         
     def write_glb(self):
         TransformativeAlgorithm(

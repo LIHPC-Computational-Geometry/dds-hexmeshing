@@ -251,7 +251,6 @@ Then we would have a `HexMeshWorkshop.py` that parse the necessary YAML files fo
 - print children of a given data subfolder: `./HexMeshWorkshop.py children ~/data/3D_model/`
 
 Remaining design choices:
-- (algorithms) When the output file is written to stdout : special YAML entry? post-processing Python script to rename `<algo>.stdout.txt`? update the executable code so that an output filename is always specifiable ?
 - (algorithms) How to remove redundancy between `algorithms/write_labeling_as_geogram.yml` and `algorithms/write_polycube_as_geogram.yml`, between `algorithms/automatic_polycube.yml` and `algorithms/automatic_polycube_gui.yml`?
 - (algorithms) how to define (meta)algorithms that calls several algorithms? eg `robustPolycube` (`rb_generate_deformation` + `rb_generate_quantization`) or `marchinghex` (`gridgenerator` + the actual `marchinghex`)
 - (algorithms) how to transmit CLI arguments to pre/post processing Python script? In order to choose between keeping/deleting debug files
