@@ -1039,6 +1039,7 @@ class hex_mesh(AbstractDataFolder):
     class FILENAMES(SimpleNamespace):
         HEX_MESH_MEDIT          = 'hex.mesh'            # hexahedral mesh, GMF/MEDIT ASCII format
         HEX_MESH_OVM            = 'hex_mesh.ovm'        # hexahedral mesh, OpenVolumeMesh format
+        HEX_MESH_VTK            = 'hex_mesh.vtk'        # hexahedral mesh, VTK DataFile Version 2.0 ASCII format
         HEX_MESH_STATS_JSON     = 'hex_mesh.stats.json' # mesh stats (min/max/avg/sd of mesh metrics) computed on HEX_MESH_MEDIT, as JSON file
         HEX_MESH_SURFACE_GLB    = 'hex_mesh.glb'        # surface of HEX_MESH_MEDIT, colored by scaled jacobian, as glTF 2.0 binary file
 
@@ -1082,6 +1083,9 @@ class hex_mesh(AbstractDataFolder):
         elif filename == self.FILENAMES.HEX_MESH_SURFACE_GLB:
             self.write_glb()
             return True
+        elif filename == self.FILENAMES.HEX_MESH_VTK:
+            self.MEDIT_to_VTK()
+            return True
         else:
             return False
     
@@ -1103,6 +1107,17 @@ class hex_mesh(AbstractDataFolder):
             True,
             input   = str(self.get_file(self.FILENAMES.HEX_MESH_OVM,    True)),
             output  = str(self.get_file(self.FILENAMES.HEX_MESH_MEDIT       )),
+        )
+
+    def MEDIT_to_VTK(self):
+        TransformativeAlgorithm(
+            'MEDIT_to_VTK',
+            self.path,
+            Settings.path('Gmsh'),
+            '{input} -format vtk -o {output} -save',
+            True,
+            input   = str(self.get_file(self.FILENAMES.HEX_MESH_MEDIT,  True)),
+            output  = str(self.get_file(self.FILENAMES.HEX_MESH_VTK         )),
         )
     
     def mesh_stats(self):
@@ -1171,6 +1186,60 @@ class hex_mesh(AbstractDataFolder):
                 else:
                     unlink(debug_filename)
         return subfolder
+
+    def Gmsh_smoothing(self, nb_smoothing_steps: int):
+        """
+        Smooth the hex-mesh with Gmsh
+        """
+        subfolder = GenerativeAlgorithm(
+            'Gmsh_smoothing',
+            self.path,
+            Settings.path('Gmsh'),
+            '{input} -smooth {nb_smoothing_steps} -o {improved_hex_mesh} -save',
+            True,
+            'Gmsh_smoothing_{nb_smoothing_steps}',
+            ['improved_hex_mesh'],
+            input               = str(self.get_file(self.FILENAMES.HEX_MESH_MEDIT,True)),
+            nb_smoothing_steps  = nb_smoothing_steps,
+            improved_hex_mesh   = hex_mesh.FILENAMES.HEX_MESH_MEDIT
+        )
+    
+    def inner_smoothing(self, nb_iter: int):
+        """
+        hex mesh smoother/untangler
+        https://github.com/fprotais/hexsmoothing /bin/innerSmoothing.cpp
+        """
+        subfolder = GenerativeAlgorithm(
+            'mixed_smoothing',
+            self.path,
+            Settings.path('hexsmoothing') / 'innerSmoother', # the .cpp is called 'innerSmoothing', but the binary is called 'innerSmoother' https://github.com/fprotais/hexsmoothing/blob/main/CMakeLists.txt#L33
+            '{input_mesh} {improved_mesh} {nb_iteration}',
+            True,
+            'inner_smoothing_{nb_iteration}',
+            ['improved_hex_mesh'],
+            input_mesh          = str(self.get_file(self.FILENAMES.HEX_MESH_VTK,True)),
+            improved_mesh       = hex_mesh.FILENAMES.HEX_MESH_MEDIT,
+            nb_iteration        = nb_iter
+        )
+
+    # doesn't seem to work ("failed untangling", no output mesh)
+    def mixed_smoothing(self, nb_iter: int):
+        """
+        mixed elements smoother/untangler
+        https://github.com/fprotais/hexsmoothing /bin/mixedSmoothing.cpp
+        """
+        subfolder = GenerativeAlgorithm(
+            'mixed_smoothing',
+            self.path,
+            Settings.path('hexsmoothing') / 'mixedSmoothing',
+            '{input_mesh} {improved_mesh} {nb_iteration}',
+            True,
+            'mixed_smoothing_{nb_iteration}',
+            ['improved_hex_mesh'],
+            input_mesh          = str(self.get_file(self.FILENAMES.HEX_MESH_VTK,True)),
+            improved_mesh       = hex_mesh.FILENAMES.HEX_MESH_MEDIT,
+            nb_iteration        = nb_iter
+        )
 
 class root(AbstractDataFolder):
     """

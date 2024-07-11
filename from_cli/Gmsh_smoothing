@@ -1,0 +1,50 @@
+#!/usr/bin/env python
+
+from pathlib import Path
+from argparse import ArgumentParser
+from sys import path
+from rich.console import Console
+from rich.traceback import install
+
+# Add root of HexMeshWorkshop project folder in path
+project_root = str(Path(__file__).parent.parent.absolute())
+if path[-1] != project_root: path.append(project_root)
+
+# colored and detailed Python traceback
+install(show_locals=True,width=Console().width,word_wrap=True)
+
+# own modules
+from modules.data_folder_types import *
+
+parser = ArgumentParser(
+    prog='Gmsh_smoothing',
+    description='Hex-mesh smoothing with Gmsh')
+
+parser.add_argument(
+    '-i', '--input',
+    dest='input',
+    metavar='PATH',
+    help='path to the input folder (type hex_mesh)',
+    required=True)
+
+parser.add_argument(
+    '--nb-steps',
+    dest='nb_steps',
+    metavar='INT',
+    help='number of smoothing steps',
+    required=False,
+    default=1)
+
+parser.add_argument(
+    '--view',
+    action='store_true',
+    dest='view_output',
+    help='visualize the output at the end')
+
+args = parser.parse_args()
+
+input = AbstractDataFolder.instantiate(Path(args.input))
+subfolder = input.Gmsh_smoothing(int(args.nb_steps))
+
+if args.view_output:
+    subfolder.view()
