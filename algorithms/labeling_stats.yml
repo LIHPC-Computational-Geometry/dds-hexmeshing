@@ -1,3 +1,5 @@
+description: |
+  Compute statistics of a labeling
 labeling: { # case of 'write_polycube_as_geogram' applied on a 'labeling' subfolder
   executable: {
     path: automatic_polycube,

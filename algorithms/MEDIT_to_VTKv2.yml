@@ -1,3 +1,5 @@
+description: |
+  Convert a tetrahedral mesh from the MEDIT format (.mesh) to the VTK data file v2.0 format (.vtk)
 tet-mesh: { # case of 'MEDIT_to_VTKv2' applied on a 'tet-mesh' subfolder
   executable: {
     path: Gmsh,

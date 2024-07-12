@@ -1,3 +1,5 @@
+description: |
+  See https://github.com/fprotais/marchinghex
 marchinghex_grid: { # case of 'marchinghex' applied on a 'marchinghex_grid' subfolder
   executable: {
     path: marchinghex,

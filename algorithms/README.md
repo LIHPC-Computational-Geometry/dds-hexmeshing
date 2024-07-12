@@ -5,6 +5,9 @@ They are not parsed for now, it is a prospective study for the architecture revi
 
 Template :
 ```yaml
+description: |
+    Description textuelle
+    de l'algorithme
 input_type: {
     executable: {
         path: , # an entry of settings.json/paths for now. Maybe this will become a paths.yml

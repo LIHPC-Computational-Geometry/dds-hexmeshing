@@ -1,3 +1,5 @@
+description:
+  Export a 3D model as glTF 2.0
 tet-mesh: { # case of 'write_glb' applied on a 'tet-mesh' subfolder
   executable: {
     path: automatic_polycube,

@@ -1,3 +1,5 @@
+description: |
+  See the post-processing stage of https://github.com/fprotais/robustPolycube
 hex-mesh: { # case of 'global_padding' applied on a 'hex-mesh' subfolder
   executable: {
     path: robustPolycube,

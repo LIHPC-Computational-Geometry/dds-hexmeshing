@@ -1,3 +1,5 @@
+description: |
+  See https://github.com/cgg-bern/AlgoHex
 tet-mesh: { # case of 'AlgoHex' applied on a 'tet-mesh' subfolder
   executable: {
     path: AlgoHex,

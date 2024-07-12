@@ -1,3 +1,5 @@
+description: |
+  Compute mesh statistics on a hexahedral mesh
 hex-mesh: { # case of 'hex_mesh_stats' applied on a 'hex-mesh' subfolder
   executable: {
     path: automatic_polycube,

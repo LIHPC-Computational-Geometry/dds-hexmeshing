@@ -1,3 +1,5 @@
+description: |
+  See the main app of https://github.com/fprotais/robustPolycube
 labeling: { # case of 'rb_generate_quantization' applied on a 'labeling' subfolder
   executable: {
     path: robustPolycube,

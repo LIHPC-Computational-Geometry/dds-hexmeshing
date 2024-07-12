@@ -1,3 +1,5 @@
+description: |
+  See default tetrehedrization of gmsh.info
 STEP: { # case of 'Gmsh' applied on a 'STEP' subfolder
   #
   # input                               output

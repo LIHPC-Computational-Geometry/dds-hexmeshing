@@ -1,4 +1,6 @@
 # TODO pre-processing to skip execution if output files already exists?
+description: |
+  See the pre-processing stage of https://github.com/fprotais/robustPolycube
 labeling: { # case of 'rb_generate_deformation' applied on a 'labeling' subfolder
   executable: {
     path: robustPolycube,

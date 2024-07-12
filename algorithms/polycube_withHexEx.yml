@@ -1,3 +1,5 @@
+description: |
+  See https://github.com/fprotais/polycube_withHexEx
 labeling: { # case of 'polycube_withHexEx' applied on a 'labeling' subfolder
   executable: {
     path: polycube_withHexEx,

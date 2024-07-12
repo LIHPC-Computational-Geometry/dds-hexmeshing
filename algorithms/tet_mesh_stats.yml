@@ -1,3 +1,5 @@
+description: |
+  Compute statistics on the tetrahedral mesh
 tet-mesh: { # case of 'tet_mesh_stats' applied on a 'tet-mesh' subfolder
   executable: {
     path: automatic_polycube,

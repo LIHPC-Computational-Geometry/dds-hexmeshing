@@ -1,3 +1,5 @@
+description: |
+  See main app of https://github.com/LIHPC-Computational-Geometry/automatic_polycube
 tet-mesh: { # case of 'automatic_polycube_gui' applied on a 'tet-mesh' subfolder
   executable: {
     path: automatic_polycube,
