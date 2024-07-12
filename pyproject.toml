@@ -1,7 +1,7 @@
 [project]
-name = "HexMeshWorkshop"
+name = "dds"
 version = "0.7.0"
-description = "High-level interface for hex-meshing algorithms"
+description = "Semantic data folders"
 authors = [
     { name = "Sébastien Mestrallet", email = "sebastien.mestrallet@hey.com" }
 ]

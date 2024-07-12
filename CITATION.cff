@@ -2,7 +2,7 @@
 # Visit https://bit.ly/cffinit to generate yours today!
 
 cff-version: 1.2.0
-title: HexMeshWorkshop
+title: dds
 message: >-
   If you use this software, please cite it using the
   metadata from this file.
@@ -13,7 +13,7 @@ authors:
     orcid: 'https://orcid.org/0000-0002-4519-2814'
 repository-code: >-
   https://github.com/LIHPC-Computational-Geometry/HexMeshWorkshop
-abstract: High-level interface for hex-meshing algorithms
+abstract: Semantic data folders
 keywords:
   - mesh-generation
   - mesh-processing

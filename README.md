@@ -1,20 +1,15 @@
-<p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="img/logo_white.png">
-    <source media="(prefers-color-scheme: light)" srcset="img/logo_black.png">
-    <img alt="HexMeshWorkshop logo" src="img/logo_black.png">
-  </picture><br/>
+<div align="center">
+  <h1>dds</h1><br/>
+  <p>Semantic data folders</p><br/>
   <a href="https://github.com/LIHPC-Computational-Geometry/HexMeshWorkshop/blob/main/CHANGELOG.md">🔄 Changelog</a> • <a href="https://github.com/LIHPC-Computational-Geometry/HexMeshWorkshop/wiki/User-documentation">📖 User documentation</a> • <a href="https://github.com/LIHPC-Computational-Geometry/HexMeshWorkshop/wiki/Developer-documentation">🧑‍💻 Developer documentation</a>
-</p>
-
-High-level interface for hex-meshing algorithms.
+</div>
 
 Instead of having:
 - a local data folder in each code repo (and a total mess inside each of them),
 - to remember the command line interface of each executable (please, don't learn them by heart),
 - to include other algorithms in your repo to compare them (adding dependencies and slipping towards enormous repos),
 
-this project make it possible to keep each algorithm small and independant, and offering to the user an object-oriented API on data folders like:
+this project make it possible to keep each algorithm small and independent, and offering to the user an object-oriented API on data folders like, for a polycube-based hexahedral mesh generation:
 
 <!-- import_MAMBO -->
 
