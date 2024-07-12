@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 
+# ./dds.py typeof path/to/folder
+# ./dds.py run algo_name path/to/folder
+
 from pathlib import Path
 import yaml
 import logging
@@ -41,6 +44,18 @@ def type_inference(path: Path) -> Optional[str]:
         exit(1)
     return recognized_types[0]
 
+class DataFolder():
+
+    def __init__(self,path: Path):
+        self.path: Path = path
+        self.type: str = type_inference(path)
+        if self.type is None:
+            logging.error(f'No data_subfolder_type/* recognize {self.type}')
+            exit(1)
+
+    def run(self,algo_name: str):
+        print(f"Running '{algo_name}' on {self.path}")
+
 if __name__ == "__main__":
     
     parser = ArgumentParser(
@@ -50,15 +65,23 @@ if __name__ == "__main__":
     
     parser.add_argument(
         'action',
-        choices = ['typeof']
+        choices = ['typeof', 'run']
     )
     
     parser.add_argument(
-        'path'
+        'supp_args',
+        nargs='*'
     )
 
     args = parser.parse_args()
 
     if args.action == 'typeof':
-        print(type_inference(Path(args.path)))
+        assert(len(args.supp_args)==1)
+        print(type_inference(Path(args.supp_args[0])))
+    elif args.action == 'run':
+        assert(len(args.supp_args)==2)
+        algo = args.supp_args[0]
+        path = Path(args.supp_args[1])
+        data_folder = DataFolder(path)
+        data_folder.run(algo)
 
