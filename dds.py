@@ -54,7 +54,10 @@ class DataFolder():
             exit(1)
 
     def run(self,algo_name: str):
-        print(f"Running '{algo_name}' on {self.path}")
+        algo_filepath: Path = Path('algorithms') / (algo_name + '.yml')
+        if not algo_filepath.exists():
+            logging.error(f"Cannot run '{algo_name}' because {algo_filepath} does not exist")
+            exit(1)
 
 if __name__ == "__main__":
     
