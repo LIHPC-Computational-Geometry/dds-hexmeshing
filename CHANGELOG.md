@@ -9,8 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0] - 2024-07-12
+
 ### Added
 
+- `from_cli/Gmsh_smoothing` : hex-mesh smoothing with [Gmsh](http://gmsh.info/doc/texinfo/gmsh.html#index-_002dsmooth-int)
+- `from_cli/inner_smoothing` and `from_cli/mixed_smoothing` : hex-mesh smoothing with [fprotais/hexsmoothing](https://github.com/fprotais/hexsmoothing)
 - `algorithms/*` and `data_subfolder_types/*` : prospective study for a new code architecture, based on YAML files
 
 ### Removed

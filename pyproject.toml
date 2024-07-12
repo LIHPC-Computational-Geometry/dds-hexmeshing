@@ -1,6 +1,6 @@
 [project]
 name = "HexMeshWorkshop"
-version = "0.6.0"
+version = "0.7.0"
 description = "High-level interface for hex-meshing algorithms"
 authors = [
     { name = "Sébastien Mestrallet", email = "sebastien.mestrallet@hey.com" }
