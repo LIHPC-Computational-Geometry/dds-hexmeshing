@@ -6,8 +6,3 @@ filenames: {
   INTEGER_GRID_MAP_TXT: IGM.txt             # an output of AlgoHex
 }
 distinctive_content: [HEX_MESH_MEDIT, HEX_MESH_OVM] # logical OR
-auto_generate_missing_file: {
-  HEX_MESH_MEDIT: OVM_to_MEDIT,
-  HEX_MESH_STATS_JSON: mesh_stats,
-  HEX_MESH_SURFACE_GLB: write_glb
-}

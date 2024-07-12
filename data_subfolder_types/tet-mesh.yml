@@ -8,11 +8,3 @@ filenames: {
   SURFACE_MESH_GLB: surface_mesh.glb                # SURFACE_MESH_OBJ as glTF 2.0 binary file
 }
 distinctive_content: [TET_MESH_MEDIT]
-auto_generate_missing_file: {
-  SURFACE_MESH_OBJ: extract_surface,
-  SURFACE_MAP_TXT: extract_surface,
-  TET_MESH_VTK: Gmsh_convert_to_VTKv2,
-  TET_MESH_STATS_JSON: tet_mesh_stats,
-  SURFACE_MESH_STATS_JSON: surface_mesh_stats,
-  SURFACE_MESH_GLB: surface_mesh_stats
-}

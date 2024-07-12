@@ -12,14 +12,3 @@ filenames: {
   LABELED_MESH_GLB: labeled_mesh.glb                                # SURFACE_MESH_OBJ colored according to SURFACE_LABELING_TXT as glTF 2.0 binary file
 }
 distinctive_content: [SURFACE_LABELING_TXT]
-auto_generate_missing_file: {
-  VOLUME_LABELING_TXT: volume_labeling,
-  POLYCUBE_SURFACE_MESH_OBJ: fastbndpolycube,
-  PREPROCESSED_TET_MESH_MEDIT: preprocess_polycube,
-  TET_MESH_REMESHED_MEDIT: rb_generate_deformation,
-  TET_MESH_REMESHED_LABELING_TXT: rb_generate_deformation,
-  SURFACE_LABELING_MESH_GEOGRAM: write_labeling_as_geogram,
-  POLYCUBE_LABELING_MESH_GEOGRAM: write_polycube_as_geogram,
-  LABELING_STATS_JSON: labeling_stats,
-  LABELED_MESH_GLB: write_glb,
-}
