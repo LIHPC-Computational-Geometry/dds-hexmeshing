@@ -10,7 +10,7 @@ filenames: {
   POLYCUBE_LABELING_MESH_GEOGRAM: fastbndpolycube.geogram,          # same as the polycube surface mesh, but with the labeling as facet attribute and in the Geogram format (to be visualized with Graphite)
   LABELING_STATS_JSON: labeling.stats.json,                         # labeling stats (nb charts/boundaries/corners/turning-points, nb invalid features) computed on SURFACE_LABELING_TXT, as JSON file
   LABELED_MESH_GLB: labeled_mesh.glb                                # SURFACE_MESH_OBJ colored according to SURFACE_LABELING_TXT as glTF 2.0 binary file
-},
+}
 distinctive_content: [SURFACE_LABELING_TXT]
 auto_generate_missing_file: {
   VOLUME_LABELING_TXT: volume_labeling,

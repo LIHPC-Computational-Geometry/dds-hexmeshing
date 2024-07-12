@@ -6,7 +6,7 @@ filenames: {
   TET_MESH_STATS_JSON: tet_mesh.stats.json,         # mesh stats (min/max/avg/sd of mesh metrics) computed on TET_MESH_MEDIT, as JSON file
   SURFACE_MESH_STATS_JSON: surface_mesh.stats.json, # mesh stats (min/max/avg/sd of mesh metrics) computed on SURFACE_MESH_OBJ, as JSON file
   SURFACE_MESH_GLB: surface_mesh.glb                # SURFACE_MESH_OBJ as glTF 2.0 binary file
-},
+}
 distinctive_content: [TET_MESH_MEDIT]
 auto_generate_missing_file: {
   SURFACE_MESH_OBJ: extract_surface,
