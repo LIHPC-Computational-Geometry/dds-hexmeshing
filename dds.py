@@ -16,7 +16,6 @@ def is_instance_of(path: Path, data_subfolder_type: str) -> bool:
         exit(1)
     with open(YAML_filepath) as YAML_stream:
         YAML_content = yaml.safe_load(YAML_stream)
-        # print(YAML_content)
         if 'distinctive_content' not in YAML_content:
             logging.error(f"{YAML_filepath} has no 'distinctive_content' entry")
             exit(1)
@@ -54,10 +53,43 @@ class DataFolder():
             exit(1)
 
     def run(self,algo_name: str):
-        algo_filepath: Path = Path('algorithms') / (algo_name + '.yml')
-        if not algo_filepath.exists():
-            logging.error(f"Cannot run '{algo_name}' because {algo_filepath} does not exist")
+        YAML_filepath: Path = Path('algorithms') / (algo_name + '.yml')
+        if not YAML_filepath.exists():
+            logging.error(f"Cannot run '{algo_name}' because {YAML_filepath} does not exist")
             exit(1)
+        with open(YAML_filepath) as YAML_stream:
+            YAML_content = yaml.safe_load(YAML_stream)
+            if self.type not in YAML_content:
+                logging.error(f"Behavior of {YAML_filepath} is not specified for input data folders of type '{self.type}', like {self.path} is")
+                exit(1)
+            if 'executable' not in YAML_content[self.type]:
+                logging.error(f"{YAML_filepath} has no 'executable' entry")
+                exit(1)
+            if 'path' not in YAML_content[self.type]['executable']:
+                logging.error(f"{YAML_filepath} has no 'executable'/'path' entry")
+                exit(1)
+            path_keyword = YAML_content[self.type]['executable']['path']
+            if 'command_line' not in YAML_content[self.type]['executable']:
+                logging.error(f"{YAML_filepath} has no 'executable'/'command_line' entry")
+                exit(1)
+            with open('paths.yml') as paths_stream:
+                paths = yaml.safe_load(paths_stream)
+                if path_keyword not in paths:
+                    logging.error(f"'{path_keyword}' is referenced in {YAML_filepath} but does not exist in paths.yml")
+                    exit(1)
+            executable_path: Path = Path(paths[path_keyword]).expanduser()
+            if not executable_path.exists():
+                logging.error(f"In paths.yml, '{path_keyword}' reference a non existing path, required by {YAML_filepath}")
+                logging.error(f"({executable_path})")
+                exit(1)
+            executable_filename = None
+            if 'filename' in YAML_content[self.type]['executable']:
+                executable_filename = YAML_content[self.type]['executable']['filename']
+                executable_path = executable_path / executable_filename
+            if not executable_path.exists():
+                logging.error(f"There is no {executable_filename} in {paths[path_keyword]}. Required by {YAML_filepath}")
+                exit(1)
+            print(f"Running '{algo_name}' -> executing {executable_path}")
 
 if __name__ == "__main__":
     
