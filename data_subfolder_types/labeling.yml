@@ -2,7 +2,6 @@ filenames: {
   SURFACE_LABELING_TXT: surface_labeling.txt,                       # per-surface-triangle labels, values from 0 to 5 -> {+X,-X,+Y,-Y,+Z,-Z}
   VOLUME_LABELING_TXT: volume_labeling.txt,                         # per-tet-facets labels, same values + "-1" for "no label"
   POLYCUBE_SURFACE_MESH_OBJ: fastbndpolycube.obj,                   # polycube deformation of the surface mesh, in the Wavefront format
-  PREPROCESSED_TET_MESH_MEDIT: preprocessed.tet.mesh,               # tet-mesh with additional cells to avoid impossible configuration regarding the labeling. GMF/MEDIT ASCII format. Output of https://github.com/fprotais/preprocess_polycube
   TET_MESH_REMESHED_MEDIT: tet.remeshed.mesh,                       # tet-mesh aiming bijectivity for the polycube. GMF/MEDIT ASCII format. Output of https://github.com/fprotais/robustPolycube
   TET_MESH_REMESHED_LABELING_TXT: tet.remeshed.volume_labeling.txt, # volume labeling of remeshed_tet_mesh. Should be the same as volume_labeling.
   POLYCUBOID_MESH_MEDIT: polycuboid.mesh,                           # polycuboid generated from remeshed_tet_mesh and its labeling. GMF/MEDIT ASCII format.
