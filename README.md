@@ -240,10 +240,14 @@ we would rely on YAML files :
 
 There will be Python script for optional pre- and post-processing for algorithms, as well as for custom algorithms (not based on an external executable)
 
-Then we would have a `HexMeshWorkshop.py` that parse the necessary YAML files for the given instructions, eg:
-- run an algorithm: `./HexMeshWorkshop.py run Gmsh -i ~/data/3D_model/`
-- get info about current data folder: `./HexMeshWorkshop.py datafolder print`
-- print children of a given data subfolder: `./HexMeshWorkshop.py children ~/data/3D_model/`
+Then we would have a `dds.py` that parse the necessary YAML files for the given instructions, eg:
+- run an algorithm: `./dds.py run <algo_name> <input_folder>`
+- print children of a given data subfolder: `./dds.py children <input_folder>`
+- print history of a given data subfolder: `./dds.py history <input_folder>`
+- list all data subfolder folder types: `./dds.py types list`
+- print info about a specific data subfolder type: `./dds.py types info <type_name>`
+- list all algorithms: `./dds.py algos list`
+- print info about a specific algorithm: `./dds.py algos info <algo_name>`
 
 Remaining design choices:
 - (algorithms) How to remove redundancy between `algorithms/write_labeling_as_geogram.yml` and `algorithms/write_polycube_as_geogram.yml`, between `algorithms/automatic_polycube.yml` and `algorithms/automatic_polycube_gui.yml`?
@@ -254,6 +258,5 @@ Remaining design choices:
 
 Note:
 - (algorithms) to access a file in the (grand)parent folder, we no longer specify the reverse depth. We need to go up until the filename in found, and potentially restrict 2 data subfolder types to use the same filename and filename keyword.
-- (paths) we should migrate from `settings.json` to a `paths.yml`, with path keywords in uppercase to indicate the strings are mentioned as it is in other files (`algorithms/*.yml`)
 
 </details>
