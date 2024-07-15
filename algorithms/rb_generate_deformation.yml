@@ -18,7 +18,12 @@ labeling: { # case of 'rb_generate_deformation' applied on a 'labeling' subfolde
       tet_remeshed: TET_MESH_REMESHED_MEDIT,
       tet_remeshed_labeling: TET_MESH_REMESHED_LABELING_TXT,
       polycuboid: POLYCUBOID_MESH_MEDIT
+    },
+    others: {
+      keep_debug_files: {
+        default: false,
+        description: If the debug files written should be kept
+      }
     }
   }
 }
-# TODO post-processing to remove/rename .geogram debug files

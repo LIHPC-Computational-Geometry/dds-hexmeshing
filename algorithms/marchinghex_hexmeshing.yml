@@ -15,6 +15,12 @@ marchinghex_grid: { # case of 'marchinghex_hexmeshing' applied on a 'marchinghex
     },
     output_files: { # will be emplaced inside the 'output_folder'
       hex_mesh: HEX_MESH_MEDIT
+    },
+    others: {
+      keep_debug_files: {
+        default: false,
+        description: If the debug files written should be kept
+      }
     }
   }
 }

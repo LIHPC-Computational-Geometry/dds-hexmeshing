@@ -21,6 +21,10 @@ labeling: { # case of 'rb_generate_quantization' applied on a 'labeling' subfold
       element_sizing: {
         default: 1.0,
         description: ratio compared to the input mesh edge size. smaller = more hexahedra
+      },
+      keep_debug_files: {
+        default: false,
+        description: If the debug files written should be kept
       }
     }
   }

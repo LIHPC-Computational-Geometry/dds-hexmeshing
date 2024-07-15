@@ -1,23 +1,22 @@
 #!/usr/bin/env python
 
-# post-processing for marchinghex.yml
+# post-processing for marchinghex_hexmeshing.yml
 
 from rich.console import Console
 from rich.traceback import install
-from shutil import move, rmtree
+from shutil import move
 from pathlib import Path
-
-# Add root of HexMeshWorkshop project folder in path
-project_root = str(Path(__file__).parent.parent.absolute())
-if path[-1] != project_root: path.append(project_root)
+from os import curdir, unlink
 
 # colored and detailed Python traceback
 install(show_locals=True,width=Console().width,word_wrap=True)
 
-# own modules
-from modules.data_folder_types import *
+# own module
+from ..dds import *
 
-def post_processing(input_subfolder: AbstractDataFolder, output_subfolder: AbstractDataFolder, data_from_pre_processing: dict):
+def post_processing(input_subfolder: DataFolder, output_subfolder: DataFolder, arguments: dict, data_from_pre_processing: dict):
+    assert(input_subfolder.type == 'marchinghex_grid')
+    assert(output_subfolder.type == 'hex-mesh')
 
     # It may be interesting to read the last printed line to have the average Hausdorff distance between the domain and the hex-mesh
     
@@ -30,7 +29,7 @@ def post_processing(input_subfolder: AbstractDataFolder, output_subfolder: Abstr
         'mh_result.mesh'
     ] + [x for x in Path(curdir).iterdir() if x.is_file() and x.stem.startswith('iter_')]: # and all 'iter_*' files
         if Path(debug_filename).exists():
-            move(debug_filename, output_subfolder / f'marchinghex_hexmeshing.{debug_filename}')
-
-# Also allow access to executable arguments from post_processing() ?
-# in order to read a 'keep_debug_files' option
+            if arguments['others']['keep_debug_files']:
+                move(debug_filename, output_subfolder / f'marchinghex_hexmeshing.{debug_filename}')
+            else:
+                unlink(debug_filename)

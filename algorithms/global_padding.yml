@@ -15,6 +15,12 @@ hex-mesh: { # case of 'global_padding' applied on a 'hex-mesh' subfolder
     },
     output_files: {
       improved_hex_mesh: HEX_MESH_MEDIT
+    },
+    others: {
+      keep_debug_files: {
+        default: false,
+        description: If the debug files written should be kept
+      }
     }
   }
 }
