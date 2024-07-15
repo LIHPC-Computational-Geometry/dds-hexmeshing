@@ -2,7 +2,7 @@ description: |
   See https://github.com/fprotais/marchinghex
 marchinghex_grid: { # case of 'marchinghex' applied on a 'marchinghex_grid' subfolder
   executable: {
-    path: marchinghex,
+    path: MARCHING_HEX,
     filename: marchinghex_hexmeshing,
     command_line: '{grid_mesh} {tet_mesh} {hex_mesh}'
   },

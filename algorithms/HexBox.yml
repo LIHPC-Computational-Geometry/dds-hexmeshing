@@ -2,7 +2,7 @@ description:
   See https://github.com/cg3hci/HexBox
 tet-mesh: { # case of 'HexBox' applied on a 'tet-mesh' subfolder
   executable: {
-    path: HexBox,
+    path: HEXBOX,
     filename: ,
     command_line: '{mesh}'
   },

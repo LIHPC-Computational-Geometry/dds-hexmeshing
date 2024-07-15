@@ -2,7 +2,7 @@ description: |
   Convert a polycube mesh and a labeling as .geogram mesh containing the labeling as facet attribute
 labeling: { # case of 'write_polycube_as_geogram' applied on a 'labeling' subfolder
   executable: {
-    path: automatic_polycube,
+    path: AUTOMATIC_POLYCUBE,
     filename: labeling_viewer,
     command_line: '{mesh} {labeling} {dot_geogram}'
   },

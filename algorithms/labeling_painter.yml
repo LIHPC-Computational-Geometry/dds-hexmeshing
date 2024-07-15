@@ -2,7 +2,7 @@ description: |
   Manual labeling modification
 tet-mesh: { # case of 'labeling_painter' applied on a 'tet-mesh' subfolder
   executable: {
-    path: automatic_polycube,
+    path: AUTOMATIC_POLYCUBE,
     filename: labeling_painter,
     command_line: '{mesh}'
   },

@@ -2,7 +2,7 @@ description:
   Export a 3D model as glTF 2.0
 tet-mesh: { # case of 'write_glb' applied on a 'tet-mesh' subfolder
   executable: {
-    path: automatic_polycube,
+    path: AUTOMATIC_POLYCUBE,
     filename: to_glTF,
     command_line: '{mesh} {gltf}'
   },
@@ -19,7 +19,7 @@ tet-mesh: { # case of 'write_glb' applied on a 'tet-mesh' subfolder
 },
 labeling: { # case of 'write_glb' applied on a 'labeling' subfolder
   executable: {
-    path: automatic_polycube,
+    path: AUTOMATIC_POLYCUBE,
     filename: to_glTF,
     command_line: '{mesh} {gltf} labeling={labeling}'
       # we also need a wrapper for 
@@ -39,7 +39,7 @@ labeling: { # case of 'write_glb' applied on a 'labeling' subfolder
 },
 hex-mesh: { # case of 'write_glb' applied on a 'hex-mesh' subfolder
   executable: {
-    path: automatic_polycube,
+    path: AUTOMATIC_POLYCUBE,
     filename: to_glTF,
     command_line: '{mesh} {gltf}'
   },

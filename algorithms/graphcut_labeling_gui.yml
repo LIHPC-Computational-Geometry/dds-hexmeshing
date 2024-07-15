@@ -2,7 +2,7 @@ description: |
   Labeling generation with Graph-Cuts Optimisation
 tet-mesh: { # case of 'graphcut_labeling' applied on a 'tet-mesh' subfolder
   executable: {
-    path: automatic_polycube,
+    path: AUTOMATIC_POLYCUBE,
     filename: graphcut_labeling,
     command_line: '{mesh} {labeling}'
   },

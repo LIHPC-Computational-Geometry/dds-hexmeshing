@@ -2,7 +2,7 @@ description: |
   See https://github.com/cgg-bern/AlgoHex
 tet-mesh: { # case of 'AlgoHex' applied on a 'tet-mesh' subfolder
   executable: {
-    path: AlgoHex,
+    path: ALGOHEX,
     command_line: "-i {tet_mesh} -o {hex_mesh} --igm-out-path {IGM}"
   },
   tee: true,

@@ -2,7 +2,7 @@ description: |
   See https://github.com/fprotais/fastbndpolycube
 labeling: { # case of 'fastbndpolycube' applied on a 'labeling' subfolder
   executable: {
-    path: fastbndpolycube,
+    path: FASTBNDPOLYCUBE,
     filename: marchinghex_hexmeshing,
     command_line: "{mesh} {labeling} {polycube}"
   },

@@ -2,7 +2,7 @@ description: |
   See the post-processing stage of https://github.com/fprotais/robustPolycube
 hex-mesh: { # case of 'global_padding' applied on a 'hex-mesh' subfolder
   executable: {
-    path: robustPolycube,
+    path: ROBUST_POLYCUBE,
     filename: rb_perform_postprocessing,
     command_line: '{tet_mesh} {hex_mesh} {improved_hex_mesh}'
   },

@@ -2,7 +2,7 @@ description: |
   See https://github.com/LIHPC-Computational-Geometry/evocube
 tet-mesh: { # case of 'evocube' applied on a 'tet-mesh' subfolder
   executable: {
-    path: evocube,
+    path: EVOCUBE,
     command_line: '{mesh} {output_folder}'
   },
   tee: true,

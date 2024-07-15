@@ -2,7 +2,7 @@ description: |
   Compute statistics of a labeling
 labeling: { # case of 'write_polycube_as_geogram' applied on a 'labeling' subfolder
   executable: {
-    path: automatic_polycube,
+    path: AUTOMATIC_POLYCUBE,
     filename: labeling_stats,
     command_line: '{mesh} {labeling}'
   },

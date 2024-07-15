@@ -2,7 +2,7 @@ description: |
   Convert a hexahedral mesh from the OpenVolumeMesh format (.ovm) to the MEDIT format (.mesh)
 hex-mesh: { # case of 'OVM_to_MEDIT' applied on a 'hex-mesh' subfolder
   executable: {
-    path: ovm.io,
+    path: OVM_IO,
     command_line: '{input} {output}'
   },
   tee: true,

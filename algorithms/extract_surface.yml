@@ -2,7 +2,7 @@ description: |
   Extract the surface triangle mesh of a tetrahedral mesh
 tet-mesh: { # case of 'extract_surface' applied on a 'tet-mesh' subfolder
   executable: {
-    path: automatic_polycube,
+    path: AUTOMATIC_POLYCUBE,
     filename: extract_surface,
     command_line: '{tet_mesh} {surface_mesh} {surface_map}'
   },

@@ -2,7 +2,7 @@ description: |
   Compute the naive labeling (nearest signed principal axis of each facet normal)
 tet-mesh: { # case of 'naive_labeling' applied on a 'tet-mesh' subfolder
   executable: {
-    path: automatic_polycube,
+    path: AUTOMATIC_POLYCUBE,
     filename: naive_labeling,
     command_line: '{mesh} {labeling}'
   },

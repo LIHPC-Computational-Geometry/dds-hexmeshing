@@ -2,7 +2,7 @@ description:
   Compute the volume labeling (per tetra facets) from the surface labeling (per surface facets)
 labeling: { # case of 'volume_labeling' applied on a 'labeling' subfolder
   executable: {
-    path: automatic_polycube,
+    path: AUTOMATIC_POLYCUBE,
     filename: volume_labeling,
     command_line: '{surface_labeling} {surface_map} {tetra_labeling}'
   },

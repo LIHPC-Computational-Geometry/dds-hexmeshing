@@ -2,7 +2,7 @@ description: |
   See main app of https://github.com/LIHPC-Computational-Geometry/automatic_polycube
 tet-mesh: { # case of 'automatic_polycube' applied on a 'tet-mesh' subfolder
   executable: {
-    path: automatic_polycube,
+    path: AUTOMATIC_POLYCUBE,
     filename: automatic_polycube,
     command_line: '{mesh} {labeling} gui=false'
   },

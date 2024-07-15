@@ -2,7 +2,7 @@ description: |
   See https://github.com/fprotais/polycube_withHexEx
 labeling: { # case of 'polycube_withHexEx' applied on a 'labeling' subfolder
   executable: {
-    path: polycube_withHexEx,
+    path: POLYCUBE_WITH_HEXEX,
     command_line: '{tet_mesh} {labeling} {hex_mesh} {scale}'
   },
   tee: true,

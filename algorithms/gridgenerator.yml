@@ -2,7 +2,7 @@ description: |
   3D grid generation inside the bounding box of the mesh
 tet-mesh: { # case of 'gridgenerator' applied on a 'tet-mesh' subfolder
   executable: {
-    path: marchinghex,
+    path: MARCHING_HEX,
     filename: gridgenerator,
     command_line: '{input_mesh} {grid_mesh} {scale}'
   },
