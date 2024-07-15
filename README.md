@@ -250,8 +250,6 @@ Then we would have a `dds.py` that parse the necessary YAML files for the given 
 - print info about a specific algorithm: `./dds.py algos info <algo_name>`
 
 Remaining design choices:
-- (algorithms) How to remove redundancy between `algorithms/write_labeling_as_geogram.yml` and `algorithms/write_polycube_as_geogram.yml`, between `algorithms/automatic_polycube.yml` and `algorithms/automatic_polycube_gui.yml`?
-- (algorithms) how to define (meta)algorithms that calls several algorithms? eg `robustPolycube` (`rb_generate_deformation` + `rb_generate_quantization`) or `marchinghex` (`gridgenerator` + the actual `marchinghex`)
 - (algorithms) how to transmit CLI arguments to pre/post processing Python script? In order to choose between keeping/deleting debug files
 - (data subfolder types) how to describe views? A `<data-subfolder-type>.<view-name>.yml` next to the `<data-subfolder-type>.yml`?
 - (data subfolder types) how to have an equivalent of `labeling.get_labeling_stats_dict()`, `labeling.has_valid_labeling()`... Some algorithms should be defined as a Python script

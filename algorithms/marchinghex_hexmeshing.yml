@@ -1,6 +1,6 @@
 description: |
   See https://github.com/fprotais/marchinghex
-marchinghex_grid: { # case of 'marchinghex' applied on a 'marchinghex_grid' subfolder
+marchinghex_grid: { # case of 'marchinghex_hexmeshing' applied on a 'marchinghex_grid' subfolder
   executable: {
     path: MARCHING_HEX,
     filename: marchinghex_hexmeshing,
