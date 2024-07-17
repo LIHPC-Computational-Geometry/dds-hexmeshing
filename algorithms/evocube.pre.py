@@ -2,12 +2,6 @@
 
 # pre-processing for evocube.yml
 
-from rich.console import Console
-from rich.traceback import install
-
-# colored and detailed Python traceback
-install(show_locals=True,width=Console().width,word_wrap=True)
-
 # own module
 from ..dds import *
 

@@ -2,14 +2,9 @@
 
 # post-processing for marchinghex_hexmeshing.yml
 
-from rich.console import Console
-from rich.traceback import install
 from shutil import move
 from pathlib import Path
 from os import curdir, unlink
-
-# colored and detailed Python traceback
-install(show_locals=True,width=Console().width,word_wrap=True)
 
 # own module
 from ..dds import *
