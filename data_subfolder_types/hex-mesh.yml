@@ -6,3 +6,4 @@ filenames: {
   INTEGER_GRID_MAP_TXT: IGM.txt             # an output of AlgoHex
 }
 distinctive_content: [HEX_MESH_MEDIT, HEX_MESH_OVM] # logical OR
+default_view: own-viewer

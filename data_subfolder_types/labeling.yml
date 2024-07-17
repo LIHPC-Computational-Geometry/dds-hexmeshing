@@ -11,3 +11,4 @@ filenames: {
   LABELED_MESH_GLB: labeled_mesh.glb                                # SURFACE_MESH_OBJ colored according to SURFACE_LABELING_TXT as glTF 2.0 binary file
 }
 distinctive_content: [SURFACE_LABELING_TXT]
+default_view: surface

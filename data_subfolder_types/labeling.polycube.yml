@@ -1,0 +1,13 @@
+description: |
+  Open the labeled polycube mesh
+executable: {
+  path: AUTOMATIC_POLYCUBE,
+  filename: labeling_viewer,
+  command_line: '{mesh} {labeling}'
+},
+arguments: {
+  input_files: {
+    mesh: POLYCUBE_SURFACE_MESH_OBJ,
+    labeling: SURFACE_LABELING_TXT
+  }
+}

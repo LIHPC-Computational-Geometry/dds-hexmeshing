@@ -10,7 +10,7 @@ description: |
     de l'algorithme
 input_type: {
     executable: {
-        path: , # an entry of settings.json/paths for now. Maybe this will become a paths.yml
+        path: , # an entry of paths.yml
         filename: , # optional, if a filename must be appended to the path
         command_line: # command line template. between curly brackets are {arguments}, filled below. but {output_folder} is a reserved keyword that will be filled with the output folder path
     },
@@ -23,7 +23,7 @@ input_type: {
         output_files: { # if 'output_folder' defined, these files will be emplaced inside output_folder/, else ("transformative algorithm" case) in the input folder
             argument2: # an filename constant (see content of data_subfolder_types/)
         },
-        others: { # -> doit aussi contenir une description pour --help
+        others: { # other arguments must contain a description, for --help
             argument3: {
                 default: , # a default value that will define the data type. Can be overwritten from the command line
                 description: , # description of this argument, to be printed with --help

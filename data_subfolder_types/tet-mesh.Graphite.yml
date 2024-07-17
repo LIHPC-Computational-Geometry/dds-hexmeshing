@@ -1,0 +1,12 @@
+# visualize a 'tet-mesh' data subfolder with Graphite
+description: |
+  Open the (surface) mesh with Graphite
+executable: {
+  path: GRAPHITE,
+  command_line: '{mesh}'
+},
+arguments: {
+  input_files: {
+    mesh: SURFACE_MESH_OBJ
+  }
+}

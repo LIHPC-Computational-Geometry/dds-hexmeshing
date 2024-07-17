@@ -1,0 +1,17 @@
+# visualize a 'STEP' data subfolder with Mayo
+description: |
+  Open with Mayo.
+  You may experience infinite loading...
+  If so, check the graphics drivers currently used
+  (__NV_PRIME_RENDER_OFFLOAD
+  and __GLX_VENDOR_LIBRARY_NAME
+  shell variables for Linux)
+executable: {
+  path: MAYO,
+  command_line: '{step} --no-progress'
+},
+arguments: {
+  input_files: {
+    step: STEP
+  }
+}
