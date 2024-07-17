@@ -51,6 +51,26 @@ class DataFolder():
         if self.type is None:
             logging.error(f'No data_subfolder_type/* recognize {self.type}')
             exit(1)
+        
+    def get_file(self, filename_keyword : str, must_exist : bool = False) -> Path:
+        # transform filename keyword into actual filename by reading the YAML describing the data subfolder type
+        YAML_filepath: Path = Path('data_subfolder_types') / (self.type + '.yml')
+        if not YAML_filepath.exists():
+            logging.error(f'{YAML_filepath} does not exist')
+            exit(1)
+        with open(YAML_filepath) as YAML_stream:
+            YAML_content = yaml.safe_load(YAML_stream)
+            if 'filenames' not in YAML_content:
+                logging.error(f"{YAML_filepath} has no 'filenames' entry")
+                exit(1)
+            if filename_keyword not in YAML_content['filenames']:
+                logging.error(f"{YAML_filepath} has no 'filenames'/'{filename_keyword}' entry")
+                exit(1)
+            path = (self.path / YAML_content['filenames'][filename_keyword]).absolute()
+            if (not must_exist) or (must_exist and path.exists()):
+                return path
+            # so 'file' is missing -> TODO try to auto-compute it
+            raise Exception(f'Missing file {path}')
 
     def run(self,algo_name: str):
         YAML_filepath: Path = Path('algorithms') / (algo_name + '.yml')

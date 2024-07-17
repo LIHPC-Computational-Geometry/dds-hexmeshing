@@ -249,9 +249,6 @@ Then we would have a `dds.py` that parse the necessary YAML files for the given 
 - list all algorithms: `./dds.py algos list`
 - print info about a specific algorithm: `./dds.py algos info <algo_name>`
 
-Remaining design choices:
-- (data subfolder types) how to have an equivalent of `labeling.get_labeling_stats_dict()`, `labeling.has_valid_labeling()`... Some algorithms should be defined as a Python script
-
 Note:
 - (algorithms) to access a file in the (grand)parent folder, we no longer specify the reverse depth. We need to go up until the filename in found, and potentially restrict 2 data subfolder types to use the same filename and filename keyword.
 
