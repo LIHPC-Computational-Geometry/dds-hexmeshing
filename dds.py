@@ -33,7 +33,7 @@ def is_instance_of(path: Path, data_subfolder_type: str) -> bool:
 
 def type_inference(path: Path) -> Optional[str]:
     recognized_types = list()
-    for type_str in [x.stem for x in Path('data_subfolder_types').iterdir() if x.is_file() and x.suffix == '.yml']: # Path.stem is Path.name without suffix
+    for type_str in [x.stem for x in Path('data_subfolder_types').iterdir() if x.is_file() and x.suffix == '.yml' and x.stem.count('.') == 0]: # Path.stem is Path.name without suffix
         if is_instance_of(path,type_str):
             recognized_types.append(type_str)
     if len(recognized_types) == 0:
