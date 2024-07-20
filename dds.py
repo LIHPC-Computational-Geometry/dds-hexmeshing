@@ -6,6 +6,7 @@
 
 from pathlib import Path
 import yaml
+import json
 import logging
 from argparse import ArgumentParser
 from typing import Optional
@@ -17,9 +18,26 @@ from rich.rule import Rule
 from rich.traceback import install
 import subprocess_tee
 import importlib.util
+from math import floor
 
 # colored and detailed Python traceback
 install(show_locals=True,width=Console().width,word_wrap=True)
+
+def simple_human_readable_duration(duration_seconds) -> str:
+    """
+    Return a human-readable text (str) for a given duration in seconds:
+    hours, minutes & seconds elapsed
+    """
+    hours   = floor(duration_seconds // 3600)
+    minutes = floor(duration_seconds % 3600 // 60)
+    seconds = floor(duration_seconds % 60) if duration_seconds > 60 else round(duration_seconds % 60,3) # high precision only for small durations
+    formatted_duration = ''
+    if hours != 0:
+        formatted_duration += '{}h '.format(hours)
+    if minutes != 0 or hours != 0:
+        formatted_duration += '{}m '.format(minutes)
+    formatted_duration += '{}s'.format(seconds)
+    return formatted_duration
 
 def translate_filename_keyword(filename_keyword: str) -> str:
     for YAML_filepath in [x for x in Path('data_subfolder_types').iterdir() if x.is_file() and x.suffix == '.yml' and x.stem.count('.') == 0]:
@@ -265,6 +283,23 @@ class DataFolder():
                         output_file_path = output_folder_path / translate_filename_keyword(YAML_content[self.type]['arguments']['output_files'][output_file_argument])
                         all_arguments[output_file_argument] = output_file_path
             command_line = f'{executable_path} {command_line.format(**all_arguments)}'
+            # fill/create the info.json file
+            info_file = dict()
+            info_file_path = self.path / 'info.json' if output_folder_path is None else output_folder_path / 'info.json'
+            if info_file_path.exists():
+                info_file = json.load(open(info_file_path))
+            while start_datetime_iso in info_file:
+                # there is already a key with this datetime (can append with very fast algorithms)
+                # -> wait a bit and get current time
+                time.sleep(1.0)
+                start_datetime_iso = time.strftime('%Y-%m-%dT%H:%M:%SZ', time.localtime())
+            info_file[start_datetime_iso] = {
+                'TransformativeAlgorithm' if output_folder_path is None else 'GenerativeAlgorithm': algo_name,
+                'command': command_line,
+                'parameters': dict()
+            }
+            for k,v in all_arguments.items():
+                info_file[start_datetime_iso]['parameters'][k] = str(v)
             # execute the command line
             if 'tee' not in YAML_content[self.type]:
                 logging.error(f"{YAML_filepath} has no '{self.type}/tee' entry")
@@ -283,11 +318,21 @@ class DataFolder():
                 f = open(self.path / filename if output_folder_path is None else output_folder_path / filename,'x')# x = create new file
                 f.write(completed_process.stdout)
                 f.close()
+                info_file[start_datetime_iso]['stdout'] = filename
             if completed_process.stderr != '': # if the subprocess wrote something in standard error
                 filename =  algo_name + '.stderr.txt'
                 f = open(self.path / filename if output_folder_path is None else output_folder_path / filename,'x')
                 f.write(completed_process.stderr)
                 f.close()
+                info_file[start_datetime_iso]['stderr'] = filename
+            # store return code and duration
+            info_file[start_datetime_iso]['return_code'] = completed_process.returncode
+            duration = chrono_stop - chrono_start
+            info_file[start_datetime_iso]['duration'] = [duration, simple_human_readable_duration(duration)]
+            ic(info_file)
+            # write JSON file
+            with open(info_file_path,'w') as file:
+                json.dump(info_file, file, sort_keys=True, indent=4)
             # execute postprocessing
             self.execute_algo_postprocessing(console,algo_name,output_folder_path,all_arguments,data_from_preprocessing)
 
