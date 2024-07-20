@@ -140,6 +140,7 @@ class DataFolder():
             if 'command_line' not in YAML_content[self.type]['executable']:
                 logging.error(f"{YAML_filepath} has no '{self.type}/executable/command_line' entry")
                 exit(1)
+            command_line = YAML_content[self.type]['executable']['command_line']
             with open('paths.yml') as paths_stream:
                 paths = yaml.safe_load(paths_stream)
                 if path_keyword not in paths:
@@ -206,8 +207,8 @@ class DataFolder():
                 else: # case generative algorithm
                    output_file_path = output_folder_path / translate_filename_keyword(YAML_content[self.type]['arguments']['output_files'][output_file_argument])
                 all_arguments[output_file_argument] = output_file_path
-            ic(all_arguments)
-            
+            command_line = f'{executable_path} {command_line.format(**all_arguments)}'
+            print(command_line)
             
 
 if __name__ == "__main__":
