@@ -9,6 +9,15 @@ import logging
 from argparse import ArgumentParser
 from typing import Optional
 
+def translate_filename_keyword(filename_keyword: str) -> str:
+    for YAML_filepath in [x for x in Path('data_subfolder_types').iterdir() if x.is_file() and x.suffix == '.yml' and x.stem.count('.') == 0]:
+        with open(YAML_filepath) as YAML_stream:
+            YAML_content = yaml.safe_load(YAML_stream)
+            if filename_keyword in YAML_content['filenames']:
+                return YAML_content['filenames'][filename_keyword]
+    logging.error(f"None of the data subfolder types declare the '{filename_keyword}' filename keyword")
+    exit(1)
+
 def is_instance_of(path: Path, data_subfolder_type: str) -> bool:
     YAML_filepath: Path = Path('data_subfolder_types') / (data_subfolder_type + '.yml')
     if not YAML_filepath.exists():
