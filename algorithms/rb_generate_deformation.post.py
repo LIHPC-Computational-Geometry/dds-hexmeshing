@@ -7,7 +7,7 @@ from pathlib import Path
 from os import unlink
 
 # own module
-from ..dds import *
+from dds import *
 
 # no 'output_subfolder' in the arguments of post_processing(), because rb_generate_deformation (see .yml) is a transformative algorithm, not a generative algorithm
 def post_processing(input_subfolder: DataFolder, arguments: dict, data_from_pre_processing: dict):

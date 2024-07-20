@@ -6,7 +6,7 @@ from shutil import move
 from os import unlink
 
 # own module
-from ..dds import *
+from dds import *
 
 def post_processing(input_subfolder: DataFolder, output_subfolder: DataFolder, arguments: dict, data_from_pre_processing: dict):
     assert(input_subfolder.type == 'tet-mesh')

@@ -16,6 +16,7 @@ from rich.console import Console
 from rich.rule import Rule
 from rich.traceback import install
 import subprocess_tee
+import importlib.util
 
 # colored and detailed Python traceback
 install(show_locals=True,width=Console().width,word_wrap=True)
@@ -126,6 +127,22 @@ class DataFolder():
             if path.exists():
                 return path # successful auto-generation
             raise Exception(f'Missing file {path}')
+    
+    def exectute_algo_preprocessing(self, console: Console, algo_name: str, output_subfolder: Path, arguments: dict) -> dict:
+        script_filepath: Path = Path('algorithms') / (algo_name + '.pre.py')
+        if not script_filepath.exists():
+            return dict() # no preprocessing defined for this algorithm
+        # thanks wim https://stackoverflow.com/a/27189110
+        spec = importlib.util.spec_from_file_location(
+            name="ext_module",  # note that ".test" is not a valid module name
+            location=script_filepath,
+        )
+        ext_module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(ext_module)
+        console.print(Rule(f'beginning of {script_filepath.name} pre_processing()'))
+        data_from_preprocessing = ext_module.pre_processing(self,output_subfolder,arguments)
+        console.print(Rule(f'end of {script_filepath.name} pre_processing()'))
+        return data_from_preprocessing
 
     def run(self, algo_name: str, arguments: dict = dict()):
         YAML_filepath: Path = Path('algorithms') / (algo_name + '.yml')
@@ -204,6 +221,9 @@ class DataFolder():
                     logging.error(f"The output folder to create ({output_folder_path}) already exists")
                     exit(1)
                 mkdir(output_folder_path)
+            # execute preprocessing
+            console = Console()
+            data_from_preprocessing = self.exectute_algo_preprocessing(console,algo_name,output_folder_path,all_arguments)
             # add 'input_files' and 'output_files' arguments to the 'all_arguments' dict
             if 'input_files' not in YAML_content[self.type]['arguments']:
                 logging.error(f"{YAML_filepath} has no '{self.type}/arguments/input_files' entry")
@@ -233,7 +253,6 @@ class DataFolder():
                 logging.error(f"{YAML_filepath} has no '{self.type}/tee' entry")
                 exit(1)
             tee = YAML_content[self.type]['tee']
-            console = Console()
             if tee:
                 console.print(Rule(f'beginning of {executable_path}'))
             chrono_start = time.monotonic()
