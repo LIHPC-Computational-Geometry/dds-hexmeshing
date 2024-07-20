@@ -128,13 +128,13 @@ class DataFolder():
                 return path # successful auto-generation
             raise Exception(f'Missing file {path}')
     
-    def exectute_algo_preprocessing(self, console: Console, algo_name: str, output_subfolder: Path, arguments: dict) -> dict:
+    def execute_algo_preprocessing(self, console: Console, algo_name: str, output_subfolder: Path, arguments: dict) -> dict:
         script_filepath: Path = Path('algorithms') / (algo_name + '.pre.py')
         if not script_filepath.exists():
             return dict() # no preprocessing defined for this algorithm
         # thanks wim https://stackoverflow.com/a/27189110
         spec = importlib.util.spec_from_file_location(
-            name="ext_module",  # note that ".test" is not a valid module name
+            name="ext_module",
             location=script_filepath,
         )
         ext_module = importlib.util.module_from_spec(spec)
@@ -143,6 +143,24 @@ class DataFolder():
         data_from_preprocessing = ext_module.pre_processing(self,output_subfolder,arguments)
         console.print(Rule(f'end of {script_filepath.name} pre_processing()'))
         return data_from_preprocessing
+    
+    def execute_algo_postprocessing(self, console: Console, algo_name: str, output_subfolder: Optional[Path], arguments: dict, data_from_preprocessing: dict) -> dict:
+        script_filepath: Path = Path('algorithms') / (algo_name + '.post.py')
+        if not script_filepath.exists():
+            return # no postprocessing defined for this algorithm
+        # import the module containing the post_processing() function
+        spec = importlib.util.spec_from_file_location(
+            name="ext_module",
+            location=script_filepath,
+        )
+        ext_module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(ext_module)
+        console.print(Rule(f'beginning of {script_filepath.name} post_processing()'))
+        if output_subfolder is None: # post-processing of a transformative algorithme
+            ext_module.post_processing(self,arguments,data_from_preprocessing)
+        else: # post-processing of a generative algorithm
+            ext_module.post_processing(self,output_subfolder,arguments,data_from_preprocessing)
+        console.print(Rule(f'end of {script_filepath.name} post_processing()'))
 
     def run(self, algo_name: str, arguments: dict = dict()):
         YAML_filepath: Path = Path('algorithms') / (algo_name + '.yml')
@@ -224,7 +242,7 @@ class DataFolder():
                 command_line = command_line.replace(r'{output_folder}',str(output_folder_path))
             # execute preprocessing
             console = Console()
-            data_from_preprocessing = self.exectute_algo_preprocessing(console,algo_name,output_folder_path,all_arguments)
+            data_from_preprocessing = self.execute_algo_preprocessing(console,algo_name,output_folder_path,all_arguments)
             # add 'input_files' and 'output_files' arguments to the 'all_arguments' dict
             if 'input_files' not in YAML_content[self.type]['arguments']:
                 logging.error(f"{YAML_filepath} has no '{self.type}/arguments/input_files' entry")
@@ -270,6 +288,8 @@ class DataFolder():
                 f = open(self.path / filename if output_folder_path is None else output_folder_path / filename,'x')
                 f.write(completed_process.stderr)
                 f.close()
+            # execute postprocessing
+            self.execute_algo_postprocessing(console,algo_name,output_folder_path,all_arguments,data_from_preprocessing)
 
 if __name__ == "__main__":
     

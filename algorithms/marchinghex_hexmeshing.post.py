@@ -9,9 +9,8 @@ from os import curdir, unlink
 # own module
 from dds import *
 
-def post_processing(input_subfolder: DataFolder, output_subfolder: DataFolder, arguments: dict, data_from_pre_processing: dict):
+def post_processing(input_subfolder: DataFolder, output_subfolder: Path, arguments: dict, data_from_pre_processing: dict):
     assert(input_subfolder.type == 'marchinghex_grid')
-    assert(output_subfolder.type == 'hex-mesh')
 
     # It may be interesting to read the last printed line to have the average Hausdorff distance between the domain and the hex-mesh
     
@@ -25,6 +24,8 @@ def post_processing(input_subfolder: DataFolder, output_subfolder: DataFolder, a
     ] + [x for x in Path(curdir).iterdir() if x.is_file() and x.stem.startswith('iter_')]: # and all 'iter_*' files
         if Path(debug_filename).exists():
             if arguments['others']['keep_debug_files']:
+                print(f'Renaming {debug_filename}...')
                 move(debug_filename, output_subfolder / f'marchinghex_hexmeshing.{debug_filename}')
             else:
+                print(f'Removing {debug_filename}...')
                 unlink(debug_filename)
