@@ -82,6 +82,45 @@ def type_inference(path: Path) -> Optional[str]:
         exit(1)
     return recognized_types[0]
 
+# Execute either <algo_name>.yml or <algo_name>.py
+# The fist one must be executed on an instance of DataFolder
+# The second has not this constraint (any folder, eg the parent folder of many DataFolder)
+def run(path: Path, algo_name: str, arguments_as_list: list = list()):
+    YAML_filepath: Path = Path('algorithms') / (algo_name + '.yml')
+    if not YAML_filepath.exists():
+        # it can be the name of a custom algorithm, defined in an <algo_name>.py
+        script_filepath: Path = Path('algorithms') / (algo_name + '.py')
+        if not script_filepath.exists():
+            logging.error(f"Cannot run '{algo_name}' because neither {YAML_filepath} nor {script_filepath} exist")
+            exit(1)
+        
+        # command = f"{script_filepath} {' '.join(arguments_as_list)}"
+        spec = importlib.util.spec_from_file_location(
+            name="ext_module",
+            location=script_filepath,
+        )
+        ext_module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(ext_module)
+
+        console = Console()
+        console.print(Rule(f'beginning of {script_filepath}'))
+        # completed_process = subprocess_tee.run(command, shell=True, capture_output=True, tee=True)
+        ext_module.main(path,arguments_as_list)
+        console.print(Rule(f'end of {script_filepath}'))
+        exit(0)
+    # convert arguments to a dict
+    # -> from ['arg1=value', 'arg2=value'] to {'arg1': 'value', 'arg2': 'value'}
+    arguments = dict()
+    for arg in arguments_as_list:
+        if arg.count('=') == 1:
+            arg = arg.split('=')
+            arguments[arg[0]] = arg[1]
+        else:
+            logging.error(f"No '=' in supplemental argument '{arg}'")
+            exit(1)
+    data_folder = DataFolder(path)
+    data_folder.run(algo,arguments)
+
 class DataFolder():
 
     def __init__(self,path: Path):
@@ -329,7 +368,6 @@ class DataFolder():
             info_file[start_datetime_iso]['return_code'] = completed_process.returncode
             duration = chrono_stop - chrono_start
             info_file[start_datetime_iso]['duration'] = [duration, simple_human_readable_duration(duration)]
-            ic(info_file)
             # write JSON file
             with open(info_file_path,'w') as file:
                 json.dump(info_file, file, sort_keys=True, indent=4)
@@ -362,16 +400,5 @@ if __name__ == "__main__":
         assert(len(args.supp_args)>=2)
         algo = args.supp_args[0]
         path = Path(args.supp_args[1])
-        # convert other arguments to a dict
-        # -> from ['arg1=value', 'arg2=value'] to {'arg1': 'value', 'arg2': 'value'}
-        arguments = dict()
-        for supp_arg in args.supp_args[2:]:
-            if supp_arg.count('=') == 1:
-                supp_arg = supp_arg.split('=')
-                arguments[supp_arg[0]] = supp_arg[1]
-            else:
-                logging.error(f"No '=' in supplemental argument '{supp_arg}'")
-                exit(1)
-        data_folder = DataFolder(path)
-        data_folder.run(algo,arguments)
+        run(path,algo,args.supp_args[2:])
 
