@@ -161,11 +161,11 @@ class DataFolder():
             if 'path' not in YAML_content[self.type]['executable']:
                 logging.error(f"{YAML_filepath} has no '{self.type}/executable/path' entry")
                 exit(1)
-            path_keyword = YAML_content[self.type]['executable']['path']
+            path_keyword: str = YAML_content[self.type]['executable']['path']
             if 'command_line' not in YAML_content[self.type]['executable']:
                 logging.error(f"{YAML_filepath} has no '{self.type}/executable/command_line' entry")
                 exit(1)
-            command_line = YAML_content[self.type]['executable']['command_line']
+            command_line: str = YAML_content[self.type]['executable']['command_line']
             with open('paths.yml') as paths_stream:
                 paths = yaml.safe_load(paths_stream)
                 if path_keyword not in paths:
@@ -176,7 +176,7 @@ class DataFolder():
                 logging.error(f"In paths.yml, '{path_keyword}' reference a non existing path, required by {YAML_filepath} algorithm")
                 logging.error(f"({executable_path})")
                 exit(1)
-            executable_filename = None
+            executable_filename: Optional[str] = None
             if 'filename' in YAML_content[self.type]['executable']:
                 executable_filename = YAML_content[self.type]['executable']['filename']
                 executable_path = executable_path / executable_filename
@@ -216,6 +216,7 @@ class DataFolder():
             if 'output_folder' in YAML_content[self.type]:
                 output_folder = YAML_content[self.type]['output_folder']
                 output_folder = output_folder.format(**all_arguments).replace('%d',start_datetime_filesystem)
+                command_line = command_line.replace(r'{output_folder}',output_folder)
                 output_folder_path = self.path / output_folder
                 if output_folder_path.exists():
                     logging.error(f"The output folder to create ({output_folder_path}) already exists")
