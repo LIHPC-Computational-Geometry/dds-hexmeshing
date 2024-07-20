@@ -13,7 +13,11 @@ from icecream import ic
 from os import mkdir
 from rich.console import Console
 from rich.rule import Rule
+from rich.traceback import install
 import subprocess_tee
+
+# colored and detailed Python traceback
+install(show_locals=True,width=Console().width,word_wrap=True)
 
 def translate_filename_keyword(filename_keyword: str) -> str:
     for YAML_filepath in [x for x in Path('data_subfolder_types').iterdir() if x.is_file() and x.suffix == '.yml' and x.stem.count('.') == 0]:
