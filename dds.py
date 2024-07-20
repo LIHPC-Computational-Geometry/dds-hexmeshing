@@ -11,6 +11,9 @@ from typing import Optional
 import time
 from icecream import ic
 from os import mkdir
+from rich.console import Console
+from rich.rule import Rule
+import subprocess_tee
 
 def translate_filename_keyword(filename_keyword: str) -> str:
     for YAML_filepath in [x for x in Path('data_subfolder_types').iterdir() if x.is_file() and x.suffix == '.yml' and x.stem.count('.') == 0]:
@@ -208,8 +211,30 @@ class DataFolder():
                    output_file_path = output_folder_path / translate_filename_keyword(YAML_content[self.type]['arguments']['output_files'][output_file_argument])
                 all_arguments[output_file_argument] = output_file_path
             command_line = f'{executable_path} {command_line.format(**all_arguments)}'
-            print(command_line)
-            
+            # execute the command line
+            if 'tee' not in YAML_content[self.type]:
+                logging.error(f"{YAML_filepath} has no '{self.type}/tee' entry")
+                exit(1)
+            tee = YAML_content[self.type]['tee']
+            console = Console()
+            if tee:
+                console.print(Rule(f'beginning of {executable_path}'))
+            chrono_start = time.monotonic()
+            completed_process = subprocess_tee.run(command_line, shell=True, capture_output=True, tee=tee)
+            chrono_stop = time.monotonic()
+            if tee:
+                console.print(Rule(f'end of {executable_path}'))
+            # write stdout and stderr
+            if completed_process.stdout != '': # if the subprocess wrote something in standard output
+                filename = algo_name + '.stdout.txt'
+                f = open(self.path / filename if output_folder_path is None else output_folder_path / filename,'x')# x = create new file
+                f.write(completed_process.stdout)
+                f.close()
+            if completed_process.stderr != '': # if the subprocess wrote something in standard error
+                filename =  algo_name + '.stderr.txt'
+                f = open(self.path / filename if output_folder_path is None else output_folder_path / filename,'x')
+                f.write(completed_process.stderr)
+                f.close()
 
 if __name__ == "__main__":
     
