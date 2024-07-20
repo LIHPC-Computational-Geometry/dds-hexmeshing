@@ -216,12 +216,12 @@ class DataFolder():
             if 'output_folder' in YAML_content[self.type]:
                 output_folder = YAML_content[self.type]['output_folder']
                 output_folder = output_folder.format(**all_arguments).replace('%d',start_datetime_filesystem)
-                command_line = command_line.replace(r'{output_folder}',output_folder)
                 output_folder_path = self.path / output_folder
                 if output_folder_path.exists():
                     logging.error(f"The output folder to create ({output_folder_path}) already exists")
                     exit(1)
                 mkdir(output_folder_path)
+                command_line = command_line.replace(r'{output_folder}',str(output_folder_path))
             # execute preprocessing
             console = Console()
             data_from_preprocessing = self.exectute_algo_preprocessing(console,algo_name,output_folder_path,all_arguments)
