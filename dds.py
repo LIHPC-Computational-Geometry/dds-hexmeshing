@@ -229,25 +229,23 @@ class DataFolder():
             if 'input_files' not in YAML_content[self.type]['arguments']:
                 logging.error(f"{YAML_filepath} has no '{self.type}/arguments/input_files' entry")
                 exit(1)
-            if 'output_files' not in YAML_content[self.type]['arguments']:
-                logging.error(f"{YAML_filepath} has no '{self.type}/arguments/output_files' entry")
-                exit(1)
             for input_file_argument in YAML_content[self.type]['arguments']['input_files']:
                 if input_file_argument in all_arguments:
                     logging.error(f"{YAML_filepath} has multiple arguments named '{input_file_argument}' in '{self.type}/arguments")
                     exit(1)
                 input_file_path = self.get_file(YAML_content[self.type]['arguments']['input_files'][input_file_argument], True)
                 all_arguments[input_file_argument] = input_file_path
-            for output_file_argument in YAML_content[self.type]['arguments']['output_files']:
-                if output_file_argument in all_arguments:
-                    logging.error(f"{YAML_filepath} has multiple arguments named '{output_file_argument}' in '{self.type}/arguments")
-                    exit(1)
-                output_file_path = None
-                if output_folder_path is None: # case transformative algorithm, no output folder created
-                   output_file_path = self.get_file(YAML_content[self.type]['arguments']['output_files'][output_file_argument], False)
-                else: # case generative algorithm
-                   output_file_path = output_folder_path / translate_filename_keyword(YAML_content[self.type]['arguments']['output_files'][output_file_argument])
-                all_arguments[output_file_argument] = output_file_path
+            if 'output_files' in YAML_content[self.type]['arguments']:
+                for output_file_argument in YAML_content[self.type]['arguments']['output_files']:
+                    if output_file_argument in all_arguments:
+                        logging.error(f"{YAML_filepath} has multiple arguments named '{output_file_argument}' in '{self.type}/arguments")
+                        exit(1)
+                    output_file_path = None
+                    if output_folder_path is None: # case transformative algorithm, no output folder created
+                        output_file_path = self.get_file(YAML_content[self.type]['arguments']['output_files'][output_file_argument], False)
+                    else: # case generative algorithm
+                        output_file_path = output_folder_path / translate_filename_keyword(YAML_content[self.type]['arguments']['output_files'][output_file_argument])
+                        all_arguments[output_file_argument] = output_file_path
             command_line = f'{executable_path} {command_line.format(**all_arguments)}'
             # execute the command line
             if 'tee' not in YAML_content[self.type]:
