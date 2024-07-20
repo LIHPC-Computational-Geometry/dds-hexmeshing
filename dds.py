@@ -2,6 +2,7 @@
 
 # ./dds.py typeof path/to/folder
 # ./dds.py run algo_name path/to/folder
+# ./dds.py run algo_name path/to/folder arg1=value arg2=value
 
 from pathlib import Path
 import yaml
@@ -126,7 +127,7 @@ class DataFolder():
                 return path # successful auto-generation
             raise Exception(f'Missing file {path}')
 
-    def run(self,algo_name: str):
+    def run(self, algo_name: str, arguments: dict = dict()):
         YAML_filepath: Path = Path('algorithms') / (algo_name + '.yml')
         if not YAML_filepath.exists():
             logging.error(f"Cannot run '{algo_name}' because {YAML_filepath} does not exist")
@@ -177,6 +178,18 @@ class DataFolder():
                         logging.error(f"{YAML_filepath} has multiple arguments named '{input_file_argument}' in '{self.type}/arguments")
                         exit(1)
                     all_arguments[other_argument] = YAML_content[self.type]['arguments']['others'][other_argument]['default']
+                    # infer argument data type from default value
+                    data_type = type(all_arguments[other_argument])
+                    if other_argument in arguments:
+                        # overwrite default value with user-given value
+                        if data_type == bool:
+                            # thank Keith Gaughan https://stackoverflow.com/a/715455
+                            all_arguments[other_argument] = arguments[other_argument].lower() in ['true', '1', 't', 'y', 'yes']
+                        else:
+                            all_arguments[other_argument] = data_type(arguments[other_argument])
+                        arguments.pop(other_argument)
+            if len(arguments):
+                logging.warning(f'Some arguments given to run() are not used by the algorithm : {list(arguments.keys())}')
             # get current date and time
             start_datetime: time.struct_time = time.localtime()
             start_datetime_iso: str = time.strftime('%Y-%m-%dT%H:%M:%SZ', start_datetime) # ISO 8601
@@ -263,9 +276,19 @@ if __name__ == "__main__":
         assert(len(args.supp_args)==1)
         print(type_inference(Path(args.supp_args[0])))
     elif args.action == 'run':
-        assert(len(args.supp_args)==2)
+        assert(len(args.supp_args)>=2)
         algo = args.supp_args[0]
         path = Path(args.supp_args[1])
+        # convert other arguments to a dict
+        # -> from ['arg1=value', 'arg2=value'] to {'arg1': 'value', 'arg2': 'value'}
+        arguments = dict()
+        for supp_arg in args.supp_args[2:]:
+            if supp_arg.count('=') == 1:
+                supp_arg = supp_arg.split('=')
+                arguments[supp_arg[0]] = supp_arg[1]
+            else:
+                logging.error(f"No '=' in supplemental argument '{supp_arg}'")
+                exit(1)
         data_folder = DataFolder(path)
-        data_folder.run(algo)
+        data_folder.run(algo,arguments)
 
