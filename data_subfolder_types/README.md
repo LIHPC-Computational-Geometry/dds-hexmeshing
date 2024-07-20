@@ -21,7 +21,7 @@ executable: {
     path: , # an entry of paths.yml
     filename: , # optional, if a filename must be appended to the path
     command_line: # command line template. between curly brackets are {arguments}, filled below
-},
+}
 arguments: {
     input_files: {
         argument1: # an filename constant (see content of <type_name>.yml)

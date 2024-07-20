@@ -3,7 +3,7 @@ description: |
 executable: {
   path: GRAPHITE,
   command_line: '{mesh}'
-},
+}
 arguments: {
   input_files: {
     mesh: GRID_MESH_MEDIT

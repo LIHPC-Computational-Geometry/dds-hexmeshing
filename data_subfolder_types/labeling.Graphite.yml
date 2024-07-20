@@ -3,7 +3,7 @@ description: |
 executable: {
   path: GRAPHITE,
   command_line: '{labeled_mesh}'
-},
+}
 arguments: {
   input_files: {
     labeled_mesh: SURFACE_LABELING_MESH_GEOGRAM

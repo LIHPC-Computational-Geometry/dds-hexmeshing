@@ -5,7 +5,7 @@ executable: {
   path: AUTOMATIC_POLYCUBE,
   filename: labeling_viewer,
   command_line: '{mesh} {labeling}'
-},
+}
 arguments: {
   input_files: {
     mesh: SURFACE_MESH_OBJ,

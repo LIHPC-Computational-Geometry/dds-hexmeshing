@@ -9,7 +9,7 @@ description: |
 executable: {
   path: MAYO,
   command_line: '{step} --no-progress'
-},
+}
 arguments: {
   input_files: {
     step: STEP
