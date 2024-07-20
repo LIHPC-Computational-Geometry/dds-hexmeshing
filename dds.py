@@ -8,6 +8,9 @@ import yaml
 import logging
 from argparse import ArgumentParser
 from typing import Optional
+import time
+from icecream import ic
+from os import mkdir
 
 def translate_filename_keyword(filename_keyword: str) -> str:
     for YAML_filepath in [x for x in Path('data_subfolder_types').iterdir() if x.is_file() and x.suffix == '.yml' and x.stem.count('.') == 0]:
@@ -126,24 +129,25 @@ class DataFolder():
             if self.type not in YAML_content:
                 logging.error(f"Behavior of {YAML_filepath} is not specified for input data folders of type '{self.type}', like {self.path} is")
                 exit(1)
+            # retrieve info about underlying executable
             if 'executable' not in YAML_content[self.type]:
-                logging.error(f"{YAML_filepath} has no 'executable' entry")
+                logging.error(f"{YAML_filepath} has no '{self.type}/executable' entry")
                 exit(1)
             if 'path' not in YAML_content[self.type]['executable']:
-                logging.error(f"{YAML_filepath} has no 'executable'/'path' entry")
+                logging.error(f"{YAML_filepath} has no '{self.type}/executable/path' entry")
                 exit(1)
             path_keyword = YAML_content[self.type]['executable']['path']
             if 'command_line' not in YAML_content[self.type]['executable']:
-                logging.error(f"{YAML_filepath} has no 'executable'/'command_line' entry")
+                logging.error(f"{YAML_filepath} has no '{self.type}/executable/command_line' entry")
                 exit(1)
             with open('paths.yml') as paths_stream:
                 paths = yaml.safe_load(paths_stream)
                 if path_keyword not in paths:
-                    logging.error(f"'{path_keyword}' is referenced in {YAML_filepath} but does not exist in paths.yml")
+                    logging.error(f"'{path_keyword}' is referenced in {YAML_filepath} at '{self.type}/executable/path' but does not exist in paths.yml")
                     exit(1)
             executable_path: Path = Path(paths[path_keyword]).expanduser()
             if not executable_path.exists():
-                logging.error(f"In paths.yml, '{path_keyword}' reference a non existing path, required by {YAML_filepath}")
+                logging.error(f"In paths.yml, '{path_keyword}' reference a non existing path, required by {YAML_filepath} algorithm")
                 logging.error(f"({executable_path})")
                 exit(1)
             executable_filename = None
@@ -151,9 +155,60 @@ class DataFolder():
                 executable_filename = YAML_content[self.type]['executable']['filename']
                 executable_path = executable_path / executable_filename
             if not executable_path.exists():
-                logging.error(f"There is no {executable_filename} in {paths[path_keyword]}. Required by {YAML_filepath}")
+                logging.error(f"There is no {executable_filename} in {paths[path_keyword]}. Required by {YAML_filepath} algorithm")
                 exit(1)
             print(f"Running '{algo_name}' -> executing {executable_path}")
+            # assemble dict of 'others' arguments
+            all_arguments = dict()
+            if 'arguments' not in YAML_content[self.type]:
+                logging.error(f"{YAML_filepath} has no '{self.type}/arguments' entry")
+                exit(1)
+            if 'others' in YAML_content[self.type]['arguments']:
+                for other_argument in YAML_content[self.type]['arguments']['others']:
+                    if other_argument in all_arguments:
+                        logging.error(f"{YAML_filepath} has multiple arguments named '{input_file_argument}' in '{self.type}/arguments")
+                        exit(1)
+                    all_arguments[other_argument] = YAML_content[self.type]['arguments']['others'][other_argument]['default']
+            # get current date and time
+            start_datetime: time.struct_time = time.localtime()
+            start_datetime_iso: str = time.strftime('%Y-%m-%dT%H:%M:%SZ', start_datetime) # ISO 8601
+            start_datetime_filesystem: str = time.strftime('%Y%m%d_%H%M%S', start_datetime) # no ':' for the string to be used in a filename
+            # find out if it's a transformative or a generative algorithm (edit a DataFolder or create a sub-DataFolder)
+            output_folder_path: Optional[Path] = None
+            if 'output_folder' in YAML_content[self.type]:
+                output_folder = YAML_content[self.type]['output_folder']
+                output_folder = output_folder.format(**all_arguments).replace('%d',start_datetime_filesystem)
+                output_folder_path = self.path / output_folder
+                if output_folder_path.exists():
+                    logging.error(f"The output folder to create ({output_folder_path}) already exists")
+                    exit(1)
+                mkdir(output_folder_path)
+            # add 'input_files' and 'output_files' arguments to the 'all_arguments' dict
+            if 'input_files' not in YAML_content[self.type]['arguments']:
+                logging.error(f"{YAML_filepath} has no '{self.type}/arguments/input_files' entry")
+                exit(1)
+            if 'output_files' not in YAML_content[self.type]['arguments']:
+                logging.error(f"{YAML_filepath} has no '{self.type}/arguments/output_files' entry")
+                exit(1)
+            for input_file_argument in YAML_content[self.type]['arguments']['input_files']:
+                if input_file_argument in all_arguments:
+                    logging.error(f"{YAML_filepath} has multiple arguments named '{input_file_argument}' in '{self.type}/arguments")
+                    exit(1)
+                input_file_path = self.get_file(YAML_content[self.type]['arguments']['input_files'][input_file_argument], True)
+                all_arguments[input_file_argument] = input_file_path
+            for output_file_argument in YAML_content[self.type]['arguments']['output_files']:
+                if output_file_argument in all_arguments:
+                    logging.error(f"{YAML_filepath} has multiple arguments named '{output_file_argument}' in '{self.type}/arguments")
+                    exit(1)
+                output_file_path = None
+                if output_folder_path is None: # case transformative algorithm, no output folder created
+                   output_file_path = self.get_file(YAML_content[self.type]['arguments']['output_files'][output_file_argument], False)
+                else: # case generative algorithm
+                   output_file_path = output_folder_path / translate_filename_keyword(YAML_content[self.type]['arguments']['output_files'][output_file_argument])
+                all_arguments[output_file_argument] = output_file_path
+            ic(all_arguments)
+            
+            
 
 if __name__ == "__main__":
     
