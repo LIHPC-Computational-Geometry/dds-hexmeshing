@@ -16,7 +16,7 @@ tet-mesh: { # case of 'write_glb' applied on a 'tet-mesh' subfolder
       gltf: SURFACE_MESH_GLB
     }
   }
-},
+}
 labeling: { # case of 'write_glb' applied on a 'labeling' subfolder
   executable: {
     path: AUTOMATIC_POLYCUBE,
@@ -36,7 +36,7 @@ labeling: { # case of 'write_glb' applied on a 'labeling' subfolder
       gltf: LABELED_MESH_GLB
     }
   }
-},
+}
 hex-mesh: { # case of 'write_glb' applied on a 'hex-mesh' subfolder
   executable: {
     path: AUTOMATIC_POLYCUBE,
