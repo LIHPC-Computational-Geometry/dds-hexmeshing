@@ -17,12 +17,22 @@ from os.path import expanduser
 from rich.console import Console
 from rich.rule import Rule
 from rich.traceback import install
+from rich.logging import RichHandler
 import subprocess_tee
 import importlib.util
 from math import floor
 
 # colored and detailed Python traceback
+# https://rich.readthedocs.io/en/latest/traceback.html
 install(show_locals=True,width=Console().width,word_wrap=True)
+
+# formatted and colorized Python's logging module
+# https://rich.readthedocs.io/en/latest/logging.html
+FORMAT = "%(message)s"
+logging.basicConfig(
+    level="NOTSET", format=FORMAT, datefmt="[%X]", handlers=[RichHandler()]
+)
+log = logging.getLogger("rich")
 
 def simple_human_readable_duration(duration_seconds) -> str:
     """
@@ -55,25 +65,25 @@ def translate_filename_keyword(filename_keyword: str) -> str:
             YAML_content = yaml.safe_load(YAML_stream)
             if filename_keyword in YAML_content['filenames']:
                 return YAML_content['filenames'][filename_keyword]
-    logging.error(f"None of the data subfolder types declare the '{filename_keyword}' filename keyword")
+    log.error(f"None of the data subfolder types declare the '{filename_keyword}' filename keyword")
     exit(1)
 
 def is_instance_of(path: Path, data_subfolder_type: str) -> bool:
     YAML_filepath: Path = Path('data_subfolder_types') / (data_subfolder_type + '.yml')
     if not YAML_filepath.exists():
-        logging.error(f'{YAML_filepath} does not exist')
+        log.error(f'{YAML_filepath} does not exist')
         exit(1)
     with open(YAML_filepath) as YAML_stream:
         YAML_content = yaml.safe_load(YAML_stream)
         if 'distinctive_content' not in YAML_content:
-            logging.error(f"{YAML_filepath} has no 'distinctive_content' entry")
+            log.error(f"{YAML_filepath} has no 'distinctive_content' entry")
             exit(1)
         if 'filenames' not in YAML_content:
-            logging.error(f"{YAML_filepath} has no 'filenames' entry")
+            log.error(f"{YAML_filepath} has no 'filenames' entry")
             exit(1)
         for distinctive_content in YAML_content['distinctive_content']:
             if distinctive_content not in YAML_content['filenames']:
-                logging.error(f"{YAML_filepath} has no 'filenames'/'{distinctive_content}' entry, despite being referenced in the 'distinctive_content' entry")
+                log.error(f"{YAML_filepath} has no 'filenames'/'{distinctive_content}' entry, despite being referenced in the 'distinctive_content' entry")
                 exit(1)
             filename = YAML_content['filenames'][distinctive_content]
             if (path / filename).exists():
@@ -88,7 +98,7 @@ def type_inference(path: Path) -> Optional[str]:
     if len(recognized_types) == 0:
         return None
     if len(recognized_types) > 1:
-        logging.error(f"Several data folder types recognize the folder {path}")
+        log.error(f"Several data folder types recognize the folder {path}")
         exit(1)
     return recognized_types[0]
 
@@ -101,7 +111,7 @@ def run(path: Path, algo_name: str, arguments_as_list: list = list()):
         # it can be the name of a custom algorithm, defined in an <algo_name>.py
         script_filepath: Path = Path('algorithms') / (algo_name + '.py')
         if not script_filepath.exists():
-            logging.error(f"Cannot run '{algo_name}' because neither {YAML_filepath} nor {script_filepath} exist")
+            log.error(f"Cannot run '{algo_name}' because neither {YAML_filepath} nor {script_filepath} exist")
             exit(1)
         
         # command = f"{script_filepath} {' '.join(arguments_as_list)}"
@@ -126,7 +136,7 @@ def run(path: Path, algo_name: str, arguments_as_list: list = list()):
             arg = arg.split('=')
             arguments[arg[0]] = arg[1]
         else:
-            logging.error(f"No '=' in supplemental argument '{arg}'")
+            log.error(f"No '=' in supplemental argument '{arg}'")
             exit(1)
     data_folder = DataFolder(path)
     data_folder.run(algo,arguments)
@@ -137,7 +147,7 @@ class DataFolder():
         self.path: Path = path
         self.type: str = type_inference(path)
         if self.type is None:
-            logging.error(f'No data_subfolder_type/* recognize {self.type}')
+            log.error(f'No data_subfolder_type/* recognize {self.type}')
             exit(1)
         
     def auto_generate_missing_file(self, filename_keyword: str):
@@ -162,12 +172,12 @@ class DataFolder():
                     # check existence of input files
                     for input_file in [self.get_file(input_filename_keyword, False) for input_filename_keyword in YAML_content[self.type]['arguments']['input_files']]:
                         if not input_file.exists():
-                            logging.error(f"Cannot auto-generate missing file {filename_keyword} in {self.path}")
-                            logging.error(f"Found algorithm '{YAML_algo_filename.stem}' to generate it")
-                            logging.error(f"but input file '{input_file.stem}' is also missing.")
+                            log.error(f"Cannot auto-generate missing file {filename_keyword} in {self.path}")
+                            log.error(f"Found algorithm '{YAML_algo_filename.stem}' to generate it")
+                            log.error(f"but input file '{input_file.stem}' is also missing.")
                             exit(1)
                     # all input files exist
-                    # self.run(YAML_algo_filename.stem)
+                    self.run(YAML_algo_filename.stem)
                 else:
                     # this transformative algorithm does not create the file we need
                     continue # parse next YAML algo definition
@@ -177,15 +187,15 @@ class DataFolder():
         # transform filename keyword into actual filename by reading the YAML describing the data subfolder type
         YAML_filepath: Path = Path('data_subfolder_types') / (self.type + '.yml')
         if not YAML_filepath.exists():
-            logging.error(f'{YAML_filepath} does not exist')
+            log.error(f'{YAML_filepath} does not exist')
             exit(1)
         with open(YAML_filepath) as YAML_stream:
             YAML_content = yaml.safe_load(YAML_stream)
             if 'filenames' not in YAML_content:
-                logging.error(f"{YAML_filepath} has no 'filenames' entry")
+                log.error(f"{YAML_filepath} has no 'filenames' entry")
                 exit(1)
             if filename_keyword not in YAML_content['filenames']:
-                logging.error(f"{YAML_filepath} has no 'filenames'/'{filename_keyword}' entry")
+                log.error(f"{YAML_filepath} has no 'filenames'/'{filename_keyword}' entry")
                 exit(1)
             path = (self.path / YAML_content['filenames'][filename_keyword]).absolute()
             if (not must_exist) or (must_exist and path.exists()):
@@ -232,52 +242,52 @@ class DataFolder():
     def run(self, algo_name: str, arguments: dict = dict()):
         YAML_filepath: Path = Path('algorithms') / (algo_name + '.yml')
         if not YAML_filepath.exists():
-            logging.error(f"Cannot run '{algo_name}' because {YAML_filepath} does not exist")
+            log.error(f"Cannot run '{algo_name}' because {YAML_filepath} does not exist")
             exit(1)
         with open(YAML_filepath) as YAML_stream:
             YAML_content = yaml.safe_load(YAML_stream)
             if self.type not in YAML_content:
-                logging.error(f"Behavior of {YAML_filepath} is not specified for input data folders of type '{self.type}', like {self.path} is")
+                log.error(f"Behavior of {YAML_filepath} is not specified for input data folders of type '{self.type}', like {self.path} is")
                 exit(1)
             # retrieve info about underlying executable
             if 'executable' not in YAML_content[self.type]:
-                logging.error(f"{YAML_filepath} has no '{self.type}/executable' entry")
+                log.error(f"{YAML_filepath} has no '{self.type}/executable' entry")
                 exit(1)
             if 'path' not in YAML_content[self.type]['executable']:
-                logging.error(f"{YAML_filepath} has no '{self.type}/executable/path' entry")
+                log.error(f"{YAML_filepath} has no '{self.type}/executable/path' entry")
                 exit(1)
             path_keyword: str = YAML_content[self.type]['executable']['path']
             if 'command_line' not in YAML_content[self.type]['executable']:
-                logging.error(f"{YAML_filepath} has no '{self.type}/executable/command_line' entry")
+                log.error(f"{YAML_filepath} has no '{self.type}/executable/command_line' entry")
                 exit(1)
             command_line: str = YAML_content[self.type]['executable']['command_line']
             with open('paths.yml') as paths_stream:
                 paths = yaml.safe_load(paths_stream)
                 if path_keyword not in paths:
-                    logging.error(f"'{path_keyword}' is referenced in {YAML_filepath} at '{self.type}/executable/path' but does not exist in paths.yml")
+                    log.error(f"'{path_keyword}' is referenced in {YAML_filepath} at '{self.type}/executable/path' but does not exist in paths.yml")
                     exit(1)
             executable_path: Path = Path(paths[path_keyword]).expanduser()
             if not executable_path.exists():
-                logging.error(f"In paths.yml, '{path_keyword}' reference a non existing path, required by {YAML_filepath} algorithm")
-                logging.error(f"({executable_path})")
+                log.error(f"In paths.yml, '{path_keyword}' reference a non existing path, required by {YAML_filepath} algorithm")
+                log.error(f"({executable_path})")
                 exit(1)
             executable_filename: Optional[str] = None
             if 'filename' in YAML_content[self.type]['executable']:
                 executable_filename = YAML_content[self.type]['executable']['filename']
                 executable_path = executable_path / executable_filename
             if not executable_path.exists():
-                logging.error(f"There is no {executable_filename} in {paths[path_keyword]}. Required by {YAML_filepath} algorithm")
+                log.error(f"There is no {executable_filename} in {paths[path_keyword]}. Required by {YAML_filepath} algorithm")
                 exit(1)
             print(f"Running '{algo_name}' -> executing {executable_path}")
             # assemble dict of 'others' arguments
             all_arguments = dict()
             if 'arguments' not in YAML_content[self.type]:
-                logging.error(f"{YAML_filepath} has no '{self.type}/arguments' entry")
+                log.error(f"{YAML_filepath} has no '{self.type}/arguments' entry")
                 exit(1)
             if 'others' in YAML_content[self.type]['arguments']:
                 for other_argument in YAML_content[self.type]['arguments']['others']:
                     if other_argument in all_arguments:
-                        logging.error(f"{YAML_filepath} has multiple arguments named '{input_file_argument}' in '{self.type}/arguments")
+                        log.error(f"{YAML_filepath} has multiple arguments named '{input_file_argument}' in '{self.type}/arguments")
                         exit(1)
                     all_arguments[other_argument] = YAML_content[self.type]['arguments']['others'][other_argument]['default']
                     # infer argument data type from default value
@@ -291,7 +301,7 @@ class DataFolder():
                             all_arguments[other_argument] = data_type(arguments[other_argument])
                         arguments.pop(other_argument)
             if len(arguments):
-                logging.warning(f'Some arguments given to run() are not used by the algorithm : {list(arguments.keys())}')
+                log.warning(f'Some arguments given to run() are not used by the algorithm : {list(arguments.keys())}')
             # get current date and time
             start_datetime: time.struct_time = time.localtime()
             start_datetime_iso: str = time.strftime('%Y-%m-%dT%H:%M:%SZ', start_datetime) # ISO 8601
@@ -303,24 +313,24 @@ class DataFolder():
                 output_folder = output_folder.format(**all_arguments).replace('%d',start_datetime_filesystem)
                 output_folder_path = self.path / output_folder
                 if output_folder_path.exists():
-                    logging.error(f"The output folder to create ({output_folder_path}) already exists")
+                    log.error(f"The output folder to create ({output_folder_path}) already exists")
                     exit(1)
                 mkdir(output_folder_path)
                 command_line = command_line.replace(r'{output_folder}',str(output_folder_path))
             # add 'input_files' and 'output_files' arguments to the 'all_arguments' dict
             if 'input_files' not in YAML_content[self.type]['arguments']:
-                logging.error(f"{YAML_filepath} has no '{self.type}/arguments/input_files' entry")
+                log.error(f"{YAML_filepath} has no '{self.type}/arguments/input_files' entry")
                 exit(1)
             for input_file_argument in YAML_content[self.type]['arguments']['input_files']:
                 if input_file_argument in all_arguments:
-                    logging.error(f"{YAML_filepath} has multiple arguments named '{input_file_argument}' in '{self.type}/arguments")
+                    log.error(f"{YAML_filepath} has multiple arguments named '{input_file_argument}' in '{self.type}/arguments")
                     exit(1)
                 input_file_path = self.get_file(YAML_content[self.type]['arguments']['input_files'][input_file_argument], True)
                 all_arguments[input_file_argument] = input_file_path
             if 'output_files' in YAML_content[self.type]['arguments']:
                 for output_file_argument in YAML_content[self.type]['arguments']['output_files']:
                     if output_file_argument in all_arguments:
-                        logging.error(f"{YAML_filepath} has multiple arguments named '{output_file_argument}' in '{self.type}/arguments")
+                        log.error(f"{YAML_filepath} has multiple arguments named '{output_file_argument}' in '{self.type}/arguments")
                         exit(1)
                     output_file_path = None
                     if output_folder_path is None: # case transformative algorithm, no output folder created
@@ -353,7 +363,7 @@ class DataFolder():
                 data_from_preprocessing = self.execute_algo_preprocessing(console,algo_name,output_folder_path,all_arguments)
                 # execute the command line
                 if 'tee' not in YAML_content[self.type]:
-                    logging.error(f"{YAML_filepath} has no '{self.type}/tee' entry")
+                    log.error(f"{YAML_filepath} has no '{self.type}/tee' entry")
                     exit(1)
                 tee = YAML_content[self.type]['tee']
                 if tee:
