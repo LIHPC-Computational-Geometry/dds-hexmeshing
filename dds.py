@@ -147,7 +147,7 @@ class DataFolder():
         self.path: Path = path
         self.type: str = type_inference(path)
         if self.type is None:
-            log.error(f'No data_subfolder_type/* recognize {self.type}')
+            log.error(f'No data_subfolder_type/* recognize [magenta]{collapseuser(self.path)}', extra={"markup": True})
             exit(1)
         
     def auto_generate_missing_file(self, filename_keyword: str):
