@@ -320,7 +320,7 @@ class DataFolder():
                         output_file_path = self.get_file(YAML_content[self.type]['arguments']['output_files'][output_file_argument], False)
                     else: # case generative algorithm
                         output_file_path = output_folder_path / translate_filename_keyword(YAML_content[self.type]['arguments']['output_files'][output_file_argument])
-                        all_arguments[output_file_argument] = output_file_path
+                    all_arguments[output_file_argument] = output_file_path
             command_line = f'{executable_path} {command_line.format(**all_arguments)}'
             # fill/create the info.json file
             info_file = dict()
