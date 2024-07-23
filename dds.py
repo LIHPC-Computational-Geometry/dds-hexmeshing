@@ -13,6 +13,7 @@ from typing import Optional
 import time
 from icecream import ic
 from os import mkdir
+from os.path import expanduser
 from rich.console import Console
 from rich.rule import Rule
 from rich.traceback import install
@@ -38,6 +39,15 @@ def simple_human_readable_duration(duration_seconds) -> str:
         formatted_duration += '{}m '.format(minutes)
     formatted_duration += '{}s'.format(seconds)
     return formatted_duration
+
+def collapseuser(path: Path) -> str:
+    # inverse of os.path.expanduser()
+    # thanks commandlineluser https://www.reddit.com/r/learnpython/comments/4mmkjo/whats_the_opposite_of_ospathexpanduser/
+    return str(path.absolute()).replace(
+        expanduser('~'),
+        '~',
+        1 # only replace the fist occurrence
+    )
 
 def translate_filename_keyword(filename_keyword: str) -> str:
     for YAML_filepath in [x for x in Path('data_subfolder_types').iterdir() if x.is_file() and x.suffix == '.yml' and x.stem.count('.') == 0]:
@@ -347,12 +357,12 @@ class DataFolder():
                     exit(1)
                 tee = YAML_content[self.type]['tee']
                 if tee:
-                    console.print(Rule(f'beginning of {executable_path}'))
+                    console.print(Rule(f'beginning of [magenta]{collapseuser(executable_path)}'))
                 chrono_start = time.monotonic()
                 completed_process = subprocess_tee.run(command_line, shell=True, capture_output=True, tee=tee)
                 chrono_stop = time.monotonic()
                 if tee:
-                    console.print(Rule(f'end of {executable_path}'))
+                    console.print(Rule(f'end of [magenta]{collapseuser(executable_path)}'))
                 # write stdout and stderr
                 if completed_process.stdout != '': # if the subprocess wrote something in standard output
                     filename = algo_name + '.stdout.txt'
