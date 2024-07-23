@@ -297,9 +297,6 @@ class DataFolder():
                     exit(1)
                 mkdir(output_folder_path)
                 command_line = command_line.replace(r'{output_folder}',str(output_folder_path))
-            # execute preprocessing
-            console = Console()
-            data_from_preprocessing = self.execute_algo_preprocessing(console,algo_name,output_folder_path,all_arguments)
             # add 'input_files' and 'output_files' arguments to the 'all_arguments' dict
             if 'input_files' not in YAML_content[self.type]['arguments']:
                 logging.error(f"{YAML_filepath} has no '{self.type}/arguments/input_files' entry")
@@ -339,40 +336,45 @@ class DataFolder():
             }
             for k,v in all_arguments.items():
                 info_file[start_datetime_iso]['parameters'][k] = str(v)
-            # execute the command line
-            if 'tee' not in YAML_content[self.type]:
-                logging.error(f"{YAML_filepath} has no '{self.type}/tee' entry")
-                exit(1)
-            tee = YAML_content[self.type]['tee']
-            if tee:
-                console.print(Rule(f'beginning of {executable_path}'))
-            chrono_start = time.monotonic()
-            completed_process = subprocess_tee.run(command_line, shell=True, capture_output=True, tee=tee)
-            chrono_stop = time.monotonic()
-            if tee:
-                console.print(Rule(f'end of {executable_path}'))
-            # write stdout and stderr
-            if completed_process.stdout != '': # if the subprocess wrote something in standard output
-                filename = algo_name + '.stdout.txt'
-                f = open(self.path / filename if output_folder_path is None else output_folder_path / filename,'x')# x = create new file
-                f.write(completed_process.stdout)
-                f.close()
-                info_file[start_datetime_iso]['stdout'] = filename
-            if completed_process.stderr != '': # if the subprocess wrote something in standard error
-                filename =  algo_name + '.stderr.txt'
-                f = open(self.path / filename if output_folder_path is None else output_folder_path / filename,'x')
-                f.write(completed_process.stderr)
-                f.close()
-                info_file[start_datetime_iso]['stderr'] = filename
-            # store return code and duration
-            info_file[start_datetime_iso]['return_code'] = completed_process.returncode
-            duration = chrono_stop - chrono_start
-            info_file[start_datetime_iso]['duration'] = [duration, simple_human_readable_duration(duration)]
-            # write JSON file
-            with open(info_file_path,'w') as file:
-                json.dump(info_file, file, sort_keys=True, indent=4)
-            # execute postprocessing
-            self.execute_algo_postprocessing(console,algo_name,output_folder_path,all_arguments,data_from_preprocessing)
+            # execution
+            console = Console()
+            with console.status(f'Executing [bold yellow]{algo_name}[/] on [bold cyan]{self.path}[/]...') as status:
+                # execute preprocessing
+                data_from_preprocessing = self.execute_algo_preprocessing(console,algo_name,output_folder_path,all_arguments)
+                # execute the command line
+                if 'tee' not in YAML_content[self.type]:
+                    logging.error(f"{YAML_filepath} has no '{self.type}/tee' entry")
+                    exit(1)
+                tee = YAML_content[self.type]['tee']
+                if tee:
+                    console.print(Rule(f'beginning of {executable_path}'))
+                chrono_start = time.monotonic()
+                completed_process = subprocess_tee.run(command_line, shell=True, capture_output=True, tee=tee)
+                chrono_stop = time.monotonic()
+                if tee:
+                    console.print(Rule(f'end of {executable_path}'))
+                # write stdout and stderr
+                if completed_process.stdout != '': # if the subprocess wrote something in standard output
+                    filename = algo_name + '.stdout.txt'
+                    f = open(self.path / filename if output_folder_path is None else output_folder_path / filename,'x')# x = create new file
+                    f.write(completed_process.stdout)
+                    f.close()
+                    info_file[start_datetime_iso]['stdout'] = filename
+                if completed_process.stderr != '': # if the subprocess wrote something in standard error
+                    filename =  algo_name + '.stderr.txt'
+                    f = open(self.path / filename if output_folder_path is None else output_folder_path / filename,'x')
+                    f.write(completed_process.stderr)
+                    f.close()
+                    info_file[start_datetime_iso]['stderr'] = filename
+                # store return code and duration
+                info_file[start_datetime_iso]['return_code'] = completed_process.returncode
+                duration = chrono_stop - chrono_start
+                info_file[start_datetime_iso]['duration'] = [duration, simple_human_readable_duration(duration)]
+                # write JSON file
+                with open(info_file_path,'w') as file:
+                    json.dump(info_file, file, sort_keys=True, indent=4)
+                # execute postprocessing
+                self.execute_algo_postprocessing(console,algo_name,output_folder_path,all_arguments,data_from_preprocessing)
 
 if __name__ == "__main__":
     
