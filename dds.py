@@ -33,6 +33,7 @@ logging.basicConfig(
     level="NOTSET", format=FORMAT, datefmt="[%X]", handlers=[RichHandler()]
 )
 log = logging.getLogger("rich")
+logging.getLogger('asyncio').setLevel(logging.WARNING) # ignore 'Using selector: EpollSelector' from asyncio selector_events.py:54
 
 def simple_human_readable_duration(duration_seconds) -> str:
     """
@@ -158,7 +159,7 @@ class DataFolder():
         # if we have all the input files, just execute the algorithm
         # else exit with failure
         # Can be improve with recursive call on the input files, and dict to cache the map between output file and algorithm
-        for YAML_algo_filename in [x for x in Path('data_subfolder_types').iterdir() if x.is_file() and x.suffix == '.yml']:
+        for YAML_algo_filename in [x for x in Path('algorithms').iterdir() if x.is_file() and x.suffix == '.yml']:
             with open(YAML_algo_filename) as YAML_stream:
                 YAML_content = yaml.safe_load(YAML_stream)
                 if self.type not in YAML_content:
@@ -167,10 +168,10 @@ class DataFolder():
                 if 'output_folder' in YAML_content[self.type]:
                     # we found a generative algorithm (it creates a subfolder)
                     continue # parse next YAML algo definition
-                if filename_keyword in YAML_content[self.type]['arguments']['output_files']:
+                if filename_keyword in [YAML_content[self.type]['arguments']['output_files'][command_line_keyword] for command_line_keyword in YAML_content[self.type]['arguments']['output_files']]:
                     # we found an algorithm whose 'filename_keyword' is one of the output file
                     # check existence of input files
-                    for input_file in [self.get_file(input_filename_keyword, False) for input_filename_keyword in YAML_content[self.type]['arguments']['input_files']]:
+                    for input_file in [self.get_file(YAML_content[self.type]['arguments']['input_files'][command_line_keyword], False) for command_line_keyword in YAML_content[self.type]['arguments']['input_files']]:
                         if not input_file.exists():
                             log.error(f"Cannot auto-generate missing file {filename_keyword} in {self.path}")
                             log.error(f"Found algorithm '{YAML_algo_filename.stem}' to generate it")
@@ -178,6 +179,7 @@ class DataFolder():
                             exit(1)
                     # all input files exist
                     self.run(YAML_algo_filename.stem)
+                    return
                 else:
                     # this transformative algorithm does not create the file we need
                     continue # parse next YAML algo definition
