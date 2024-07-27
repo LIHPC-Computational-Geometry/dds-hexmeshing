@@ -30,7 +30,6 @@ input_type: {
             }
         },
     },
-    note: , # string that will be printed as help/indication message at the beginning of an execution. Can contain {arguments}
-    comment: # string written in output info.json after each execution
+    indication: , # string that will be printed as help/indication message for the user, at the beginning of an execution. Can contain {arguments}
 }
 ```
