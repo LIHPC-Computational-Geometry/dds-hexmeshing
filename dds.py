@@ -60,12 +60,17 @@ def collapseuser(path: Path) -> str:
         1 # only replace the fist occurrence
     )
 
-def translate_filename_keyword(filename_keyword: str) -> str:
+def translate_filename_keyword(filename_keyword: str) -> tuple[str,str]:
+    """
+    From a filename keyword (by convention in uppercase), parse all defined datafolder types
+    until we found one of them that define this filename keyword.
+    Return the associated filename, and the datafolder type
+    """
     for YAML_filepath in [x for x in Path('data_subfolder_types').iterdir() if x.is_file() and x.suffix == '.yml' and x.stem.count('.') == 0]:
         with open(YAML_filepath) as YAML_stream:
             YAML_content = yaml.safe_load(YAML_stream)
             if filename_keyword in YAML_content['filenames']:
-                return YAML_content['filenames'][filename_keyword]
+                return (YAML_content['filenames'][filename_keyword],YAML_filepath.stem)
     log.error(f"None of the data subfolder types declare the '{filename_keyword}' filename keyword")
     exit(1)
 
@@ -338,7 +343,7 @@ class DataFolder():
                     if output_folder_path is None: # case transformative algorithm, no output folder created
                         output_file_path = self.get_file(YAML_content[self.type]['arguments']['output_files'][output_file_argument], False)
                     else: # case generative algorithm
-                        output_file_path = output_folder_path / translate_filename_keyword(YAML_content[self.type]['arguments']['output_files'][output_file_argument])
+                        output_file_path = output_folder_path / translate_filename_keyword(YAML_content[self.type]['arguments']['output_files'][output_file_argument])[0]
                     all_arguments[output_file_argument] = output_file_path
             command_line = f'{executable_path} {command_line.format(**all_arguments)}'
             # fill/create the info.json file
