@@ -146,14 +146,21 @@ def run(path: Path, algo_name: str, arguments_as_list: list = list()):
     data_folder = DataFolder(path)
     data_folder.run(algo,arguments)
 
+class DataFolderInstantiationError(Exception):
+    """
+    Exception raised for attempted DataFolder instantiation on a folder whose type cannot be inferred
+    """
+    def __init__(self, path):
+        self.path = path
+        super().__init__(f'No definitions/data_folder_type/* recognize {collapseuser(self.path)}')
+
 class DataFolder():
 
     def __init__(self,path: Path):
-        self.path: Path = path
-        self.type: str = type_inference(path)
+        self.path: Path = Path(path) # in case the argument was a str
+        self.type: str = type_inference(self.path)
         if self.type is None:
-            log.error(f'No definitions/data_folder_type/* recognize [magenta]{collapseuser(self.path)}', extra={"markup": True})
-            exit(1)
+            raise DataFolderInstantiationError(self.path)
         
     def auto_generate_missing_file(self, filename_keyword: str):
         # Idea : parse all algorithms until we found one where 'filename_keyword' is an output file
