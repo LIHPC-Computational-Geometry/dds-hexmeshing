@@ -65,16 +65,16 @@ def translate_filename_keyword(filename_keyword: str) -> tuple[str,str]:
     until we found one of them that define this filename keyword.
     Return the associated filename, and the datafolder type
     """
-    for YAML_filepath in [x for x in Path('data_subfolder_types').iterdir() if x.is_file() and x.suffix == '.yml' and x.stem.count('.') == 0]:
+    for YAML_filepath in [x for x in Path('definitions/data_folder_types').iterdir() if x.is_file() and x.suffix == '.yml' and x.stem.count('.') == 0]:
         with open(YAML_filepath) as YAML_stream:
             YAML_content = yaml.safe_load(YAML_stream)
             if filename_keyword in YAML_content['filenames']:
                 return (YAML_content['filenames'][filename_keyword],YAML_filepath.stem)
-    log.error(f"None of the data subfolder types declare the '{filename_keyword}' filename keyword")
+    log.error(f"None of the data folder types declare the '{filename_keyword}' filename keyword")
     exit(1)
 
-def is_instance_of(path: Path, data_subfolder_type: str) -> bool:
-    YAML_filepath: Path = Path('data_subfolder_types') / (data_subfolder_type + '.yml')
+def is_instance_of(path: Path, data_folder_type: str) -> bool:
+    YAML_filepath: Path = Path('definitions/data_folder_types') / (data_folder_type + '.yml')
     if not YAML_filepath.exists():
         log.error(f'{YAML_filepath} does not exist')
         exit(1)
@@ -97,7 +97,7 @@ def is_instance_of(path: Path, data_subfolder_type: str) -> bool:
 
 def type_inference(path: Path) -> Optional[str]:
     recognized_types = list()
-    for type_str in [x.stem for x in Path('data_subfolder_types').iterdir() if x.is_file() and x.suffix == '.yml' and x.stem.count('.') == 0]: # Path.stem is Path.name without suffix
+    for type_str in [x.stem for x in Path('definitions/data_folder_types').iterdir() if x.is_file() and x.suffix == '.yml' and x.stem.count('.') == 0]: # Path.stem is Path.name without suffix
         if is_instance_of(path,type_str):
             recognized_types.append(type_str)
     if len(recognized_types) == 0:
@@ -111,7 +111,7 @@ def type_inference(path: Path) -> Optional[str]:
 # The fist one must be executed on an instance of DataFolder
 # The second has not this constraint (any folder, eg the parent folder of many DataFolder)
 def run(path: Path, algo_name: str, arguments_as_list: list = list()):
-    YAML_filepath: Path = Path('algorithms') / (algo_name + '.yml')
+    YAML_filepath: Path = Path('definitions/algorithms') / (algo_name + '.yml')
     if not YAML_filepath.exists():
         # it can be the name of a custom algorithm, defined in an <algo_name>.py
         script_filepath: Path = Path('algorithms') / (algo_name + '.py')
@@ -152,7 +152,7 @@ class DataFolder():
         self.path: Path = path
         self.type: str = type_inference(path)
         if self.type is None:
-            log.error(f'No data_subfolder_type/* recognize [magenta]{collapseuser(self.path)}', extra={"markup": True})
+            log.error(f'No definitions/data_folder_type/* recognize [magenta]{collapseuser(self.path)}', extra={"markup": True})
             exit(1)
         
     def auto_generate_missing_file(self, filename_keyword: str):
@@ -190,8 +190,8 @@ class DataFolder():
 
         
     def get_file(self, filename_keyword: str, must_exist: bool = False) -> Path:
-        # transform filename keyword into actual filename by reading the YAML describing the data subfolder type
-        YAML_filepath: Path = Path('data_subfolder_types') / (self.type + '.yml')
+        # transform filename keyword into actual filename by reading the YAML describing the data folder type
+        YAML_filepath: Path = Path('definitions/data_folder_types') / (self.type + '.yml')
         if not YAML_filepath.exists():
             log.error(f'{YAML_filepath} does not exist')
             exit(1)
@@ -212,7 +212,7 @@ class DataFolder():
             raise Exception(f'Missing file {path}')
     
     def execute_algo_preprocessing(self, console: Console, algo_name: str, output_subfolder: Path, arguments: dict) -> dict:
-        script_filepath: Path = Path('algorithms') / (algo_name + '.pre.py')
+        script_filepath: Path = Path('definitions/algorithms') / (algo_name + '.pre.py')
         if not script_filepath.exists():
             return dict() # no preprocessing defined for this algorithm
         # thanks wim https://stackoverflow.com/a/27189110
@@ -228,7 +228,7 @@ class DataFolder():
         return data_from_preprocessing
     
     def execute_algo_postprocessing(self, console: Console, algo_name: str, output_subfolder: Optional[Path], arguments: dict, data_from_preprocessing: dict) -> dict:
-        script_filepath: Path = Path('algorithms') / (algo_name + '.post.py')
+        script_filepath: Path = Path('definitions/algorithms') / (algo_name + '.post.py')
         if not script_filepath.exists():
             return # no postprocessing defined for this algorithm
         # import the module containing the post_processing() function
@@ -246,7 +246,7 @@ class DataFolder():
         console.print(Rule(f'end of {script_filepath.name} post_processing()'))
 
     def run(self, algo_name: str, arguments: dict = dict()):
-        YAML_filepath: Path = Path('algorithms') / (algo_name + '.yml')
+        YAML_filepath: Path = Path('definitions/algorithms') / (algo_name + '.yml')
         if not YAML_filepath.exists():
             log.error(f"Cannot run '{algo_name}' because {YAML_filepath} does not exist")
             exit(1)
@@ -267,10 +267,10 @@ class DataFolder():
                 log.error(f"{YAML_filepath} has no '{self.type}/executable/command_line' entry")
                 exit(1)
             command_line: str = YAML_content[self.type]['executable']['command_line']
-            with open('paths.yml') as paths_stream:
+            with open('definitions/paths.yml') as paths_stream:
                 paths = yaml.safe_load(paths_stream)
                 if path_keyword not in paths:
-                    log.error(f"'{path_keyword}' is referenced in {YAML_filepath} at '{self.type}/executable/path' but does not exist in paths.yml")
+                    log.error(f"'{path_keyword}' is referenced in {YAML_filepath} at '{self.type}/executable/path' but does not exist in definitions/paths.yml")
                     exit(1)
             executable_path: Path = Path(paths[path_keyword]).expanduser()
             if not executable_path.exists():
