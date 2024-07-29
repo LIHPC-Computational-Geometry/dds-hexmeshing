@@ -456,8 +456,10 @@ dds.py [r]run[/] [bright_green]algo_name[/] [cyan]path/to/input/folder[/] \[algo
     Run the specified [bright_green]algorithm[/] on a [cyan]data folder[/]
     Here are the algorithms found in [bright_black]definitions/algorithms/[/] :\
             """)
-            for algo in [x.stem for x in Path('definitions/algorithms').iterdir() if x.is_file() and (x.suffix == '.yml' or (x.suffix == '.py' and x.stem.count('.') == 0))]:
+            for algo in [x.stem for x in Path('definitions/algorithms').iterdir() if x.is_file() and x.suffix == '.yml']:
                 yield Text(f'     • {algo}')
+            for algo in [x.stem for x in Path('definitions/algorithms').iterdir() if x.is_file() and x.suffix == '.py' and x.stem.count('.') == 0]:
+                yield Text(f'     • {algo} (Python script)')
 
         help_panels = Group(
             Text.from_markup("""\
