@@ -1,9 +1,5 @@
 #!/usr/bin/env python
 
-# ./dds.py typeof path/to/folder
-# ./dds.py run algo_name path/to/folder
-# ./dds.py run algo_name path/to/folder arg1=value arg2=value
-
 from pathlib import Path
 import yaml
 import json
@@ -14,10 +10,13 @@ import time
 from icecream import ic
 from os import mkdir
 from os.path import expanduser
-from rich.console import Console
+from rich.console import Console, group
+from rich.text import Text
 from rich.rule import Rule
 from rich.traceback import install
 from rich.logging import RichHandler
+from rich.theme import Theme
+from rich.panel import Panel
 import subprocess_tee
 import importlib.util
 from math import floor
@@ -412,7 +411,7 @@ if __name__ == "__main__":
     
     parser.add_argument(
         'action',
-        choices = ['typeof', 'run']
+        choices = ['typeof', 'run','help']
     )
     
     parser.add_argument(
@@ -430,4 +429,46 @@ if __name__ == "__main__":
         algo = args.supp_args[0]
         path = Path(args.supp_args[1])
         run(path,algo,args.supp_args[2:])
+    elif args.action == 'help':
+        assert(len(args.supp_args)<=1)
+        console = Console(theme=Theme(inherit=False))
+        if len(args.supp_args)==1:
+            print(f"Requesting help about '{args.supp_args[0]}'")
+            exit(0)
+        # else: general help
+        @group()
+        def get_panels():
+            yield Text.from_markup("""\
+     _     _ 
+    | |   | |
+  __| | __| |___ 
+ / _` |/ _` / __|
+| (_| | (_| \__ \\
+ \__,_|\__,_|___/
+
+Semantic data folders
+
+[bright_black]dds.py <action> \[action-specific args][/]
+            """) # ASCII font from https://patorjk.com/software/taag/#p=display&f=Doom&t=Type%20Something%20
+            yield Panel("""\
+dds.py [r]typeof[/] [cyan]path/to/input/folder[/]
+
+    Infer the type of a [cyan]data folder[/]\
+            """)
+        
+            yield Panel("""\
+dds.py [r]run[/] [bright_green]algo_name[/] [cyan]path/to/input/folder[/] \[algo-specific args]
+
+    Run the specified [bright_green]algorithm[/] on a [cyan]data folder[/]\
+            """)
+            yield Panel("""\
+dds.py [r]help[/] \[[bright_green]name[/]]
+
+    Print this message.
+    If a [bright_green]name[/] is provided, parse defined data folder types.
+    If one of them has this name, print info about it.
+    Else, parse defined algorithms.
+    If one of them has this name, print info about it.\
+            """)
+        console.print(get_panels())
 
