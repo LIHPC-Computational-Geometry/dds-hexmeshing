@@ -10,7 +10,7 @@ import time
 from icecream import ic
 from os import mkdir
 from os.path import expanduser
-from rich.console import Console, group
+from rich.console import Console, group, Group
 from rich.text import Text
 from rich.rule import Rule
 from rich.traceback import install
@@ -436,9 +436,31 @@ if __name__ == "__main__":
             print(f"Requesting help about '{args.supp_args[0]}'")
             exit(0)
         # else: general help
+
         @group()
-        def get_panels():
+        def get_typeof_panel_content():
             yield Text.from_markup("""\
+dds.py [r]typeof[/] [cyan]path/to/input/folder[/]
+
+    Infer the type of a [cyan]data folder[/].
+    Here are the types found in [bright_black]definitions/data_folder_types/[/] :\
+            """)
+            for data_folder_type in [x.stem for x in Path('definitions/data_folder_types').iterdir() if x.is_file() and x.suffix == '.yml' and x.stem.count('.') == 0]:
+                yield Text(f'     • {data_folder_type}')
+        
+        @group()
+        def get_run_panel_content():
+            yield Text.from_markup("""\
+dds.py [r]run[/] [bright_green]algo_name[/] [cyan]path/to/input/folder[/] \[algo-specific args]
+
+    Run the specified [bright_green]algorithm[/] on a [cyan]data folder[/]
+    Here are the algorithms found in [bright_black]definitions/algorithms/[/] :\
+            """)
+            for algo in [x.stem for x in Path('definitions/algorithms').iterdir() if x.is_file() and (x.suffix == '.yml' or (x.suffix == '.py' and x.stem.count('.') == 0))]:
+                yield Text(f'     • {algo}')
+
+        help_panels = Group(
+            Text.from_markup("""\
      _     _ 
     | |   | |
   __| | __| |___ 
@@ -448,20 +470,11 @@ if __name__ == "__main__":
 
 Semantic data folders
 
-[bright_black]dds.py <action> \[action-specific args][/]
-            """) # ASCII font from https://patorjk.com/software/taag/#p=display&f=Doom&t=Type%20Something%20
-            yield Panel("""\
-dds.py [r]typeof[/] [cyan]path/to/input/folder[/]
-
-    Infer the type of a [cyan]data folder[/]\
-            """)
-        
-            yield Panel("""\
-dds.py [r]run[/] [bright_green]algo_name[/] [cyan]path/to/input/folder[/] \[algo-specific args]
-
-    Run the specified [bright_green]algorithm[/] on a [cyan]data folder[/]\
-            """)
-            yield Panel("""\
+dds.py <action> \[action-specific args]
+            """), # ASCII font from https://patorjk.com/software/taag/#p=display&f=Doom&t=Type%20Something%20
+            Panel(get_typeof_panel_content()),
+            Panel(get_run_panel_content()),
+            Panel("""\
 dds.py [r]help[/] \[[bright_green]name[/]]
 
     Print this message.
@@ -470,5 +483,6 @@ dds.py [r]help[/] \[[bright_green]name[/]]
     Else, parse defined algorithms.
     If one of them has this name, print info about it.\
             """)
-        console.print(get_panels())
+        )
+        console.print(help_panels)
 
