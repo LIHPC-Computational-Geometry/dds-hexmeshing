@@ -217,6 +217,18 @@ class DataFolder():
             if path.exists():
                 return path # successful auto-generation
             raise Exception(f'Missing file {path}')
+        
+    def get_closest_parent_of_type(self, data_folder_type: str, check_self = True):
+        if check_self and self.type == data_folder_type:
+            return self
+        parent = None
+        try:
+            parent = DataFolder(self.path.parent)
+        except DataFolderInstantiationError:
+            raise Exception(f'get_closest_parent_of_type() found a non-instantiable parent folder ({self.path.parent}) before one of the requested folder type ({data_folder_type})')
+        if parent.type == data_folder_type:
+            return parent
+        return parent.get_closest_parent_of_type(data_folder_type,False)
     
     def execute_algo_preprocessing(self, console: Console, algo_name: str, output_subfolder: Path, arguments: dict) -> dict:
         script_filepath: Path = Path('definitions/algorithms') / (algo_name + '.pre.py')
