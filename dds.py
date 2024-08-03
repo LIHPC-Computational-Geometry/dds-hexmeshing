@@ -140,6 +140,17 @@ def get_subfolders_of_type(path: Path, data_folder_type: str) -> list[Path]:
             out.append(subfolder)
     return out
 
+def get_subfolders_generated_by(path: Path, generator_name: str) -> list[Path]:
+    out = list()
+    for subfolder in [x for x in path.iterdir() if x.is_dir()]:
+        if (subfolder / 'info.json').exists():
+            with open(subfolder / 'info.json') as json_file:
+                json_dict = json.load(json_file)
+                for per_algo_info in json_dict.values():
+                    if 'GenerativeAlgorithm' in per_algo_info.keys() and per_algo_info['GenerativeAlgorithm'] == generator_name:
+                        out.append(subfolder)
+    return out
+
 # Execute either <algo_name>.yml or <algo_name>.py
 # The fist one must be executed on an instance of DataFolder
 # The second has not this constraint (any folder, eg the parent folder of many DataFolder)
@@ -212,6 +223,9 @@ class DataFolder():
         
     def get_subfolders_of_type(self, data_folder_type: str) -> list[Path]:
         return get_subfolders_of_type(self.path, data_folder_type)
+    
+    def get_subfolders_generated_by(self, generator_name: str) -> list[Path]:
+        return get_subfolders_generated_by(self.path, generator_name)
     
     def print_history(self):
         table = Table()
