@@ -128,10 +128,10 @@ def run(path: Path, algo_name: str, arguments_as_list: list = list()):
         spec.loader.exec_module(ext_module)
 
         console = Console()
-        console.print(Rule(f'beginning of {script_filepath}'))
+        console.print(Rule(f'beginning of [magenta]{script_filepath}[/]'))
         # completed_process = subprocess_tee.run(command, shell=True, capture_output=True, tee=True)
         ext_module.main(path,arguments_as_list)
-        console.print(Rule(f'end of {script_filepath}'))
+        console.print(Rule(f'end of [magenta]{script_filepath}[/]'))
         exit(0)
     # convert arguments to a dict
     # -> from ['arg1=value', 'arg2=value'] to {'arg1': 'value', 'arg2': 'value'}
