@@ -17,6 +17,7 @@ from rich.traceback import install
 from rich.logging import RichHandler
 from rich.theme import Theme
 from rich.panel import Panel
+from rich.table import Table
 import subprocess_tee
 import importlib.util
 from math import floor
@@ -29,7 +30,7 @@ install(show_locals=True,width=Console().width,word_wrap=True)
 # https://rich.readthedocs.io/en/latest/logging.html
 FORMAT = "%(message)s"
 logging.basicConfig(
-    level=logging.DEBUG, format=FORMAT, datefmt="[%X]", handlers=[RichHandler()]
+    level=logging.WARNING, format=FORMAT, datefmt="[%X]", handlers=[RichHandler()]
 )
 log = logging.getLogger("rich")
 logging.getLogger('asyncio').setLevel(logging.WARNING) # ignore 'Using selector: EpollSelector' from asyncio selector_events.py:54
@@ -49,6 +50,10 @@ def simple_human_readable_duration(duration_seconds) -> str:
         formatted_duration += '{}m '.format(minutes)
     formatted_duration += '{}s'.format(seconds)
     return formatted_duration
+
+def ISO_datetime_to_readable_datetime(datetime: str) -> str:
+    #ex: '2024-03-13T22:10:41Z' -> '2024-03-13 22:10:41'
+    return datetime.replace('T',' ')[0:-1] # use a space separator between date and time (instead of 'T') & remove trailing 'Z'
 
 def collapseuser(path: Path) -> str:
     # inverse of os.path.expanduser()
@@ -196,6 +201,23 @@ class DataFolder():
             return None
         with open(self.path / 'info.json') as info_json_file:
             return json.load(info_json_file)
+    
+    def print_history(self):
+        table = Table()
+        table.add_column("Datetime", style="cyan")
+        table.add_column("Name")
+        for datetime, algo_info in self.get_info_dict().items(): # for each top-level entry in info.json
+            datetime = ISO_datetime_to_readable_datetime(datetime)
+            algo_name = '?'
+            if 'GenerativeAlgorithm' in algo_info:
+                algo_name = algo_info['GenerativeAlgorithm']
+            elif 'InteractiveGenerativeAlgorithm' in algo_info:
+                algo_name = algo_info['InteractiveGenerativeAlgorithm']
+            elif 'TransformativeAlgorithm' in algo_info:
+                algo_name = algo_info['TransformativeAlgorithm']
+            table.add_row(datetime,algo_name)
+        console = Console()
+        console.print(table)
         
     def auto_generate_missing_file(self, filename_keyword: str):
         # Idea : parse all algorithms until we found one where 'filename_keyword' is an output file
@@ -477,7 +499,7 @@ if __name__ == "__main__":
     
     parser.add_argument(
         'action',
-        choices = ['typeof', 'run','help']
+        choices = ['typeof', 'run', 'history', 'help']
     )
     
     parser.add_argument(
@@ -490,12 +512,19 @@ if __name__ == "__main__":
     if args.action == 'typeof':
         assert(len(args.supp_args)==1)
         print(type_inference(Path(args.supp_args[0])))
-    elif args.action == 'run':
+        exit(0)
+    if args.action == 'run':
         assert(len(args.supp_args)>=2)
         algo = args.supp_args[0]
         path = Path(args.supp_args[1])
         run(path,algo,args.supp_args[2:])
-    elif args.action == 'help':
+        exit(0)
+    if args.action == 'history':
+        assert(len(args.supp_args)==1)
+        path = Path(args.supp_args[0])
+        DataFolder(path).print_history()
+        exit(0)
+    if args.action == 'help':
         assert(len(args.supp_args)<=1)
         console = Console(theme=Theme(inherit=False))
         if len(args.supp_args)==1:
@@ -542,6 +571,11 @@ dds.py <action> \[action-specific args]
             """), # ASCII font from https://patorjk.com/software/taag/#p=display&f=Doom&t=Type%20Something%20
             Panel(get_typeof_panel_content()),
             Panel(get_run_panel_content()),
+            Panel(Text.from_markup("""\
+dds.py [r]history[/] [cyan]path/to/input/folder[/]
+
+    Print the history of algorithms run on a [cyan]data folder[/]
+            """)),
             Panel("""\
 dds.py [r]help[/] \[[bright_green]name[/]]
 
@@ -553,4 +587,5 @@ dds.py [r]help[/] \[[bright_green]name[/]]
             """)
         )
         console.print(help_panels)
+        exit(0)
 
