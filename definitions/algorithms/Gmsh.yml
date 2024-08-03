@@ -1,11 +1,11 @@
 description: |
   See default tetrehedrization of gmsh.info
-STEP: { # case of 'Gmsh' applied on a 'STEP' subfolder
+step: { # case of 'Gmsh' applied on a 'step' subfolder
   #
   # input                               output
   # files    ┌────────[Gmsh]────────┐    files
   #          │                      │
-  # STEP --▶ │step          tet_mesh│ --▶ TET_MESH_MEDIT
+  # STEP --▶ │CAD_file          mesh│ --▶ TET_MESH_MEDIT
   #          └──────────────────────┘
   #                ▲          ▲
   #                |          |
@@ -13,13 +13,13 @@ STEP: { # case of 'Gmsh' applied on a 'STEP' subfolder
   #
   executable: {
     path: GMSH,
-    command_line: '{step} -3 -format mesh -o {mesh} -setnumber Mesh.CharacteristicLengthFactor {characteristic_length_factor} -nt {nb_threads}', # 'Mesh.MeshSizeFactor' or '-clscale' instead ?
+    command_line: '{CAD_file} -3 -format mesh -o {mesh} -setnumber Mesh.CharacteristicLengthFactor {characteristic_length_factor} -nt {nb_threads}', # 'Mesh.MeshSizeFactor' or '-clscale' instead ?
   },
   tee: true,
   output_folder: 'Gmsh_{characteristic_length_factor}',
   arguments: {
     input_files: {
-      step: STEP
+      CAD_file: STEP
     },
     output_files: { # will be emplaced inside the 'output_folder'
       mesh: TET_MESH_MEDIT
