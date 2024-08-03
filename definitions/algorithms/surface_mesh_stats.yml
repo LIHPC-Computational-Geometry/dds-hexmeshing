@@ -13,7 +13,7 @@ tet-mesh: { # case of 'surface_mesh_stats' applied on a 'tet-mesh' subfolder
       mesh: SURFACE_MESH_OBJ
     },
     output_files: {
-      stats_json: TET_MESH_STATS_JSON
+      stats_json: SURFACE_MESH_STATS_JSON
     }
   }
 }
