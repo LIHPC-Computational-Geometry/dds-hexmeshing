@@ -5,7 +5,7 @@
 from json import load
 
 # own module
-from ..dds import DataFolder
+from dds import DataFolder, log
 
 def get_labeling_stats_dict(self: DataFolder) -> dict:
     assert(self.type == 'labeling')
@@ -22,6 +22,9 @@ def nb_turning_points(self: DataFolder) -> int:
     return int(stats['turning-points']['nb'])
 
 # add these functions to the class, as methods
+log.info(f"Adding get_labeling_stats_dict() as DataFolder method for when type == 'labeling'")
 DataFolder.get_labeling_stats_dict = get_labeling_stats_dict
+log.info(f"Adding has_valid_labeling() as DataFolder method for when type == 'labeling'")
 DataFolder.has_valid_labeling = has_valid_labeling
+log.info(f"Adding nb_turning_points() as DataFolder method for when type == 'labeling'")
 DataFolder.nb_turning_points = nb_turning_points
