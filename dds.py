@@ -190,6 +190,12 @@ class DataFolder():
             )
             ext_module = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(ext_module)
+    
+    def get_info_dict(self) -> Optional[dict]:
+        if not (self.path / 'info.json').exists():
+            return None
+        with open(self.path / 'info.json') as info_json_file:
+            return json.load(info_json_file)
         
     def auto_generate_missing_file(self, filename_keyword: str):
         # Idea : parse all algorithms until we found one where 'filename_keyword' is an output file
