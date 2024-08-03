@@ -114,7 +114,7 @@ def run(path: Path, algo_name: str, arguments_as_list: list = list()):
     YAML_filepath: Path = Path('definitions/algorithms') / (algo_name + '.yml')
     if not YAML_filepath.exists():
         # it can be the name of a custom algorithm, defined in an <algo_name>.py
-        script_filepath: Path = Path('algorithms') / (algo_name + '.py')
+        script_filepath: Path = Path('definitions/algorithms') / (algo_name + '.py')
         if not script_filepath.exists():
             log.error(f"Cannot run '{algo_name}' because neither {YAML_filepath} nor {script_filepath} exist")
             exit(1)
@@ -170,7 +170,7 @@ class DataFolder():
         # if we have all the input files, just execute the algorithm
         # else exit with failure
         # Can be improve with recursive call on the input files, and dict to cache the map between output file and algorithm
-        for YAML_algo_filename in [x for x in Path('algorithms').iterdir() if x.is_file() and x.suffix == '.yml']:
+        for YAML_algo_filename in [x for x in Path('definitions/algorithms').iterdir() if x.is_file() and x.suffix == '.yml']:
             with open(YAML_algo_filename) as YAML_stream:
                 YAML_content = yaml.safe_load(YAML_stream)
                 if self.type not in YAML_content:
