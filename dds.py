@@ -161,6 +161,15 @@ class DataFolder():
         self.type: str = type_inference(self.path)
         if self.type is None:
             raise DataFolderInstantiationError(self.path)
+        # if this data folder type has specific accessors, load their definition
+        accessors_definition_file: Path = Path(f'definitions/data_folder_types/{self.type}.accessors.py')
+        if accessors_definition_file.exists():
+            spec = importlib.util.spec_from_file_location(
+                name="ext_module",
+                location=accessors_definition_file,
+            )
+            ext_module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(ext_module)
         
     def auto_generate_missing_file(self, filename_keyword: str):
         # Idea : parse all algorithms until we found one where 'filename_keyword' is an output file
