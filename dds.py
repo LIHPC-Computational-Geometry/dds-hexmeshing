@@ -29,7 +29,7 @@ install(show_locals=True,width=Console().width,word_wrap=True)
 # https://rich.readthedocs.io/en/latest/logging.html
 FORMAT = "%(message)s"
 logging.basicConfig(
-    level=logging.WARNING, format=FORMAT, datefmt="[%X]", handlers=[RichHandler()]
+    level=logging.DEBUG, format=FORMAT, datefmt="[%X]", handlers=[RichHandler()]
 )
 log = logging.getLogger("rich")
 logging.getLogger('asyncio').setLevel(logging.WARNING) # ignore 'Using selector: EpollSelector' from asyncio selector_events.py:54
@@ -106,6 +106,26 @@ def type_inference(path: Path) -> Optional[str]:
         log.error(f"Several data folder types recognize the folder {path}")
         exit(1)
     return recognized_types[0]
+
+def get_generative_algorithm(path: Path) -> Optional[str]:
+    """
+    Open `path` info.json and retrieve first value mapped to a 'GenerativeAlgorithm' or an 'InteractiveGenerativeAlgorithm' key.
+    Not a DataFolder method to not require `path` from being instantiable.
+    """
+    if not path.exists():
+        log.fatal(f"{path} does not exist")
+        exit(1)
+    if (path / 'info.json').exists():
+        with open(path / 'info.json') as info_json_file:
+            info_dict = json.load(info_json_file)
+            for algo_info in info_dict.values(): # parse recorded algorithms. keys = date as ISO 8601, values = algo info
+                if 'GenerativeAlgorithm' in algo_info:
+                    return algo_info['GenerativeAlgorithm']
+                elif 'InteractiveGenerativeAlgorithm' in algo_info:
+                    return algo_info['InteractiveGenerativeAlgorithm']
+    else:
+        log.debug(f"There is no info.json inside {path}")
+    return None
 
 # Execute either <algo_name>.yml or <algo_name>.py
 # The fist one must be executed on an instance of DataFolder
