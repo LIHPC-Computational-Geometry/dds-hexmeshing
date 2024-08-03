@@ -132,6 +132,14 @@ def get_generative_algorithm(path: Path) -> Optional[str]:
         log.debug(f"There is no info.json inside {path}")
     return None
 
+def get_subfolders_of_type(path: Path, data_folder_type: str) -> list[Path]:
+    out = list()
+    for subfolder in [x for x in path.iterdir() if x.is_dir()]:
+        inferred_type = type_inference(subfolder)
+        if inferred_type == data_folder_type:
+            out.append(subfolder)
+    return out
+
 # Execute either <algo_name>.yml or <algo_name>.py
 # The fist one must be executed on an instance of DataFolder
 # The second has not this constraint (any folder, eg the parent folder of many DataFolder)
@@ -201,6 +209,9 @@ class DataFolder():
             return None
         with open(self.path / 'info.json') as info_json_file:
             return json.load(info_json_file)
+        
+    def get_subfolders_of_type(self, data_folder_type: str) -> list[Path]:
+        return get_subfolders_of_type(self.path, data_folder_type)
     
     def print_history(self):
         table = Table()
