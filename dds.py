@@ -29,7 +29,7 @@ install(show_locals=True,width=Console().width,word_wrap=True)
 # https://rich.readthedocs.io/en/latest/logging.html
 FORMAT = "%(message)s"
 logging.basicConfig(
-    level="NOTSET", format=FORMAT, datefmt="[%X]", handlers=[RichHandler()]
+    level=logging.WARNING, format=FORMAT, datefmt="[%X]", handlers=[RichHandler()]
 )
 log = logging.getLogger("rich")
 logging.getLogger('asyncio').setLevel(logging.WARNING) # ignore 'Using selector: EpollSelector' from asyncio selector_events.py:54
@@ -171,6 +171,7 @@ class DataFolder():
         # else exit with failure
         # Can be improve with recursive call on the input files, and dict to cache the map between output file and algorithm
         for YAML_algo_filename in [x for x in Path('definitions/algorithms').iterdir() if x.is_file() and x.suffix == '.yml']:
+            log.debug(f"auto_generate_missing_file('{filename_keyword}') on {self.path} : checking algo '{YAML_algo_filename.stem}'")
             with open(YAML_algo_filename) as YAML_stream:
                 YAML_content = yaml.safe_load(YAML_stream)
                 if self.type not in YAML_content:
@@ -182,19 +183,22 @@ class DataFolder():
                 if filename_keyword in [YAML_content[self.type]['arguments']['output_files'][command_line_keyword] for command_line_keyword in YAML_content[self.type]['arguments']['output_files']]:
                     # we found an algorithm whose 'filename_keyword' is one of the output file
                     # check existence of input files
-                    for input_file in [self.get_file(YAML_content[self.type]['arguments']['input_files'][command_line_keyword], False) for command_line_keyword in YAML_content[self.type]['arguments']['input_files']]:
-                        if not input_file.exists():
+                    for algo_input_filename_keyword in [YAML_content[self.type]['arguments']['input_files'][command_line_keyword] for command_line_keyword in YAML_content[self.type]['arguments']['input_files']]:
+                        algo_input_filename, its_data_folder = translate_filename_keyword(algo_input_filename_keyword)
+                        if not self.get_closest_parent_of_type(its_data_folder).get_file(algo_input_filename_keyword, False).exists():
                             log.error(f"Cannot auto-generate missing file {filename_keyword} in {self.path}")
                             log.error(f"Found algorithm '{YAML_algo_filename.stem}' to generate it")
-                            log.error(f"but input file '{input_file.stem}' is also missing.")
+                            log.error(f"but input file '{algo_input_filename}' is also missing.")
                             exit(1)
                     # all input files exist
+                    log.debug(f"auto_generate_missing_file('{filename_keyword}') on {self.path} : the solution found is to run {filename_keyword}")
                     self.run(YAML_algo_filename.stem)
                     return
                 else:
                     # this transformative algorithm does not create the file we need
                     continue # parse next YAML algo definition
-
+        log.error(f"auto_generate_missing_file('{filename_keyword}') on {self.path} : no solution found")
+        exit(1)
         
     def get_file(self, filename_keyword: str, must_exist: bool = False) -> Path:
         # transform filename keyword into actual filename by reading the YAML describing the data folder type
@@ -213,6 +217,7 @@ class DataFolder():
             path = (self.path / YAML_content['filenames'][filename_keyword]).absolute()
             if (not must_exist) or (must_exist and path.exists()):
                 return path
+            log.debug(f"get_file('{filename_keyword}',{must_exist}) on {self.path} : launching auto_generate_missing_file()")
             self.auto_generate_missing_file(filename_keyword)
             if path.exists():
                 return path # successful auto-generation
@@ -225,7 +230,8 @@ class DataFolder():
         try:
             parent = DataFolder(self.path.parent)
         except DataFolderInstantiationError:
-            raise Exception(f'get_closest_parent_of_type() found a non-instantiable parent folder ({self.path.parent}) before one of the requested folder type ({data_folder_type})')
+            log.error(f'get_closest_parent_of_type() found a non-instantiable parent folder ({self.path.parent}) before one of the requested folder type ({data_folder_type})')
+            exit(1)
         if parent.type == data_folder_type:
             return parent
         return parent.get_closest_parent_of_type(data_folder_type,False)
@@ -303,7 +309,7 @@ class DataFolder():
             if not executable_path.exists():
                 log.error(f"There is no {executable_filename} in {paths[path_keyword]}. Required by {YAML_filepath} algorithm")
                 exit(1)
-            print(f"Running '{algo_name}' -> executing {executable_path}")
+            log.info(f"Running '{algo_name}' -> executing {executable_path}")
             # assemble dict of 'others' arguments
             all_arguments = dict()
             if 'arguments' not in YAML_content[self.type]:
@@ -350,7 +356,13 @@ class DataFolder():
                 if input_file_argument in all_arguments:
                     log.error(f"{YAML_filepath} has multiple arguments named '{input_file_argument}' in '{self.type}/arguments")
                     exit(1)
-                input_file_path = self.get_file(YAML_content[self.type]['arguments']['input_files'][input_file_argument], True)
+                input_filename_keyword = YAML_content[self.type]['arguments']['input_files'][input_file_argument]
+                log.debug(f"run('{algo_name}',...) on {self.path} : the algorithm wants a {input_filename_keyword} as input")
+                _, its_data_folder_type = translate_filename_keyword(input_filename_keyword)
+                log.debug(f"run('{algo_name}',...) on {self.path} : ⤷ we must look into a (parent) folder of type '{its_data_folder_type}'")
+                closest_parent_of_this_type: DataFolder = self.get_closest_parent_of_type(its_data_folder_type,True)
+                log.debug(f"run('{algo_name}',...) on {self.path} : ⤷ the closest is {closest_parent_of_this_type.path}")
+                input_file_path = closest_parent_of_this_type.get_file(input_filename_keyword, True)
                 all_arguments[input_file_argument] = input_file_path
             if 'output_files' in YAML_content[self.type]['arguments']:
                 for output_file_argument in YAML_content[self.type]['arguments']['output_files']:
