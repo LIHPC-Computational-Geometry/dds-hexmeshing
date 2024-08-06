@@ -6,7 +6,6 @@ tet-mesh: { # case of 'graphcut_labeling' applied on a 'tet-mesh' subfolder
     filename: graphcut_labeling,
     command_line: '{mesh} {labeling}'
   },
-  tee: true,
   output_folder: 'graphcut_labeling',
   arguments: {
     input_files: {

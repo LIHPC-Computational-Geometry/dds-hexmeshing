@@ -6,7 +6,6 @@ tet-mesh: { # case of 'naive_labeling' applied on a 'tet-mesh' subfolder
     filename: naive_labeling,
     command_line: '{mesh} {labeling}'
   },
-  tee: true,
   output_folder: 'naive_labeling',
   arguments: {
     input_files: {

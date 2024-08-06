@@ -14,7 +14,6 @@ input_type: {
         filename: , # optional, if a filename must be appended to the path
         command_line: # command line template. between curly brackets are {arguments}, filled below. but {output_folder} is a reserved keyword that will be filled with the output folder path
     },
-    tee: , # boolean. if the stdout should be printed while the algorithm is running (in all cases the stdout is captured and written to file)
     output_folder: , # string template of the output folder to create ("generative algorithm" case). '%d' replaced by datetime
     arguments: { # all keywords in the executable definition must be covered with 'argumentX' entries
         input_files: {

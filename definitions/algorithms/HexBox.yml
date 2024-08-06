@@ -6,7 +6,6 @@ tet-mesh: { # case of 'HexBox' applied on a 'tet-mesh' subfolder
     filename: ,
     command_line: '{mesh}'
   },
-  tee: true,
   output_folder: 'HexBox_%d',
   arguments: {
     input_files: {

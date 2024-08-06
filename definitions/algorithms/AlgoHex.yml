@@ -5,7 +5,6 @@ tet-mesh: { # case of 'AlgoHex' applied on a 'tet-mesh' subfolder
     path: ALGOHEX,
     command_line: "-i {tet_mesh} -o {hex_mesh} --igm-out-path {IGM}"
   },
-  tee: true,
   output_folder: 'AlgoHex_%d',
   arguments: {
     input_files: {

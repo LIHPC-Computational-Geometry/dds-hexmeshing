@@ -6,7 +6,6 @@ labeling: { # case of 'rb_generate_quantization' applied on a 'labeling' subfold
     filename: rb_generate_quantization,
     command_line: '{tet_remeshed} {tet_remeshed_labeling} {polycuboid} {element_sizing} {hex_mesh}'
   },
-  tee: true,
   output_folder: 'robustPolycube_{element_sizing}',
   arguments: {
     input_files: {

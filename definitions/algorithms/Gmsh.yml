@@ -15,7 +15,6 @@ step: { # case of 'Gmsh' applied on a 'step' subfolder
     path: GMSH,
     command_line: '{CAD_file} -3 -format mesh -o {mesh} -setnumber Mesh.CharacteristicLengthFactor {characteristic_length_factor} -nt {nb_threads}', # 'Mesh.MeshSizeFactor' or '-clscale' instead ?
   },
-  tee: true,
   output_folder: 'Gmsh_{characteristic_length_factor}',
   arguments: {
     input_files: {

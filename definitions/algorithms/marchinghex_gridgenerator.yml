@@ -6,7 +6,6 @@ tet-mesh: { # case of 'marchinghex_gridgenerator' applied on a 'tet-mesh' subfol
     filename: gridgenerator,
     command_line: '{input_mesh} {grid_mesh} {scale}'
   },
-  tee: true,
   output_folder: 'marchinghex_{scale}',
   arguments: {
     input_files: {

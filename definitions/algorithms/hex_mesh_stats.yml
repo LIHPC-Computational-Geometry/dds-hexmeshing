@@ -6,7 +6,6 @@ hex-mesh: { # case of 'hex_mesh_stats' applied on a 'hex-mesh' subfolder
     filename: mesh_stats,
     command_line: '{mesh}'
   },
-  tee: true,
   # no `output_folder` -> transformative algorithm
   arguments: {
     input_files: {

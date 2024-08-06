@@ -8,7 +8,7 @@ from os import unlink
 # own module
 from dds import *
 
-def post_processing(input_subfolder: DataFolder, output_subfolder: Path, arguments: dict, data_from_pre_processing: dict):
+def post_processing(input_subfolder: DataFolder, output_subfolder: Path, arguments: dict, data_from_pre_processing: dict, silent_output: bool):
     assert(input_subfolder.type == 'tet-mesh')
 
     # read labeling.yml to get some filenames
@@ -36,7 +36,8 @@ def post_processing(input_subfolder: DataFolder, output_subfolder: Path, argumen
         old_to_new_filenames['fast_polycube_surf.obj'] = labeling_type['filenames']['POLYCUBE_SURFACE_MESH_OBJ']
         for old,new in old_to_new_filenames.items():
             if (output_subfolder / old).exists():
-                print(f'Renaming {old}...')
+                if not silent_output:
+                    print(f'Renaming {old}...')
                 move(
                     str((output_subfolder / old).absolute()),
                     str((output_subfolder / new).absolute())
@@ -44,5 +45,6 @@ def post_processing(input_subfolder: DataFolder, output_subfolder: Path, argumen
         
         # remove the tris_to_tets.txt file created in pre-processing
         if (output_subfolder / 'tris_to_tets.txt').exists():
-            print(f'Removing tris_to_tets.txt...')
+            if not silent_output:
+                print(f'Removing tris_to_tets.txt...')
             unlink(output_subfolder / 'tris_to_tets.txt')

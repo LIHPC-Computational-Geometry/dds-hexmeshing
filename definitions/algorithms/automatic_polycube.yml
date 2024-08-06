@@ -6,7 +6,6 @@ tet-mesh: { # case of 'automatic_polycube' applied on a 'tet-mesh' subfolder
     filename: automatic_polycube,
     command_line: '{mesh} {labeling} gui=false'
   },
-  tee: true,
   output_folder: 'automatic_polycube_%d',
   arguments: {
     input_files: {

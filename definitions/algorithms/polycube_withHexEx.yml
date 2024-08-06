@@ -5,7 +5,6 @@ labeling: { # case of 'polycube_withHexEx' applied on a 'labeling' subfolder
     path: POLYCUBE_WITH_HEXEX,
     command_line: '{tet_mesh} {labeling} {hex_mesh} {scale}'
   },
-  tee: true,
   output_folder: 'polycube_withHexEx_{scale}',
   arguments: {
     input_files: {

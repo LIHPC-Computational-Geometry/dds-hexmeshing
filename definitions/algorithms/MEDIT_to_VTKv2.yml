@@ -5,7 +5,6 @@ tet-mesh: { # case of 'MEDIT_to_VTKv2' applied on a 'tet-mesh' subfolder
     path: GMSH,
     command_line: '{input_mesh} -format vtk -o {dot_vtk} -save'
   },
-  tee: true,
   # no `output_folder` -> transformative algorithm
   arguments: {
     input_files: {

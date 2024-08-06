@@ -6,7 +6,6 @@ labeling: { # case of 'volume_labeling' applied on a 'labeling' subfolder
     filename: volume_labeling,
     command_line: '{surface_labeling} {surface_map} {tetra_labeling}'
   },
-  tee: true,
   # no `output_folder` -> transformative algorithm
   arguments: {
     input_files: {

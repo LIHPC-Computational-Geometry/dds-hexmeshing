@@ -6,7 +6,6 @@ labeling: { # case of 'fastbndpolycube' applied on a 'labeling' subfolder
     filename: marchinghex_hexmeshing,
     command_line: "{mesh} {labeling} {polycube}"
   },
-  tee: true,
   # no `output_folder` -> transformative algorithm
   arguments: {
     input_files: {

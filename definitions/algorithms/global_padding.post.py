@@ -9,7 +9,7 @@ from os import unlink
 # own module
 from dds import *
 
-def post_processing(input_subfolder: DataFolder, output_subfolder: DataFolder, arguments: dict, data_from_pre_processing: dict):
+def post_processing(input_subfolder: DataFolder, output_subfolder: DataFolder, arguments: dict, data_from_pre_processing: dict, silent_output: bool):
     assert(input_subfolder.type == 'hex-mesh')
     assert(output_subfolder.type == 'hex-mesh')
 
@@ -31,6 +31,10 @@ def post_processing(input_subfolder: DataFolder, output_subfolder: DataFolder, a
     ]:
         if Path(debug_filename).exists():
             if arguments['others']['keep_debug_files']:
+                if not silent_output:
+                    print(f'Renaming {debug_filename}...')
                 move(debug_filename, output_subfolder / f'rb_perform_postprocessing.{debug_filename}')
             else:
+                if not silent_output:
+                    print(f'Removing {debug_filename}...')
                 unlink(debug_filename)

@@ -6,7 +6,6 @@ labeling: { # case of 'write_labeling_as_geogram' applied on a 'labeling' subfol
     filename: labeling_viewer,
     command_line: '{mesh} {labeling} {dot_geogram}'
   },
-  tee: true,
   # no `output_folder` -> transformative algorithm
   arguments: {
     input_files: {

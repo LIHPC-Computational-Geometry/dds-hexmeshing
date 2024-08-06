@@ -6,7 +6,6 @@ tet-mesh: { # case of 'extract_surface' applied on a 'tet-mesh' subfolder
     filename: extract_surface,
     command_line: '{tet_mesh} {surface_mesh} {surface_map}'
   },
-  tee: true,
   # no `output_folder` -> transformative algorithm
   arguments: {
     input_files: {

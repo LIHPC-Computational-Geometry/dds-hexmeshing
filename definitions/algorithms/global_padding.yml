@@ -6,7 +6,6 @@ hex-mesh: { # case of 'global_padding' applied on a 'hex-mesh' subfolder
     filename: rb_perform_postprocessing,
     command_line: '{tet_mesh} {hex_mesh} {improved_hex_mesh}'
   },
-  tee: true,
   output_folder: global_padding,
   arguments: {
     input_files: {

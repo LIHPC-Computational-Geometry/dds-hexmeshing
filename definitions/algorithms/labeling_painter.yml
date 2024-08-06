@@ -6,7 +6,6 @@ tet-mesh: { # case of 'labeling_painter' applied on a 'tet-mesh' subfolder
     filename: labeling_painter,
     command_line: '{mesh}'
   },
-  tee: true,
   output_folder: 'labeling_painter_%d',
   arguments: {
     input_files: {

@@ -5,7 +5,6 @@ hex-mesh: { # case of 'OVM_to_MEDIT' applied on a 'hex-mesh' subfolder
     path: OVM_IO,
     command_line: '{input} {output}'
   },
-  tee: true,
   # no `output_folder` -> transformative algorithm
   arguments: {
     input_files: {

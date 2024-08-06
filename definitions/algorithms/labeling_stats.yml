@@ -6,7 +6,6 @@ labeling: { # case of 'write_polycube_as_geogram' applied on a 'labeling' subfol
     filename: labeling_stats,
     command_line: '{mesh} {labeling}'
   },
-  tee: true,
   # no `output_folder` -> transformative algorithm
   arguments: {
     input_files: {

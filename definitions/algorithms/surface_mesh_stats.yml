@@ -6,7 +6,6 @@ tet-mesh: { # case of 'surface_mesh_stats' applied on a 'tet-mesh' subfolder
     filename: mesh_stats,
     command_line: '{mesh} {stats_json}'
   },
-  tee: true,
   # no `output_folder` -> transformative algorithm
   arguments: {
     input_files: {

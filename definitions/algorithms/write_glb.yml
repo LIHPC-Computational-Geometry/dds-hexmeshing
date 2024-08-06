@@ -6,7 +6,6 @@ tet-mesh: { # case of 'write_glb' applied on a 'tet-mesh' subfolder
     filename: to_glTF,
     command_line: '{mesh} {gltf}'
   },
-  tee: true,
   # no `output_folder` -> transformative algorithm
   arguments: {
     input_files: {

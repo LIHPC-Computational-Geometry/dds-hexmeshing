@@ -7,7 +7,6 @@ labeling: { # case of 'rb_generate_deformation' applied on a 'labeling' subfolde
     filename: rb_generate_deformation,
     command_line: '{tet_mesh} {labeling} {tet_remeshed} {tet_remeshed_labeling} {polycuboid}'
   },
-  tee: true,
   # no `output_folder` -> transformative algorithm
   arguments: {
     input_files: {

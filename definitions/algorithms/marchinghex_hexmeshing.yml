@@ -6,7 +6,6 @@ marchinghex_grid: { # case of 'marchinghex_hexmeshing' applied on a 'marchinghex
     filename: marchinghex_hexmeshing,
     command_line: '{grid_mesh} {tet_mesh} {hex_mesh}'
   },
-  tee: true,
   # no `output_folder` -> transformative algorithm
   arguments: {
     input_files: {

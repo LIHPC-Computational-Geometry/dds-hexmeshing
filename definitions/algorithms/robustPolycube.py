@@ -4,7 +4,7 @@
 
 from dds import *
 
-def main(input_path: Path, arguments: list):
+def main(input_path: Path, arguments: list, silent_output: bool):
     # check 'arguments'
     # check existence of 'input_path'
     # instantiate and get type (must be 'labeling')

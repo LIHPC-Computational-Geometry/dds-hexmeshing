@@ -169,7 +169,7 @@ def get_subfolders_generated_by(path: Path, generator_name: str) -> list[Path]:
 # Execute either <algo_name>.yml or <algo_name>.py
 # The fist one must be executed on an instance of DataFolder
 # The second has not this constraint (any folder, eg the parent folder of many DataFolder)
-def run(path: Path, algo_name: str, arguments_as_list: list = list()):
+def run(path: Path, algo_name: str, arguments_as_list: list = list(), silent_output: bool = None):
     YAML_filepath: Path = Path('definitions/algorithms') / (algo_name + '.yml')
     if not YAML_filepath.exists():
         # it can be the name of a custom algorithm, defined in an <algo_name>.py
@@ -178,7 +178,6 @@ def run(path: Path, algo_name: str, arguments_as_list: list = list()):
             log.error(f"Cannot run '{algo_name}' because neither {YAML_filepath} nor {script_filepath} exist")
             exit(1)
         
-        # command = f"{script_filepath} {' '.join(arguments_as_list)}"
         spec = importlib.util.spec_from_file_location(
             name="ext_module",
             location=script_filepath,
@@ -187,10 +186,11 @@ def run(path: Path, algo_name: str, arguments_as_list: list = list()):
         spec.loader.exec_module(ext_module)
 
         console = Console()
-        console.print(Rule(f'beginning of [magenta]{script_filepath}[/]'))
-        # completed_process = subprocess_tee.run(command, shell=True, capture_output=True, tee=True)
-        ext_module.main(path,arguments_as_list)
-        console.print(Rule(f'end of [magenta]{script_filepath}[/]'))
+        if not silent_output:
+            console.print(Rule(f'beginning of [magenta]{script_filepath}[/]'))
+        ext_module.main(path,arguments_as_list,silent_output)
+        if not silent_output:
+            console.print(Rule(f'end of [magenta]{script_filepath}[/]'))
         exit(0)
     # convert arguments to a dict
     # -> from ['arg1=value', 'arg2=value'] to {'arg1': 'value', 'arg2': 'value'}
@@ -203,7 +203,7 @@ def run(path: Path, algo_name: str, arguments_as_list: list = list()):
             log.error(f"No '=' in supplemental argument '{arg}'")
             exit(1)
     data_folder = DataFolder(path)
-    data_folder.run(algo,arguments)
+    data_folder.run(algo,arguments,silent_output)
 
 class DataFolderInstantiationError(Exception):
     """
@@ -336,7 +336,7 @@ class DataFolder():
             return parent
         return parent.get_closest_parent_of_type(data_folder_type,False)
     
-    def execute_algo_preprocessing(self, console: Console, algo_name: str, output_subfolder: Path, arguments: dict) -> dict:
+    def execute_algo_preprocessing(self, console: Console, algo_name: str, output_subfolder: Path, arguments: dict, silent_output: bool) -> dict:
         script_filepath: Path = Path('definitions/algorithms') / (algo_name + '.pre.py')
         if not script_filepath.exists():
             return dict() # no preprocessing defined for this algorithm
@@ -347,12 +347,14 @@ class DataFolder():
         )
         ext_module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(ext_module)
-        console.print(Rule(f'beginning of {script_filepath.name} pre_processing()'))
-        data_from_preprocessing = ext_module.pre_processing(self,output_subfolder,arguments)
-        console.print(Rule(f'end of {script_filepath.name} pre_processing()'))
+        if not silent_output:
+            console.print(Rule(f'beginning of {script_filepath.name} pre_processing()'))
+        data_from_preprocessing = ext_module.pre_processing(self,output_subfolder,arguments,silent_output)
+        if not silent_output:
+            console.print(Rule(f'end of {script_filepath.name} pre_processing()'))
         return data_from_preprocessing
     
-    def execute_algo_postprocessing(self, console: Console, algo_name: str, output_subfolder: Optional[Path], arguments: dict, data_from_preprocessing: dict) -> dict:
+    def execute_algo_postprocessing(self, console: Console, algo_name: str, output_subfolder: Optional[Path], arguments: dict, data_from_preprocessing: dict, silent_output: bool) -> dict:
         script_filepath: Path = Path('definitions/algorithms') / (algo_name + '.post.py')
         if not script_filepath.exists():
             return # no postprocessing defined for this algorithm
@@ -363,14 +365,16 @@ class DataFolder():
         )
         ext_module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(ext_module)
-        console.print(Rule(f'beginning of {script_filepath.name} post_processing()'))
+        if not silent_output:
+            console.print(Rule(f'beginning of {script_filepath.name} post_processing()'))
         if output_subfolder is None: # post-processing of a transformative algorithme
-            ext_module.post_processing(self,arguments,data_from_preprocessing)
+            ext_module.post_processing(self,arguments,data_from_preprocessing,silent_output)
         else: # post-processing of a generative algorithm
-            ext_module.post_processing(self,output_subfolder,arguments,data_from_preprocessing)
-        console.print(Rule(f'end of {script_filepath.name} post_processing()'))
+            ext_module.post_processing(self,output_subfolder,arguments,data_from_preprocessing,silent_output)
+        if not silent_output:
+            console.print(Rule(f'end of {script_filepath.name} post_processing()'))
 
-    def run(self, algo_name: str, arguments: dict = dict()):
+    def run(self, algo_name: str, arguments: dict = dict(), silent_output: bool = False):
         YAML_filepath: Path = Path('definitions/algorithms') / (algo_name + '.yml')
         if not YAML_filepath.exists():
             log.error(f"Cannot run '{algo_name}' because {YAML_filepath} does not exist")
@@ -497,18 +501,14 @@ class DataFolder():
             console = Console()
             with console.status(f'Executing [bold yellow]{algo_name}[/] on [bold cyan]{collapseuser(self.path)}[/]...') as status:
                 # execute preprocessing
-                data_from_preprocessing = self.execute_algo_preprocessing(console,algo_name,output_folder_path,all_arguments)
+                data_from_preprocessing = self.execute_algo_preprocessing(console,algo_name,output_folder_path,all_arguments,silent_output)
                 # execute the command line
-                if 'tee' not in YAML_content[self.type]:
-                    log.error(f"{YAML_filepath} has no '{self.type}/tee' entry")
-                    exit(1)
-                tee = YAML_content[self.type]['tee']
-                if tee:
+                if not silent_output:
                     console.print(Rule(f'beginning of [magenta]{collapseuser(executable_path)}'))
                 chrono_start = time.monotonic()
-                completed_process = subprocess_tee.run(command_line, shell=True, capture_output=True, tee=tee)
+                completed_process = subprocess_tee.run(command_line, shell=True, capture_output=True, tee=(not silent_output))
                 chrono_stop = time.monotonic()
-                if tee:
+                if not silent_output:
                     console.print(Rule(f'end of [magenta]{collapseuser(executable_path)}'))
                 # write stdout and stderr
                 if completed_process.stdout != '': # if the subprocess wrote something in standard output
@@ -531,7 +531,7 @@ class DataFolder():
                 with open(info_file_path,'w') as file:
                     json.dump(info_file, file, sort_keys=True, indent=4)
                 # execute postprocessing
-                self.execute_algo_postprocessing(console,algo_name,output_folder_path,all_arguments,data_from_preprocessing)
+                self.execute_algo_postprocessing(console,algo_name,output_folder_path,all_arguments,data_from_preprocessing,silent_output)
 
 if __name__ == "__main__":
     
