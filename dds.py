@@ -495,7 +495,7 @@ class DataFolder():
                 info_file[start_datetime_iso]['parameters'][k] = str(v)
             # execution
             console = Console()
-            with console.status(f'Executing [bold yellow]{algo_name}[/] on [bold cyan]{self.path}[/]...') as status:
+            with console.status(f'Executing [bold yellow]{algo_name}[/] on [bold cyan]{collapseuser(self.path)}[/]...') as status:
                 # execute preprocessing
                 data_from_preprocessing = self.execute_algo_preprocessing(console,algo_name,output_folder_path,all_arguments)
                 # execute the command line
