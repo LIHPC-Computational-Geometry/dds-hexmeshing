@@ -132,6 +132,21 @@ def get_generative_algorithm(path: Path) -> Optional[str]:
         log.debug(f"There is no info.json inside {path}")
     return None
 
+# if the algo was executed several times on this data folder,
+# return the first occurrence in the info.json file
+def get_datetime_key_of_algo_in_info_file(path: Path, algo_name: str) -> Optional[str]:
+    if (path / 'info.json').exists():
+        with open(path / 'info.json') as json_file:
+            json_dict = json.load(json_file)
+            for datetime_key,per_algo_info in json_dict.items():
+                if (
+                    ('GenerativeAlgorithm' in per_algo_info.keys() and per_algo_info['GenerativeAlgorithm'] == algo_name) or 
+                    ('TransformativeAlgorithm' in per_algo_info.keys() and per_algo_info['TransformativeAlgorithm'] == algo_name) or 
+                    ('InteractiveGenerativeAlgorithm' in per_algo_info.keys() and per_algo_info['InteractiveGenerativeAlgorithm'] == algo_name)
+                ):
+                    return datetime_key
+    return None
+
 def get_subfolders_of_type(path: Path, data_folder_type: str) -> list[Path]:
     out = list()
     for subfolder in [x for x in path.iterdir() if x.is_dir()]:
@@ -220,6 +235,9 @@ class DataFolder():
             return None
         with open(self.path / 'info.json') as info_json_file:
             return json.load(info_json_file)
+        
+    def get_datetime_key_of_algo_in_info_file(self, algo_name: str) -> Optional[str]:
+        return get_datetime_key_of_algo_in_info_file(self.path, algo_name)
         
     def get_subfolders_of_type(self, data_folder_type: str) -> list[Path]:
         return get_subfolders_of_type(self.path, data_folder_type)
