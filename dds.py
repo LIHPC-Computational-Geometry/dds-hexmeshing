@@ -336,6 +336,72 @@ class DataFolder():
             return parent
         return parent.get_closest_parent_of_type(data_folder_type,False)
     
+    def view(self, view_name: str):
+        # TODO allow view_name is None -> fetch default view name in data folder type definition
+        YAML_filepath: Path = Path('definitions/data_folder_types') / (self.type + '.' + view_name + '.yml')
+        if not YAML_filepath.exists():
+            log.error(f"Cannot use view '{view_name}' on a data folder of type {self.type} because {YAML_filepath} does not exist")
+            exit(1)
+        with open(YAML_filepath) as YAML_stream:
+            YAML_content = yaml.safe_load(YAML_stream)
+            # retrieve info about underlying executable
+            if 'executable' not in YAML_content:
+                log.error(f"{YAML_filepath} has no '{self.type}/executable' entry")
+                exit(1)
+            if 'path' not in YAML_content['executable']:
+                log.error(f"{YAML_filepath} has no '{self.type}/executable/path' entry")
+                exit(1)
+            path_keyword: str = YAML_content['executable']['path']
+            if 'command_line' not in YAML_content['executable']:
+                log.error(f"{YAML_filepath} has no '{self.type}/executable/command_line' entry")
+                exit(1)
+            command_line: str = YAML_content['executable']['command_line']
+            with open('definitions/paths.yml') as paths_stream:
+                paths = yaml.safe_load(paths_stream)
+                if path_keyword not in paths:
+                    log.error(f"'{path_keyword}' is referenced in {YAML_filepath} at '{self.type}/executable/path' but does not exist in definitions/paths.yml")
+                    exit(1)
+            executable_path: Path = Path(paths[path_keyword]).expanduser()
+            if not executable_path.exists():
+                log.error(f"In paths.yml, '{path_keyword}' reference a non existing path, required by {YAML_filepath} algorithm")
+                log.error(f"({executable_path})")
+                exit(1)
+            executable_filename: Optional[str] = None
+            if 'filename' in YAML_content['executable']:
+                executable_filename = YAML_content['executable']['filename']
+                executable_path = executable_path / executable_filename
+            if not executable_path.exists():
+                log.error(f"There is no {executable_filename} in {paths[path_keyword]}. Required by {YAML_filepath} algorithm")
+                exit(1)
+            log.info(f"View '{view_name}' on a data folder of type {self.type} -> executing {executable_path}")
+            # assemble dict of 'others' arguments
+            all_arguments = dict()
+            if 'arguments' not in YAML_content:
+                log.error(f"{YAML_filepath} has no 'arguments' entry")
+                exit(1)
+            # add 'input_files' and 'output_files' arguments to the 'all_arguments' dict
+            if 'input_files' not in YAML_content['arguments']:
+                log.error(f"{YAML_filepath} has no '{self.type}/arguments/input_files' entry")
+                exit(1)
+            for input_file_argument in YAML_content['arguments']['input_files']:
+                if input_file_argument in all_arguments:
+                    log.error(f"{YAML_filepath} has multiple arguments named '{input_file_argument}' in '{self.type}/arguments")
+                    exit(1)
+                input_filename_keyword = YAML_content['arguments']['input_files'][input_file_argument]
+                log.debug(f"view('{view_name}',...) on {self.path} : the algorithm wants a {input_filename_keyword} as input")
+                _, its_data_folder_type = translate_filename_keyword(input_filename_keyword)
+                log.debug(f"view('{view_name}',...) on {self.path} : ⤷ we must look into a (parent) folder of type '{its_data_folder_type}'")
+                closest_parent_of_this_type: DataFolder = self.get_closest_parent_of_type(its_data_folder_type,True)
+                log.debug(f"view('{view_name}',...) on {self.path} : ⤷ the closest is {closest_parent_of_this_type.path}")
+                input_file_path = closest_parent_of_this_type.get_file(input_filename_keyword, True)
+                all_arguments[input_file_argument] = input_file_path
+            command_line = f'{executable_path} {command_line.format(**all_arguments)}'
+            # execution
+            console = Console()# execute the command line
+            console.print(Rule(f'beginning of [magenta]{collapseuser(executable_path)}'))
+            subprocess_tee.run(command_line, shell=True, capture_output=True, tee=True)
+            console.print(Rule(f'end of [magenta]{collapseuser(executable_path)}'))
+    
     def execute_algo_preprocessing(self, console: Console, algo_name: str, output_subfolder: Path, arguments: dict, silent_output: bool) -> dict:
         script_filepath: Path = Path('definitions/algorithms') / (algo_name + '.pre.py')
         if not script_filepath.exists():
@@ -542,7 +608,7 @@ if __name__ == "__main__":
     
     parser.add_argument(
         'action',
-        choices = ['typeof', 'run', 'history', 'help']
+        choices = ['typeof', 'run', 'view', 'history', 'help']
     )
     
     parser.add_argument(
@@ -561,6 +627,12 @@ if __name__ == "__main__":
         algo = args.supp_args[0]
         path = Path(args.supp_args[1])
         run(path,algo,args.supp_args[2:])
+        exit(0)
+    if args.action == 'view':
+        assert(len(args.supp_args) == 2) # TODO allow 1 supp_args only & fetch default view name
+        path = Path(args.supp_args[0])
+        view_name = args.supp_args[1]
+        DataFolder(path).view(view_name)
         exit(0)
     if args.action == 'history':
         assert(len(args.supp_args)==1)
@@ -584,7 +656,7 @@ dds.py [r]typeof[/] [cyan]path/to/input/folder[/]
     Here are the types found in [bright_black]definitions/data_folder_types/[/] :\
             """)
             for data_folder_type in [x.stem for x in Path('definitions/data_folder_types').iterdir() if x.is_file() and x.suffix == '.yml' and x.stem.count('.') == 0]:
-                yield Text(f'     • {data_folder_type}')
+                yield Text(f'     • {data_folder_type}') # TODO list available views
         
         @group()
         def get_run_panel_content():
@@ -615,9 +687,14 @@ dds.py <action> \[action-specific args]
             Panel(get_typeof_panel_content()),
             Panel(get_run_panel_content()),
             Panel(Text.from_markup("""\
+dds.py [r]view[/] [cyan]path/to/input/folder[/] view_name
+
+    Visualize a [cyan]data folder[/] with the given view.\
+            """)),
+            Panel(Text.from_markup("""\
 dds.py [r]history[/] [cyan]path/to/input/folder[/]
 
-    Print the history of algorithms run on a [cyan]data folder[/]
+    Print the history of algorithms run on a [cyan]data folder[/]\
             """)),
             Panel("""\
 dds.py [r]help[/] \[[bright_green]name[/]]

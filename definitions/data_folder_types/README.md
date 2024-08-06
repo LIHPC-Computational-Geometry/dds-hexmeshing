@@ -28,3 +28,20 @@ arguments: {
     }
 }
 ```
+
+A given data subfolder type can have specific accessors (methods that read a specific file and return a Python object), defined in `<type_name>.accessors.py`:
+
+```python
+#!/usr/bin/env python
+
+from json import load
+
+# own module
+from dds import DataFolder
+
+def get_data_json_as_dict(self: DataFolder) -> dict:
+    return load(open(self.get_file('some_data.json',True)))
+
+# add this function to the class, as method
+DataFolder.get_data_json_as_dict = get_data_json_as_dict
+```

@@ -8,7 +8,7 @@ description: |
   shell variables for Linux)
 executable: {
   path: MAYO,
-  command_line: '{step} --no-progress'
+  command_line: '{step}'
 }
 arguments: {
   input_files: {
