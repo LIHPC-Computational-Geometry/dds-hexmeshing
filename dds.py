@@ -22,6 +22,7 @@ from rich.table import Table
 import subprocess_tee
 import importlib.util
 from math import floor
+from parse import parse
 
 # colored and detailed Python traceback
 # https://rich.readthedocs.io/en/latest/traceback.html
@@ -93,6 +94,13 @@ def get_default_view_name(data_folder_type: str) -> Optional[str]:
             log.fatal(f"Default view of data folder type '{data_folder_type}' is '{default_view}', but there is no {data_folder_type}.{default_view}.yml in definitions/data_folder_types/")
             exit(1)
         return default_view
+    
+def get_declared_views(data_folder_type: str) -> list:
+    """
+    Find all <data_folder_type>.*.yml in definitions/data_folder_types/
+    But doest not check the content of the view definition.
+    """
+    return [x.named['view_name'] for x in [parse(data_folder_type + ".{view_name}.yml", file.name) for file in Path('definitions/data_folder_types').iterdir() if file.is_file()] if x is not None]
 
 def is_instance_of(path: Path, data_folder_type: str) -> bool:
     YAML_filepath: Path = Path('definitions/data_folder_types') / (data_folder_type + '.yml')
