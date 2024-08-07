@@ -352,8 +352,12 @@ class DataFolder():
             return parent
         return parent.get_closest_parent_of_type(data_folder_type,False)
     
-    def view(self, view_name: str):
-        # TODO allow view_name is None -> fetch default view name in data folder type definition
+    def view(self, view_name: Optional[str] = None):
+        if view_name is None:
+            view_name = get_default_view_name(self.type)
+            if view_name is None:
+                log.fatal(f"view() on {self.path} was called without a view name, and data folder type '{self.type}' does not specify a default view name")
+                exit(1)
         YAML_filepath: Path = Path('definitions/data_folder_types') / (self.type + '.' + view_name + '.yml')
         if not YAML_filepath.exists():
             log.error(f"Cannot use view '{view_name}' on a data folder of type {self.type} because {YAML_filepath} does not exist")
@@ -404,11 +408,11 @@ class DataFolder():
                     log.error(f"{YAML_filepath} has multiple arguments named '{input_file_argument}' in '{self.type}/arguments")
                     exit(1)
                 input_filename_keyword = YAML_content['arguments']['input_files'][input_file_argument]
-                log.debug(f"view('{view_name}',...) on {self.path} : the algorithm wants a {input_filename_keyword} as input")
+                log.debug(f"view('{view_name}') on {self.path} : the algorithm wants a {input_filename_keyword} as input")
                 _, its_data_folder_type = translate_filename_keyword(input_filename_keyword)
-                log.debug(f"view('{view_name}',...) on {self.path} : ⤷ we must look into a (parent) folder of type '{its_data_folder_type}'")
+                log.debug(f"view('{view_name}') on {self.path} : ⤷ we must look into a (parent) folder of type '{its_data_folder_type}'")
                 closest_parent_of_this_type: DataFolder = self.get_closest_parent_of_type(its_data_folder_type,True)
-                log.debug(f"view('{view_name}',...) on {self.path} : ⤷ the closest is {closest_parent_of_this_type.path}")
+                log.debug(f"view('{view_name}') on {self.path} : ⤷ the closest is {closest_parent_of_this_type.path}")
                 input_file_path = closest_parent_of_this_type.get_file(input_filename_keyword, True)
                 all_arguments[input_file_argument] = input_file_path
             command_line = f'{executable_path} {command_line.format(**all_arguments)}'
@@ -645,10 +649,14 @@ if __name__ == "__main__":
         run(path,algo,args.supp_args[2:])
         exit(0)
     if args.action == 'view':
-        assert(len(args.supp_args) == 2) # TODO allow 1 supp_args only & fetch default view name
+        assert(len(args.supp_args) in [1,2])
         path = Path(args.supp_args[0])
-        view_name = args.supp_args[1]
-        DataFolder(path).view(view_name)
+        if len(args.supp_args) == 2:
+            view_name = args.supp_args[1]
+            DataFolder(path).view(view_name)
+        else:
+            # use default view
+            DataFolder(path).view()
         exit(0)
     if args.action == 'history':
         assert(len(args.supp_args)==1)
@@ -703,9 +711,9 @@ dds.py <action> \[action-specific args]
             Panel(get_typeof_panel_content()),
             Panel(get_run_panel_content()),
             Panel(Text.from_markup("""\
-dds.py [r]view[/] [cyan]path/to/input/folder[/] view_name
+dds.py [r]view[/] [cyan]path/to/input/folder[/] \[[bright_green]view_name[/]]
 
-    Visualize a [cyan]data folder[/] with the given view.\
+    Visualize a [cyan]data folder[/] with the default view, or with the [bright_green]specified view[/].\
             """)),
             Panel(Text.from_markup("""\
 dds.py [r]history[/] [cyan]path/to/input/folder[/]
