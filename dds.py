@@ -627,6 +627,37 @@ class DataFolder():
                 # execute postprocessing
                 self.execute_algo_postprocessing(console,algo_name,output_folder_path,all_arguments,data_from_preprocessing,silent_output)
 
+def print_help_on_data_folder_type(data_folder_type: str):
+    YAML_filepath: Path = Path('definitions/data_folder_types') / (data_folder_type + '.yml')
+    if not YAML_filepath.exists():
+        log.fatal(f'{YAML_filepath} does not exist')
+        exit(1)
+    with open(YAML_filepath) as YAML_stream:
+        YAML_content = yaml.safe_load(YAML_stream)
+        if 'distinctive_content' not in YAML_content:
+            log.error(f"{YAML_filepath} has no 'distinctive_content' entry")
+            exit(1)
+        if 'filenames' not in YAML_content:
+            log.error(f"{YAML_filepath} has no 'filenames' entry")
+            exit(1)
+        distinctive_content_filename_keywords = list()
+        for filename_keyword in YAML_content['distinctive_content']:
+            if filename_keyword not in YAML_content['filenames']:
+                log.error(f"{YAML_filepath} has no 'filenames'/'{filename_keyword}' entry, despite being referenced in the 'distinctive_content' entry")
+                exit(1)
+            distinctive_content_filename_keywords.append(filename_keyword)
+        print(f"A data folder is of type '{data_folder_type}' if it contains:")
+        print("\n  or\n".join([f" • {YAML_content['filenames'][x]} (={x})" for x in distinctive_content_filename_keywords]))
+        print("Other files that can be expected inside are:")
+        for filename_keyword, filename in YAML_content['filenames'].items():
+            if filename_keyword in distinctive_content_filename_keywords:
+                continue # already printed
+            print(f" • {filename} (={filename_keyword})")
+        default_view = get_default_view_name(data_folder_type)
+        print(f"Views declared for this type of data folders:")
+        for view_name in get_declared_views(data_folder_type):
+            print(f" • {view_name}" + (" (default view)" if view_name == default_view else ""))
+
 if __name__ == "__main__":
     
     parser = ArgumentParser(
@@ -675,7 +706,9 @@ if __name__ == "__main__":
         assert(len(args.supp_args)<=1)
         console = Console(theme=Theme(inherit=False))
         if len(args.supp_args)==1:
-            print(f"Requesting help about '{args.supp_args[0]}'")
+            # TODO check data folder types
+            print_help_on_data_folder_type(args.supp_args[0])
+            # TODO check algorithms
             exit(0)
         # else: general help
 
