@@ -10,6 +10,7 @@ import time
 from icecream import ic
 from os import mkdir
 from os.path import expanduser
+from sys import exit
 from rich.console import Console, group, Group
 from rich.text import Text
 from rich.rule import Rule
@@ -77,6 +78,21 @@ def translate_filename_keyword(filename_keyword: str) -> tuple[str,str]:
                 return (YAML_content['filenames'][filename_keyword],YAML_filepath.stem)
     log.error(f"None of the data folder types declare the '{filename_keyword}' filename keyword")
     exit(1)
+
+def get_default_view_name(data_folder_type: str) -> Optional[str]:
+    YAML_filepath: Path = Path('definitions/data_folder_types') / (data_folder_type + '.yml')
+    if not YAML_filepath.exists():
+        log.fatal(f'{YAML_filepath} does not exist')
+        exit(1)
+    with open(YAML_filepath) as YAML_stream:
+        YAML_content = yaml.safe_load(YAML_stream)
+        if not 'default_view' in YAML_content:
+            return None
+        default_view = YAML_content['default_view']
+        if not Path(f'definitions/data_folder_types/{data_folder_type}.{default_view}.yml').exists():
+            log.fatal(f"Default view of data folder type '{data_folder_type}' is '{default_view}', but there is no {data_folder_type}.{default_view}.yml in definitions/data_folder_types/")
+            exit(1)
+        return default_view
 
 def is_instance_of(path: Path, data_folder_type: str) -> bool:
     YAML_filepath: Path = Path('definitions/data_folder_types') / (data_folder_type + '.yml')
