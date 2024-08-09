@@ -597,9 +597,9 @@ class DataFolder():
             }
             for k,v in all_arguments.items():
                 info_file[start_datetime_iso]['parameters'][k] = str(v)
-            # execution
             console = Console()
-            with console.status(f'Executing [bold yellow]{algo_name}[/] on [bold cyan]{collapseuser(self.path)}[/]...') as status:
+            # execution
+            def core_of_the_function():
                 # execute preprocessing
                 data_from_preprocessing = self.execute_algo_preprocessing(console,algo_name,output_folder_path,all_arguments,silent_output)
                 # execute the command line
@@ -632,6 +632,13 @@ class DataFolder():
                     json.dump(info_file, file, sort_keys=True, indent=4)
                 # execute postprocessing
                 self.execute_algo_postprocessing(console,algo_name,output_folder_path,all_arguments,data_from_preprocessing,silent_output)
+            if silent_output:
+                # no rich.status, no spinner
+                core_of_the_function()
+            else:
+                with console.status(f'Executing [bold yellow]{algo_name}[/] on [bold cyan]{collapseuser(self.path)}[/]...') as status:
+                    core_of_the_function()
+               
 
 def print_help_on_data_folder_type(data_folder_type: str):
     YAML_filepath: Path = Path('definitions/data_folder_types') / (data_folder_type + '.yml')
