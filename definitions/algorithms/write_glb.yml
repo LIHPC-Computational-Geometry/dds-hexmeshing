@@ -24,7 +24,6 @@ labeling: { # case of 'write_glb' applied on a 'labeling' subfolder
       # we also need a wrapper for 
       # '{mesh} {gltf} labeling={labeling} polycube={polycube}'
   },
-  tee: true,
   # no `output_folder` -> transformative algorithm
   arguments: {
     input_files: {
@@ -42,7 +41,6 @@ hex-mesh: { # case of 'write_glb' applied on a 'hex-mesh' subfolder
     filename: to_glTF,
     command_line: '{mesh} {gltf}'
   },
-  tee: true,
   # no `output_folder` -> transformative algorithm
   arguments: {
     input_files: {
