@@ -253,6 +253,12 @@ class DataFolder():
             )
             ext_module = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(ext_module)
+
+    def __str__(self) -> str:
+        return f"DataFolder('{self.path}','{self.type}')"
+    
+    def __repr__(self) -> str:
+        return f"DataFolder(path='{self.path}',type='{self.type}')"
     
     def get_info_dict(self) -> Optional[dict]:
         if not (self.path / 'info.json').exists():
