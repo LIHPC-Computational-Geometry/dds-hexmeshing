@@ -23,7 +23,7 @@ def post_processing(input_subfolder: DataFolder, output_subfolder: Path, argumen
         'mh_result.mesh'
     ] + [x for x in Path(curdir).iterdir() if x.is_file() and x.stem.startswith('iter_')]: # and all 'iter_*' files
         if Path(debug_filename).exists():
-            if arguments['others']['keep_debug_files']:
+            if arguments['keep_debug_files']:
                 if not silent_output:
                     print(f'Renaming {debug_filename}...')
                 move(debug_filename, output_subfolder / f'marchinghex_hexmeshing.{debug_filename}')

@@ -9,9 +9,8 @@ from os import unlink
 # own module
 from dds import *
 
-def post_processing(input_subfolder: DataFolder, output_subfolder: DataFolder, arguments: dict, data_from_pre_processing: dict, silent_output: bool):
+def post_processing(input_subfolder: DataFolder, output_subfolder: Path, arguments: dict, data_from_pre_processing: dict, silent_output: bool):
     assert(input_subfolder.type == 'hex-mesh')
-    assert(output_subfolder.type == 'hex-mesh')
 
     # The executable also writes debug files
     for debug_filename in [
@@ -30,7 +29,7 @@ def post_processing(input_subfolder: DataFolder, output_subfolder: DataFolder, a
         'view.lua'
     ]:
         if Path(debug_filename).exists():
-            if arguments['others']['keep_debug_files']:
+            if arguments['keep_debug_files']:
                 if not silent_output:
                     print(f'Renaming {debug_filename}...')
                 move(debug_filename, output_subfolder / f'rb_perform_postprocessing.{debug_filename}')

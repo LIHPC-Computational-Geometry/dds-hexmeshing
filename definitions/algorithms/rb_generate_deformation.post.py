@@ -24,7 +24,7 @@ def post_processing(input_subfolder: DataFolder, arguments: dict, data_from_pre_
         'debug_corrected_param_6.geogram'
     ]:
         if Path(debug_filename).exists():
-            if arguments['others']['keep_debug_files']:
+            if arguments['keep_debug_files']:
                 if not silent_output:
                     print(f'Renaming {debug_filename}...')
                 move(debug_filename, input_subfolder / f'rb_generate_deformation.{debug_filename}')

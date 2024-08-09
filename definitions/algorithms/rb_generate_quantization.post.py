@@ -34,7 +34,7 @@ def post_processing(input_subfolder: DataFolder, output_subfolder: Path, argumen
         'view.lua'
     ]:
         if Path(debug_filename).exists():
-            if arguments['others']['keep_debug_files']:
+            if arguments['keep_debug_files']:
                 if not silent_output:
                     print(f'Renaming {debug_filename}...')
                 move(debug_filename, output_subfolder / f'rb_generate_quantization.{debug_filename}')
