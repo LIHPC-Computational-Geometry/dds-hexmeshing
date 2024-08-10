@@ -1,11 +1,11 @@
 description: |
-  Open the (surface) mesh with Graphite
+  Open the hex-mesh with Graphite
 executable: {
   path: GRAPHITE,
   command_line: '{mesh}'
 }
 arguments: {
   input_files: {
-    mesh: SURFACE_MESH_OBJ
+    mesh: HEX_MESH_MEDIT
   }
 }
