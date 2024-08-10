@@ -1,14 +1,71 @@
 # keys in uppercase because they are keywords used in other YAML files
-AUTOMATIC_POLYCUBE: ~/code/automatic_polycube/build_Release/bin/ # path to the binaries folder, because several binaries are of interest
-MAYO: ~/.local/bin/mayo # path to the binary
-GRAPHITE: ~/.local/bin/graphite # path to the binary
-GMSH: ~/.local/Gmsh/gmsh-4.11.1-Linux64/bin/gmsh # path to the binary
-FASTBNDPOLYCUBE: ~/.local/fastbndpolycube/build_Release/fastpolycube # path to the binary
-HEXBOX: ~/.local/HexBox/build/gui/gui # path to the binary
-EVOCUBE: ~/.local/evocube/build_Release/evolabel # path to the binary
-OVM_IO: ~/code/ovm.io/build/Linux64-gcc-dynamic-Debug/ovm.io # path to the binary
-ALGOHEX: ~/.local/AlgoHex/build_Release/Build/bin/HexMeshing # path to the binary
-POLYCUBE_WITH_HEXEX: ~/.local/polycube_withHexEx/build_Release/polycube # path to the binary
-ROBUST_POLYCUBE: ~/.local/robustPolycube/build_Release/ # path to the binaries folder, because several binaries are of interest
-MARCHING_HEX: ~/.local/marchinghex/build_Release/ # path to the binaries folder, because several binaries are of interest
-HEXSMOOTHING: ~/.local/hexsmoothing/build_Release/ # path to the binaries folder, because several binaries are of interest
+
+# https://github.com/LIHPC-Computational-Geometry/automatic_polycube
+# Polycube labeling generation + other tools
+# path to the binaries folder, because several binaries are of interest (automatic_polycube, labeling_viewer, mesh_stats...)
+AUTOMATIC_POLYCUBE: ~/code/automatic_polycube/build_Release/bin/
+
+# https://github.com/fougue/mayo/
+# 3D CAD viewer
+# Path to the binary
+MAYO: ~/.local/bin/mayo
+
+# https://github.com/brunolevy/GraphiteThree
+# 3D modeler
+# Path to the binary
+GRAPHITE: ~/.local/bin/graphite
+
+# http://gmsh.info/
+# Mesh generator
+# Path to the binary
+GMSH: ~/.local/Gmsh/gmsh-4.11.1-Linux64/bin/gmsh
+
+# https://github.com/fprotais/fastbndpolycube
+# Surface polycube estimation
+# Path to the binary
+FASTBNDPOLYCUBE: ~/.local/fastbndpolycube/build_Release/fastpolycube
+
+# https://github.com/cg3hci/HexBox
+# Interactive tool for creating hex-meshes
+# Path to the binary
+HEXBOX: ~/.local/HexBox/build/gui/gui
+
+# https://github.com/LIHPC-Computational-Geometry/evocube
+# Genetic labeling framework for polycubes
+# Path to the binary
+EVOCUBE: ~/.local/evocube/build_Release/evolabel
+
+# https://github.com/LIHPC-Computational-Geometry/ovm.io
+# .ovm to .mesh hex-mesh conversion
+# Path to the binary
+OVM_IO: ~/code/ovm.io/build/Linux64-gcc-dynamic-Debug/ovm.io
+
+# https://github.com/cgg-bern/AlgoHex
+# Frame-field based hex-meshing pipeline
+# Path to the binary
+ALGOHEX: ~/.local/AlgoHex/build_Release/Build/bin/HexMeshing
+
+# https://github.com/fprotais/polycube_withHexEx
+# Polycube parametrization from a labeling and hex-mesh extraction
+# Path to the binary
+POLYCUBE_WITH_HEXEX: ~/.local/polycube_withHexEx/build_Release/polycube
+
+# https://github.com/fprotais/robustPolycube
+# Robust quantization for polycube-maps
+# Path to the binaries folder, because several binaries are of interest (rb_generate_deformation, rb_generate_quantization and rb_perform_postprocessing)
+ROBUST_POLYCUBE: ~/.local/robustPolycube/build_Release/
+
+# https://github.com/fprotais/marchinghex
+# Robust hex-meshing from a regular grid
+# Path to the binaries folder, because several binaries are of interest (gridgenerator and marchinghex_hexmeshing)
+MARCHING_HEX: ~/.local/marchinghex/build_Release/
+
+# https://github.com/fprotais/hexsmoothing
+# Hex-mesh smoothing
+# Path to the binaries folder, because several binaries are of interest (innerSmoother and mixedSmoothing)
+HEXSMOOTHING: ~/.local/hexsmoothing/build_Release/
+
+# https://github.com/f3d-app/f3d
+# Fast and minimalist 3D viewer
+# Path to the binary
+F3D: /usr/bin/f3d

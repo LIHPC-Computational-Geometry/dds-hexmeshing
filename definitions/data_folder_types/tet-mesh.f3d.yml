@@ -1,7 +1,7 @@
 description: |
-  Open the surface mesh (.obj) with Graphite
+  Open the surface mesh (.obj) f3d
 executable: {
-  path: GRAPHITE,
+  path: F3D,
   command_line: '{mesh}'
 }
 arguments: {
