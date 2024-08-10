@@ -676,6 +676,11 @@ def print_help_on_data_folder_type(data_folder_type: str):
         print(f"Views declared for this type of data folders:")
         for view_name in get_declared_views(data_folder_type):
             print(f" • {view_name}" + (" (default view)" if view_name == default_view else ""))
+            # load the YAML view definition and print the view description
+            with open(f'definitions/data_folder_types/{data_folder_type}.{view_name}.yml') as view_definition_stream:
+                view_definition = yaml.safe_load(view_definition_stream)
+                if 'description' in view_definition:
+                    print(f"   {view_definition['description']}",end='') # there is already a new line at the end of the description
 
 if __name__ == "__main__":
     
