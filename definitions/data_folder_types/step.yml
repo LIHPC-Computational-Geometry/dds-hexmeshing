@@ -2,4 +2,4 @@ filenames: {
   STEP: CAD.step # CAD model in the STEP format
 }
 distinctive_content: [STEP]
-default_view: Mayo
+default_view: mayo

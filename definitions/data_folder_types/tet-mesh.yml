@@ -8,4 +8,4 @@ filenames: {
   SURFACE_MESH_GLB: surface_mesh.glb                # SURFACE_MESH_OBJ as glTF 2.0 binary file
 }
 distinctive_content: [TET_MESH_MEDIT]
-default_view: Graphite
+default_view: graphite
