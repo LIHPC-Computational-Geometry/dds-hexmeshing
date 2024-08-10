@@ -310,15 +310,21 @@ class DataFolder():
                 if 'output_folder' in YAML_content[self.type]:
                     # we found a generative algorithm (it creates a subfolder)
                     continue # parse next YAML algo definition
+                if not 'arguments' in YAML_content[self.type]:
+                    log.fatal(f"{collapseuser(YAML_algo_filename)} has no '{self.type}/arguments' entry")
+                    exit(1)
+                if not 'output_files' in YAML_content[self.type]['arguments']:
+                    log.fatal(f"{collapseuser(YAML_algo_filename)} has no '{self.type}/arguments/output_files' entry")
+                    exit(1)
                 if filename_keyword in [YAML_content[self.type]['arguments']['output_files'][command_line_keyword] for command_line_keyword in YAML_content[self.type]['arguments']['output_files']]:
                     # we found an algorithm whose 'filename_keyword' is one of the output file
                     # check existence of input files
                     for algo_input_filename_keyword in [YAML_content[self.type]['arguments']['input_files'][command_line_keyword] for command_line_keyword in YAML_content[self.type]['arguments']['input_files']]:
                         algo_input_filename, its_data_folder = translate_filename_keyword(algo_input_filename_keyword)
                         if not self.get_closest_parent_of_type(its_data_folder).get_file(algo_input_filename_keyword, False).exists():
-                            log.error(f"Cannot auto-generate missing file {filename_keyword} in {self.path}")
-                            log.error(f"Found algorithm '{YAML_algo_filename.stem}' to generate it")
-                            log.error(f"but input file '{algo_input_filename}' is also missing.")
+                            log.fatal(f"Cannot auto-generate missing file {filename_keyword} in {self.path}")
+                            log.fatal(f"Found algorithm '{YAML_algo_filename.stem}' to generate it")
+                            log.fatal(f"but input file '{algo_input_filename}' is also missing.")
                             exit(1)
                     # all input files exist
                     log.debug(f"auto_generate_missing_file('{filename_keyword}') on {self.path} : the solution found is to run {filename_keyword}")
@@ -327,7 +333,7 @@ class DataFolder():
                 else:
                     # this transformative algorithm does not create the file we need
                     continue # parse next YAML algo definition
-        log.error(f"auto_generate_missing_file('{filename_keyword}') on {self.path} : no solution found")
+        log.fatal(f"auto_generate_missing_file('{filename_keyword}') on {self.path} : no solution found")
         exit(1)
         
     def get_file(self, filename_keyword: str, must_exist: bool = False) -> Path:
