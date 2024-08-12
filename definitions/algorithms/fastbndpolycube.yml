@@ -3,7 +3,6 @@ description: |
 labeling: { # case of 'fastbndpolycube' applied on a 'labeling' subfolder
   executable: {
     path: FASTBNDPOLYCUBE,
-    filename: marchinghex_hexmeshing,
     command_line: "{mesh} {labeling} {polycube}"
   },
   # no `output_folder` -> transformative algorithm
