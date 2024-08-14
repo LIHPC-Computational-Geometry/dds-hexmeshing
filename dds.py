@@ -80,6 +80,23 @@ def translate_filename_keyword(filename_keyword: str) -> tuple[str,str]:
     log.error(f"None of the data folder types declare the '{filename_keyword}' filename keyword")
     exit(1)
 
+class InvalidPathKeywordError(Exception):
+    """
+    Exception raised when a path keyword does not exist in definitions/paths.yml
+    """
+    def __init__(self, path_keyword):
+        super().__init__(f"Path '{path_keyword}' is referenced but does not exist in definitions/paths.yml")
+
+def translate_path_keyword(path_keyword: str) -> Optional[Path]:
+    with open('definitions/paths.yml') as paths_stream:
+        paths = yaml.safe_load(paths_stream)
+        if path_keyword not in paths:
+            raise InvalidPathKeywordError(path_keyword)
+        return Path(paths[path_keyword])
+
+def get_declared_data_folder_types() -> list[str]:
+    return [x.stem for x in Path('definitions/data_folder_types').iterdir() if x.is_file() and x.suffix == '.yml' and x.stem.count('.') == 0]
+
 def get_default_view_name(data_folder_type: str) -> Optional[str]:
     YAML_filepath: Path = Path('definitions/data_folder_types') / (data_folder_type + '.yml')
     if not YAML_filepath.exists():
@@ -94,13 +111,19 @@ def get_default_view_name(data_folder_type: str) -> Optional[str]:
             log.fatal(f"Default view of data folder type '{data_folder_type}' is '{default_view}', but there is no {data_folder_type}.{default_view}.yml in definitions/data_folder_types/")
             exit(1)
         return default_view
-    
-def get_declared_views(data_folder_type: str) -> list:
+
+def get_declared_views(data_folder_type: str) -> list[str]:
     """
     Find all <data_folder_type>.*.yml in definitions/data_folder_types/
     But doest not check the content of the view definition.
     """
     return [x.named['view_name'] for x in [parse(data_folder_type + ".{view_name}.yml", file.name) for file in Path('definitions/data_folder_types').iterdir() if file.is_file()] if x is not None]
+
+def get_declared_algorithms_as_YAML() -> list[str]:
+    return [x.stem for x in Path('definitions/algorithms').iterdir() if x.is_file() and x.suffix == '.yml']
+
+def get_declared_algorithms_as_Python_script() -> list[str]:
+    return [x.stem for x in Path('definitions/algorithms').iterdir() if x.is_file() and x.suffix == '.py' and x.stem.count('.') == 0]
 
 def is_instance_of(path: Path, data_folder_type: str) -> bool:
     YAML_filepath: Path = Path('definitions/data_folder_types') / (data_folder_type + '.yml')
@@ -126,9 +149,9 @@ def is_instance_of(path: Path, data_folder_type: str) -> bool:
 
 def type_inference(path: Path) -> Optional[str]:
     recognized_types = list()
-    for type_str in [x.stem for x in Path('definitions/data_folder_types').iterdir() if x.is_file() and x.suffix == '.yml' and x.stem.count('.') == 0]: # Path.stem is Path.name without suffix
-        if is_instance_of(path,type_str):
-            recognized_types.append(type_str)
+    for data_folder_type in get_declared_data_folder_types():
+        if is_instance_of(path,data_folder_type):
+            recognized_types.append(data_folder_type)
     if len(recognized_types) == 0:
         return None
     if len(recognized_types) > 1:
@@ -682,6 +705,109 @@ def print_help_on_data_folder_type(data_folder_type: str):
                 if 'description' in view_definition:
                     print(f"   {view_definition['description']}",end='') # there is already a new line at the end of the description
 
+def print_help_on_algorithm(algo_name: str):
+    """
+    Print underlying executable, input/output files and other arguments for an algorithm defined with a YAML file (not a Python script)
+    """
+    print(f"Algorithm '{algo_name}'")
+    print(f"Has a pre-processing stage: {Path(f'definitions/algorithms/{algo_name}.pre.py').exists()}")
+    print(f"Has a post-processing stage: {Path(f'definitions/algorithms/{algo_name}.pre.py').exists()}")
+    YAML_filepath: Path = Path('definitions/algorithms') / (algo_name + '.yml')
+    if not YAML_filepath.exists():
+        log.fatal(f'{YAML_filepath} does not exist')
+        exit(1)
+    with open(YAML_filepath) as YAML_stream:
+        YAML_content = yaml.safe_load(YAML_stream)
+        print(f"Description: {YAML_content['description']}")
+        for input_folder_type in [key for key in YAML_content if key != 'description']:
+            console = Console(theme=Theme(inherit=False))
+            console.print(Rule(f"Behavior when run on a data folder of type '{input_folder_type}'"))
+            # starts with input files
+            # we can display 4 pieces of information:
+            # - the filename keyword (by convention in uppercase)
+            # - the filename (name.ext)
+            # - the data folder type in which this file is expected (the algo will search in the closest parent folder)
+            # - the command line keyword ({name}) -> not useful for the end user
+            all_command_line_keywords = dict()
+            if 'arguments' not in YAML_content[input_folder_type]:
+                log.fatal(f"{YAML_filepath} has no '{input_folder_type}/arguments' entry")
+                exit(1)
+            if 'input_files' not in YAML_content[input_folder_type]['arguments']:
+                log.fatal(f"{YAML_filepath} has no '{input_folder_type}/arguments/input_files' entry")
+                exit(1)
+            console.print("Input files:")
+            for command_line_keyword in YAML_content[input_folder_type]['arguments']['input_files']:
+                if command_line_keyword in all_command_line_keywords:
+                    log.fatal(f"{YAML_filepath} has multiple arguments named '{command_line_keyword}' in '{input_folder_type}/arguments")
+                    exit(1)
+                filename_keyword = YAML_content[input_folder_type]['arguments']['input_files'][command_line_keyword]
+                filename, affiliated_data_folder_type = translate_filename_keyword(filename_keyword)
+                console.print(f" • {filename} (={filename_keyword}), in closest parent folder of type '{affiliated_data_folder_type}'")
+                all_command_line_keywords[command_line_keyword] = filename
+            if 'others' in YAML_content[input_folder_type]['arguments']:
+                console.print("Other inputs (not files):")
+                for command_line_keyword in YAML_content[input_folder_type]['arguments']['others']:
+                    if command_line_keyword in all_command_line_keywords:
+                        log.fatal(f"{YAML_filepath} has multiple arguments named '{command_line_keyword}' in '{input_folder_type}/arguments")
+                        exit(1)
+                    if 'default' not in YAML_content[input_folder_type]['arguments']['others'][command_line_keyword]:
+                        log.fatal(f"{YAML_filepath} has no 'default' in '{input_folder_type}/arguments/others/{command_line_keyword}/")
+                        exit(1)
+                    if 'description' not in YAML_content[input_folder_type]['arguments']['others'][command_line_keyword]:
+                        log.fatal(f"{YAML_filepath} has no 'default' in '{input_folder_type}/arguments/others/{command_line_keyword}/")
+                        exit(1)
+                    default_value = YAML_content[input_folder_type]['arguments']['others'][command_line_keyword]['default']
+                    description = YAML_content[input_folder_type]['arguments']['others'][command_line_keyword]['description']
+                    console.print(f" • {command_line_keyword} (type {type(default_value).__name__}, default value = {default_value}) : {description}")
+                    all_command_line_keywords[command_line_keyword] = '{' + command_line_keyword + '}'
+            output_folder = None
+            if 'output_folder' in YAML_content[input_folder_type]:
+                output_folder = YAML_content[input_folder_type]['output_folder']
+            if 'output_files' not in YAML_content[input_folder_type]['arguments']:
+                log.fatal(f"{YAML_filepath} has no '{input_folder_type}/arguments/output_files' entry")
+                exit(1)
+            console.print("Output files:" if output_folder is None else f"Output files (in a '{output_folder}' subfolder):")
+            for command_line_keyword in YAML_content[input_folder_type]['arguments']['output_files']:
+                if command_line_keyword in all_command_line_keywords:
+                    log.fatal(f"{YAML_filepath} has multiple arguments named '{command_line_keyword}' in '{input_folder_type}/arguments")
+                    exit(1)
+                filename_keyword = YAML_content[input_folder_type]['arguments']['output_files'][command_line_keyword]
+                filename, _ = translate_filename_keyword(filename_keyword) # TODO check consistency across all affiliated data folder types?
+                console.print(f" • {filename} (={filename_keyword})")
+                all_command_line_keywords[command_line_keyword] = filename
+            # retrieve info about underlying executable
+            if 'executable' not in YAML_content[input_folder_type]:
+                log.fatal(f"{YAML_filepath} has no '{input_folder_type}/executable' entry")
+                exit(1)
+            if 'path' not in YAML_content[input_folder_type]['executable']:
+                log.fatal(f"{YAML_filepath} has no '{input_folder_type}/executable/path' entry")
+                exit(1)
+            path_keyword: str = YAML_content[input_folder_type]['executable']['path']
+            executable_path = None
+            try:
+                executable_path = translate_path_keyword(path_keyword).expanduser()
+            except InvalidPathKeywordError:
+                log.fatal(f"'{path_keyword}' is referenced in {YAML_filepath} at '{input_folder_type}/executable/path' but does not exist in definitions/paths.yml")
+                exit(1)
+            if not executable_path.exists():
+                log.fatal(f"In paths.yml, '{path_keyword}' reference a non existing path, required by {YAML_filepath} algorithm")
+                log.fatal(f"({executable_path})")
+                exit(1)
+            executable_filename: Optional[str] = None
+            if 'filename' in YAML_content[input_folder_type]['executable']:
+                executable_filename = YAML_content[input_folder_type]['executable']['filename']
+                executable_path = executable_path / executable_filename
+            if not executable_path.exists():
+                log.error(f"There is no {executable_filename} in {executable_path}. Required by {YAML_filepath} algorithm")
+                exit(1)
+            console.print(f"Executable: {executable_path}")
+            if 'command_line' not in YAML_content[input_folder_type]['executable']:
+                log.fatal(f"{YAML_filepath} has no '{input_folder_type}/executable/command_line' entry")
+                exit(1)
+            command_line: str = YAML_content[input_folder_type]['executable']['command_line']
+            command_line = command_line.format(**all_command_line_keywords)
+            console.print(f"Command line: {command_line}")
+
 if __name__ == "__main__":
     
     parser = ArgumentParser(
@@ -730,9 +856,16 @@ if __name__ == "__main__":
         assert(len(args.supp_args)<=1)
         console = Console(theme=Theme(inherit=False))
         if len(args.supp_args)==1:
-            # TODO check data folder types
-            print_help_on_data_folder_type(args.supp_args[0])
-            # TODO check algorithms
+            if args.supp_args[0] in get_declared_data_folder_types():
+                print_help_on_data_folder_type(args.supp_args[0])
+            elif args.supp_args[0] in get_declared_algorithms_as_YAML():
+                print_help_on_algorithm(args.supp_args[0])
+            elif args.supp_args[0] in get_declared_algorithms_as_Python_script():
+                print(f"{args.supp_args[0]} is an algorithm defined as a Python script")
+            else:
+                # TODO check path keywords
+                # If args.supp_args[0] is a path keyword, list all algorithms & views that depend on this path
+                pass
             exit(0)
         # else: general help
 
@@ -755,9 +888,9 @@ dds.py [r]run[/] [bright_green]algo_name[/] [cyan]path/to/input/folder[/] \[algo
     Run the specified [bright_green]algorithm[/] on a [cyan]data folder[/]
     Here are the algorithms found in [bright_black]definitions/algorithms/[/] :\
             """)
-            for algo in [x.stem for x in Path('definitions/algorithms').iterdir() if x.is_file() and x.suffix == '.yml']:
+            for algo in get_declared_algorithms_as_YAML():
                 yield Text(f'     • {algo}')
-            for algo in [x.stem for x in Path('definitions/algorithms').iterdir() if x.is_file() and x.suffix == '.py' and x.stem.count('.') == 0]:
+            for algo in get_declared_algorithms_as_Python_script():
                 yield Text(f'     • {algo} (Python script)')
 
         help_panels = Group(
