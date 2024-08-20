@@ -32,3 +32,10 @@ allow-direct-references = true
 # see https://github.com/mitsuhiko/rye/issues/515#issuecomment-1858983801
 [tool.hatch.build.targets.wheel]
 packages = ["src/HexMeshWorkshop"]
+
+# for Zed to use the proper Python interpreter
+# see https://github.com/zed-industries/zed/discussions/6646
+# see https://github.com/zed-industries/zed/blob/main/docs/src/languages/python.md
+[tool.pyright]
+venvPath = "."
+venv = ".venv"
