@@ -3,11 +3,14 @@
 # based on the part of root.generate_report() that was related to stats aggregation and not HTML report generation
 # use the post-processed hex-meshes (padding + smoothing) instead of the direct output of HexHex
 
-from copy import deepcopy
-
 from dds import *
 
 def main(input_folder: Path, arguments: list):
+
+    # check `arguments`
+    if len(arguments) != 0:
+        logging.fatal(f'generate_stats_table does not need other arguments than the input folder, but {arguments} were provided')
+        exit(1)
 
     nb_CAD = dict()
     nb_CAD['B'] = 0
