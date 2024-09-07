@@ -1697,7 +1697,7 @@ class root(AbstractDataFolder):
                 elif labeling_folder.nb_turning_points() != 0:
                     nb_meshing_succeeded_2_labeling_non_monotone[MAMBO_subset]['Evocube'] += 1
                     if evocube_row['glb_hexmesh'] is not None:
-                        # an hex-mesh was successully generated
+                        # an hex-mesh was successfully generated
                         if evocube_row['minSJ'] < 0.0:
                             nb_labeling_non_monotone_2_hexmesh_negative_min_sj[MAMBO_subset]['Evocube'] += 1
                         else:
@@ -1708,7 +1708,7 @@ class root(AbstractDataFolder):
                 else:
                     nb_meshing_succeeded_2_labeling_succeeded[MAMBO_subset]['Evocube'] += 1
                     if evocube_row['glb_hexmesh'] is not None:
-                        # an hex-mesh was successully generated
+                        # an hex-mesh was successfully generated
                         if evocube_row['minSJ'] < 0.0:
                             nb_labeling_succeeded_2_hexmesh_negative_min_sj[MAMBO_subset]['Evocube'] += 1
                         else:
@@ -1797,7 +1797,7 @@ class root(AbstractDataFolder):
                 elif labeling_folder.nb_turning_points() != 0:
                     nb_meshing_succeeded_2_labeling_non_monotone[MAMBO_subset]['Ours'] += 1
                     if ours_row['glb_hexmesh'] is not None:
-                        # an hex-mesh was successully generated
+                        # an hex-mesh was successfully generated
                         if ours_row['minSJ'] < 0.0:
                             nb_labeling_non_monotone_2_hexmesh_negative_min_sj[MAMBO_subset]['Ours'] += 1
                         else:
@@ -1809,7 +1809,7 @@ class root(AbstractDataFolder):
                     # so we have a valid labeling with no turning-points
                     nb_meshing_succeeded_2_labeling_succeeded[MAMBO_subset]['Ours'] += 1
                     if ours_row['glb_hexmesh'] is not None:
-                        # an hex-mesh was successully generated
+                        # an hex-mesh was successfully generated
                         if ours_row['minSJ'] < 0.0:
                             nb_labeling_succeeded_2_hexmesh_negative_min_sj[MAMBO_subset]['Ours'] += 1
                         else:
