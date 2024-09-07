@@ -421,11 +421,25 @@ def main(input_folder: Path, arguments: list):
         url = 'https://cdn.jsdelivr.net/gh/holtzy/D3-graph-gallery@master/LIB/sankey.js',
         filename = str(output_folder / 'js' / 'sankey.js')
     )
+    # Three.js https://threejs.org/
+    # for <model-viewer-effects>
+    logging.info('Downloading Three.js...')
+    request.urlretrieve(
+        url = 'https://cdn.jsdelivr.net/npm/three@^0.167.1/build/three.module.min.js',
+        filename = str(output_folder / 'js' / 'three.module.min.js')
+    )
     # <model-viewer> https://modelviewer.dev/
+    # module version which doesn't package Three.js
     logging.info('Downloading <model-viewer>...')
     request.urlretrieve(
-        url = 'https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js',
-        filename =str(output_folder / 'js' / 'model-viewer.min.js')
+        url = 'https://cdn.jsdelivr.net/npm/@google/model-viewer/dist/model-viewer-module.min.js',
+        filename = str(output_folder / 'js' / 'model-viewer-module.min.js')
+    )
+    # <model-viewer-effects> https://modelviewer.dev/examples/postprocessing/index.html
+    logging.info('Downloading <model-viewer-effects>...')
+    request.urlretrieve(
+        url = 'https://cdn.jsdelivr.net/npm/@google/model-viewer-effects/dist/model-viewer-effects.min.js',
+        filename = str(output_folder / 'js' / 'model-viewer-effects.min.js')
     )
 
     # copy README.md

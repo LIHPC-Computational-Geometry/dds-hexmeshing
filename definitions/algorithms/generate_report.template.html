@@ -58,6 +58,10 @@
                 border-radius: 5px;
                 box-shadow: 0px 0px 10px white;
             }
+
+            dialog label {
+                color: white;
+            }
             
             dialog model-viewer{
                 height: calc(100% - 25px);
@@ -78,27 +82,60 @@
         <script src="js/ag-grid-community.min.js"></script>
         <script src="js/d3.v4.min.js"></script>
         <script src="js/sankey.js"></script>
-        <script type="module" src="js/model-viewer.min.js"></script>
+        <script type="importmap">
+            {
+              "imports": {
+                "three": "./js/three.module.min.js"
+              }
+            }
+        </script>
+        <script type="module" src="/js/model-viewer-module.min.js"></script>
+        <script type="module" src="/js/model-viewer-effects.min.js"></script>
         <script>
             // open/close 3D model viewer
+
             const dialog = document.querySelector("dialog");
-            const closeButton = document.querySelector("dialog #close-viewer");
             // The "Close" button closes the dialog
+            const closeButton = document.querySelector("dialog #close-viewer");
             closeButton.addEventListener("click", () => {
                 dialog.close();
                 dialog.removeChild(document.querySelector("dialog model-viewer"));
+                dialog.removeChild(document.querySelector("dialog label"));
+                dialog.removeChild(document.querySelector("dialog input"));
             });
             // fill the dialog with a <model-viewer>
             function make_dialog(filename) {
+                SSAO_initially_activated = filename.includes('labeling'); // boolean. SSAO on by default for labeling, not for hex-meshes
+                // create a checkbox and an associated label
+                let ssaoLabel = dialog.appendChild(document.createElement("label"));
+                ssaoLabel.setAttribute("for","ssao");
+                ssaoLabel.innerText = "SSAO";
+                let ssaoCheckbox = dialog.appendChild(document.createElement("input"));
+                ssaoCheckbox.setAttribute("type","checkbox");
+                ssaoCheckbox.setAttribute("id","ssao");
+                if(SSAO_initially_activated) {
+                    ssaoCheckbox.setAttribute("checked","1");
+                }
+                // create a <model-viewer>
                 let model_viewer = dialog.appendChild(document.createElement("model-viewer"));
                 model_viewer.setAttribute("alt","labeling 3D viewer");
                 model_viewer.setAttribute("src", "glb/" + filename);
                 model_viewer.setAttribute("shadow-intensity", "0"); // no shadow
                 model_viewer.setAttribute("exposure","1");
-                model_viewer.setAttribute("tone-mapping","commerce");
+                model_viewer.setAttribute("tone-mapping","neutral");
                 model_viewer.setAttribute("camera-controls",true);
                 model_viewer.setAttribute("touch-action","pan-y");
                 model_viewer.setAttribute("autoplay",true);
+                let effect_composer = model_viewer.appendChild(document.createElement("effect-composer"));
+                let ssao_effect = effect_composer.appendChild(document.createElement("ssao-effect"));
+                if(SSAO_initially_activated) {
+                    ssao_effect.setAttribute("blend-mode","default");
+                }
+                else {
+                    ssao_effect.setAttribute("blend-mode","skip");
+                }
+                // toggle SSAO with the dedicated checkbox
+                ssaoCheckbox.addEventListener('change', (e) => ssao_effect.blendMode = e.target.checked ? 'default' : 'skip');
                 dialog.showModal();
             }
 

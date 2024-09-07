@@ -94,7 +94,7 @@ You can click on the name of a column to switch between ascending, descending an
 
 - speedup : duration of Evocube divided by the duration of our algorithm
 
-- open : open the 3D viewer. After 5s, the 3D model switches between the labeled mesh and a fast polycube estimation. If no labeling was generated, the triangle mesh is displayed instead.
+- open : open the 3D viewer. After 5s, the 3D model switches between the labeled mesh and a fast polycube estimation. If no labeling was generated, the triangle mesh is displayed instead. Screen space Ambient Occlusion (SSAO) is on by default.
 
 "feature edges" group
 
@@ -110,7 +110,7 @@ You can click on the name of a column to switch between ascending, descending an
 
 - avg(SJ) : average per-hexahedron scaled jacobian
 
-- open : open the 3D viewer
+- open : open the 3D viewer. Screen space Ambient Occlusion (SSAO) is off by default.
 
 # Comparison with PolyCut
 
