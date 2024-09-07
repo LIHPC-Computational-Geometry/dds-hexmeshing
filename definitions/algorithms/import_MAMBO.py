@@ -8,7 +8,7 @@ from tempfile import mkdtemp
 from urllib import request
 from rich.prompt import Confirm
 
-def main(folder_path: Path, arguments: list, silent_output: bool):
+def main(folder_path: Path, arguments: list):
     # check `arguments`
     path_to_MAMBO = None
     if len(arguments) > 1:
@@ -55,8 +55,7 @@ or
                 continue
             mkdir(folder_path / file.stem)
             copyfile(file, folder_path / file.stem / STEP_filename)
-            if not silent_output:
-                print(file.stem + ' imported')
+            print(file.stem + ' imported')
     if tmp_folder is not None:
         # delete the temporary directory
         logging.debug(f"Deleting folder '{tmp_folder}'")

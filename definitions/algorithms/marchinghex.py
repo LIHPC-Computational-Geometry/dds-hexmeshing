@@ -4,7 +4,7 @@
 
 from dds import *
 
-def main(input_path: Path, arguments: list, silent_output: bool):
+def main(input_path: Path, arguments: list):
     # check 'arguments'
     # check existence of 'input_path'
     # instantiate and get type (must be 'tet-mesh')

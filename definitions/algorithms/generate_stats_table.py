@@ -7,7 +7,7 @@ from copy import deepcopy
 
 from dds import *
 
-def main(input_folder: Path, arguments: list, silent_output: bool):
+def main(input_folder: Path, arguments: list):
 
     nb_CAD = dict()
     nb_CAD['B'] = 0

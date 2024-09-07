@@ -6,7 +6,7 @@ from rich.table import Table
 
 from dds import *
 
-def main(input_folder: Path, arguments: list, silent_output: bool):
+def main(input_folder: Path, arguments: list):
     # check `arguments`
     if len(arguments) != 1:
         logging.fatal(f'compare need the input folder + another argument: the 2nd folder to compare with')

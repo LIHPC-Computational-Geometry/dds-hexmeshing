@@ -28,7 +28,7 @@ from rich.prompt import Confirm
 
 from dds import *
 
-def main(input_folder: Path, arguments: list, silent_output: bool):
+def main(input_folder: Path, arguments: list):
     # check `arguments`
     if len(arguments) != 0:
         logging.fatal(f'batch_processing does not need other arguments than the input folder, but {arguments} were provided')

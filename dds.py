@@ -235,7 +235,7 @@ def run(path: Path, algo_name: str, arguments_as_list: list = list(), silent_out
         console = Console()
         if not silent_output:
             console.print(Rule(f'beginning of [magenta]{script_filepath}[/]'))
-        ext_module.main(path,arguments_as_list,silent_output)
+        ext_module.main(path,arguments_as_list)
         if not silent_output:
             console.print(Rule(f'end of [magenta]{script_filepath}[/]'))
         exit(0)

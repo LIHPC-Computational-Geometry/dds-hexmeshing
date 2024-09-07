@@ -233,23 +233,23 @@ Repository structure:
 <summary>Yet another architecture revision</summary>
 
 Idea: declarative approach, infrastructure-as-code (like Terraform).
-Instead of editing Python scripts to describe data subfolder types and algorithms,
+Instead of editing Python scripts to describe data folder types and algorithms,
 we would rely on YAML files :
-- `data_subfolder_types/*.yml` : a type of data subfolder. interpret a folder as an object. description of the expected filenames inside
+- `data_folder_types/*.yml` : a type of data folder. interpret a folder as an object. description of the expected filenames inside
 - `algorithms/*.yml` : an wrapper around an executable, working on a specific data subfolder type
 
 There will be Python script for optional pre- and post-processing for algorithms, as well as for custom algorithms (not based on an external executable)
 
 Then we would have a `dds.py` that parse the necessary YAML files for the given instructions, eg:
 - run an algorithm: `./dds.py run <algo_name> <input_folder>`
-- print children of a given data subfolder: `./dds.py children <input_folder>`
-- print history of a given data subfolder: `./dds.py history <input_folder>`
-- list all data subfolder folder types: `./dds.py types list`
-- print info about a specific data subfolder type: `./dds.py types info <type_name>`
+- print children of a given data folder: `./dds.py children <input_folder>`
+- print history of a given data folder: `./dds.py history <input_folder>`
+- list all data folder types: `./dds.py types list`
+- print info about a specific data folder type: `./dds.py types info <type_name>`
 - list all algorithms: `./dds.py algos list`
 - print info about a specific algorithm: `./dds.py algos info <algo_name>`
 
 Note:
-- (algorithms) to access a file in the (grand)parent folder, we no longer specify the reverse depth. We need to go up until the filename in found, and potentially restrict 2 data subfolder types to use the same filename and filename keyword.
+- (algorithms) to access a file in the (grand)parent folder, we no longer specify the reverse depth. We need to go up until the filename in found, and potentially restrict 2 data folder types to use the same filename and filename keyword.
 
 </details>
