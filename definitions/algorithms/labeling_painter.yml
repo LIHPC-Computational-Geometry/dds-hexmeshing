@@ -17,3 +17,21 @@ tet-mesh: { # case of 'labeling_painter' applied on a 'tet-mesh' subfolder
   },
   note: "Save the output file as {labeling}"
 }
+labeling: { # case of 'labeling_painter' applied on a 'labeling' subfolder
+  executable: {
+    path: AUTOMATIC_POLYCUBE,
+    filename: labeling_painter,
+    command_line: '{mesh} {init_labeling}'
+  },
+  output_folder: 'labeling_painter_%d',
+  arguments: {
+    input_files: {
+      mesh: SURFACE_MESH_OBJ,
+      init_labeling: SURFACE_LABELING_TXT
+    },
+    output_files: {
+      output_labeling: SURFACE_LABELING_TXT
+    }
+  },
+  note: "Save the output file as {output_labeling}"
+}
