@@ -627,6 +627,9 @@ class DataFolder():
             for k,v in all_arguments.items():
                 info_file[start_datetime_iso]['parameters'][k] = str(v)
             console = Console()
+            if not silent_output:
+                if 'note' in YAML_content[self.type]:
+                    console.print(YAML_content[self.type]['note'].format(**all_arguments))
             # execution
             def core_of_the_function():
                 # execute preprocessing
