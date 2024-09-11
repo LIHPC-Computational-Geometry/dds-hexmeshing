@@ -1,12 +1,12 @@
 description: |
   Labeling generation with Graph-Cuts Optimisation
-tet-mesh: { # case of 'graphcut_labeling_gui' applied on a 'tet-mesh' subfolder
+tet-mesh: { # case of 'graphcut_labeling' applied on a 'tet-mesh' subfolder
   executable: {
     path: AUTOMATIC_POLYCUBE,
     filename: graphcut_labeling,
-    command_line: '{mesh} compactness={compactness} fidelity={fidelity} gui=true'
+    command_line: '{mesh} compactness={compactness} fidelity={fidelity} gui=false output={labeling}'
   },
-  output_folder: 'graphcut_labeling_%d',
+  output_folder: 'graphcut_labeling_{compactness}_{fidelity}',
   arguments: {
     input_files: {
       mesh: SURFACE_MESH_OBJ
@@ -24,6 +24,5 @@ tet-mesh: { # case of 'graphcut_labeling_gui' applied on a 'tet-mesh' subfolder
         description: "fidelity coeff"
       }
     }
-  },
-  note: "Save the output file as {labeling}"
+  }
 }
