@@ -36,7 +36,7 @@ from dds import *
 # Per algo policy when an output is missing
 # 'ask', 'run' or 'pass'
 GMSH_OUTPUT_MISSING_POLICY               = 'pass'
-GRAPHCUT_LABELING_OUTPUT_MISSING_POLICY  = 'run'
+GRAPHCUT_LABELING_OUTPUT_MISSING_POLICY  = 'pass'
 AUTOMATIC_POLYCUBE_OUTPUT_MISSING_POLICY = 'pass'
 EVOCUBE_OUTPUT_MISSING_POLICY            = 'pass'
 POLYCUBE_WITHHEXEX_OUTPUT_MISSING_POLICY = 'pass'
@@ -59,7 +59,7 @@ def main(input_folder: Path, arguments: list):
         logging.fatal(f'batch_processing does not need other arguments than the input folder, but {arguments} were provided')
         exit(1)
     console = Console() # better to create a global variable in dds.py ??
-    for step_subfolder in get_subfolders_of_type(input_folder,'step'):
+    for step_subfolder in sorted(get_subfolders_of_type(input_folder,'step')):
         step_object: DataFolder = DataFolder(step_subfolder)
         # tetrahedrization if not already done
         if not (step_subfolder / 'Gmsh_0.1').exists():
