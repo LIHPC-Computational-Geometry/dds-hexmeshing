@@ -4,9 +4,9 @@ tet-mesh: { # case of 'graphcut_labeling' applied on a 'tet-mesh' subfolder
   executable: {
     path: AUTOMATIC_POLYCUBE,
     filename: graphcut_labeling,
-    command_line: '{mesh} compactness={compactness} fidelity={fidelity} gui=false output={labeling}'
+    command_line: '{mesh} compactness={compactness} fidelity={fidelity} sensitivity={sensitivity} angle_of_rotation={angle_of_rotation} gui=false output={labeling}'
   },
-  output_folder: 'graphcut_labeling_{compactness}_{fidelity}',
+  output_folder: 'graphcut_labeling_{compactness}_{fidelity}_{sensitivity}_{angle_of_rotation}',
   arguments: {
     input_files: {
       mesh: SURFACE_MESH_OBJ
@@ -17,11 +17,19 @@ tet-mesh: { # case of 'graphcut_labeling' applied on a 'tet-mesh' subfolder
     others: {
       compactness: {
         default: 1,
-        description: "compactness coeff"
+        description: compactness coeff
       },
       fidelity: {
         default: 3,
-        description: "fidelity coeff"
+        description: fidelity coeff
+      },
+      sensitivity: {
+        default: 1e-9,
+        description: sensitivity for the facet normals pre-processing
+      },
+      angle_of_rotation: {
+        default: 0.05,
+        description: angle of rotation for the facet normals pre-processing
       }
     }
   }
