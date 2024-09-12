@@ -1,0 +1,11 @@
+description: |
+  Open the .obj CAD model with Graphite
+executable: {
+  path: GRAPHITE,
+  command_line: '{mesh}'
+}
+arguments: {
+  input_files: {
+    mesh: OBJ_CAD
+  }
+}

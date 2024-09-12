@@ -1,0 +1,5 @@
+filenames: {
+  OBJ_CAD: CAD.obj # CAD model in the OBJ/Wavefront format
+}
+distinctive_content: [OBJ_CAD]
+default_view: graphite
