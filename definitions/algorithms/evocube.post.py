@@ -12,7 +12,7 @@ def post_processing(input_subfolder: DataFolder, output_subfolder: Path, argumen
     assert(input_subfolder.type == 'tet-mesh')
 
     # read labeling.yml to get some filenames
-    with open('data_subfolder_types/labeling.yml') as YAML_stream:
+    with open(Path(__file__).parent.parent / 'data_folder_types/labeling.yml') as YAML_stream:
         labeling_type = yaml.safe_load(YAML_stream)
         if 'filenames' not in labeling_type:
             logging.error(f"labeling.yml has no 'filenames' entry")
