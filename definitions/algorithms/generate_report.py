@@ -52,7 +52,8 @@ def main(input_folder: Path, arguments: list):
     AG_Grid_rowData = list()
 
     # parse the input_folder and fill `AG_Grid_rowData`
-    for depth_1_folder in get_subfolders_of_type(input_folder,'step'):
+    assert((input_folder / 'MAMBO').exists())
+    for depth_1_folder in sorted(get_subfolders_of_type(input_folder / 'MAMBO','step')):
         depth_1_object: Optional[DataFolder] = None
         try:
             # instantiate this depth-1 folder

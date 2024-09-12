@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Parse all 'step' data folders inside the given folder. For each of them,
+# Parse all 'step' data folders inside `input_folder` / 'MAMBO'. For each of them,
 # (if not already done) generate a tet-mesh with Gmsh. For each of them,
 # (if not already done) generate a labeling with automatic_polycube, and one with evocube. For each of them,
 # (if not already done) generate a hex-mesh with polycube_withHexEx. For each of them,
@@ -8,18 +8,19 @@
 # (if not already done) generate a hex-mesh with inner_smoothing.
 
 # The final structure is:
-# <'step' data folder>
-# └── Gmsh_0.1
-#     ├── graphcut_labeling_1_3_1e-9_0.05         # compactness=1, fidelity=3, sensitivity=1e-9, angle of rotation=0.05
-#     ├── automatic_polycube_YYYYMMDD_HHMMSS
-#     │   └── polycube_withHexEx_1.3
-#     │       └── global_padding
-#     │           └── inner_smoothing_50
-#     └── evocube_YYYYMMDD_HHMMSS
-#         └── polycube_withHexEx_1.3
-#             └── global_padding
-#                 └── inner_smoothing_50
-# for all 'step' data folders inside the input folder
+# `input_folder`
+# └── MAMBO
+#     └── <every 'step' data folder>
+#         └── Gmsh_0.1
+#             ├── graphcut_labeling_1_3_1e-9_0.05         # compactness=1, fidelity=3, sensitivity=1e-9, angle of rotation=0.05
+#             ├── automatic_polycube_YYYYMMDD_HHMMSS
+#             │   └── polycube_withHexEx_1.3
+#             │       └── global_padding
+#             │           └── inner_smoothing_50
+#             └── evocube_YYYYMMDD_HHMMSS
+#                 └── polycube_withHexEx_1.3
+#                     └── global_padding
+#                         └── inner_smoothing_50
 
 # based on :
 # https://github.com/LIHPC-Computational-Geometry/HexMeshWorkshop/blob/ee4f61e239678bf9274cbc22e9d054664f01b1ec/modules/data_folder_types.py#L1318
@@ -59,7 +60,8 @@ def main(input_folder: Path, arguments: list):
         logging.fatal(f'batch_processing does not need other arguments than the input folder, but {arguments} were provided')
         exit(1)
     console = Console() # better to create a global variable in dds.py ??
-    for step_subfolder in sorted(get_subfolders_of_type(input_folder,'step')):
+    assert((input_folder / 'MAMBO').exists())
+    for step_subfolder in sorted(get_subfolders_of_type(input_folder / 'MAMBO','step')):
         step_object: DataFolder = DataFolder(step_subfolder)
         # tetrahedrization if not already done
         if not (step_subfolder / 'Gmsh_0.1').exists():

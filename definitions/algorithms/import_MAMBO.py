@@ -31,6 +31,9 @@ or
     # if `folder_path` does not exist, create it
     if not folder_path.exists():
         mkdir(folder_path)
+    # if `folder_path` / 'MAMBO' does not exist, create it
+    if not (folder_path / 'MAMBO').exists():
+        mkdir(folder_path / 'MAMBO')
     # download MAMBO if not already done
     tmp_folder = None
     if path_to_MAMBO is None:
@@ -46,15 +49,15 @@ or
         logging.info('Extracting archive')
         unpack_archive(zip_file,extract_dir=tmp_folder)
     STEP_filename,_ = translate_filename_keyword('STEP')
-    for subfolder in [x for x in path_to_MAMBO.iterdir() if x.is_dir()]:
+    for subfolder in [x for x in sorted(path_to_MAMBO.iterdir()) if x.is_dir()]:
         if subfolder.name in ['Scripts', '.git']:
             continue # ignore this subfolder
-        for file in [x for x in subfolder.iterdir() if x.suffix == '.step']:
-            if (folder_path / file.stem).exists() and (folder_path / file.stem).is_dir():
+        for file in [x for x in sorted(subfolder.iterdir()) if x.suffix == '.step']:
+            if (folder_path / 'MAMBO' / file.stem).exists() and (folder_path / 'MAMBO' / file.stem).is_dir():
                 logging.error(f"There is already a subfolder named {file.stem} in {folder_path}. Skip import of this 3D model.")
                 continue
-            mkdir(folder_path / file.stem)
-            copyfile(file, folder_path / file.stem / STEP_filename)
+            mkdir(folder_path / 'MAMBO' / file.stem)
+            copyfile(file, folder_path / 'MAMBO' / file.stem / STEP_filename)
             print(file.stem + ' imported')
     if tmp_folder is not None:
         # delete the temporary directory
