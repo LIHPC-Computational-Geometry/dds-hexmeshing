@@ -9,6 +9,11 @@ from tempfile import mkdtemp
 from urllib import request
 from rich.prompt import Confirm
 
+obj_CAD_filename = 'CAD.obj'
+# /!\ no data folder type expects such filename
+# Maybe extend this script to auto-convert to .stl
+# and create a 'stl' data folder type?
+
 def main(folder_path: Path, arguments: list):
     # check `arguments`
     path_to_OctreeMeshing = None
@@ -49,7 +54,6 @@ or
         request.urlretrieve(url=url,filename=str(zip_file))
         logging.info('Extracting archive')
         unpack_archive(zip_file,extract_dir=tmp_folder)
-    obj_CAD_filename,_ = translate_filename_keyword('OBJ_CAD')
     for subset_name in ['cad','smooth']:
         assert((path_to_OctreeMeshing / 'input' / subset_name).exists())
         mkdir(folder_path / 'OctreeMeshing' / subset_name)
