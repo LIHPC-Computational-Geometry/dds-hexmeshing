@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 
-# Parse all 'step' data folders inside `input_folder` / 'MAMBO'. For each of them,
+# Parse all 'step' data folders inside `input_folder` / 'MAMBO'
+#   and all 'tet-mesh' data folders inside `input_folder` / 'OctreeMeshing' / 'cad'.
+# For each of them,
 # (if not already done) generate a tet-mesh with Gmsh. For each of them,
 # (if not already done) generate a labeling with automatic_polycube, and one with evocube. For each of them,
 # (if not already done) generate a hex-mesh with polycube_withHexEx. For each of them,
@@ -9,18 +11,29 @@
 
 # The final structure is:
 # `input_folder`
-# └── MAMBO
-#     └── <every 'step' data folder>
-#         └── Gmsh_0.1
-#             ├── graphcut_labeling_1_6_1e-9_0.05         # compactness=1, fidelity=6, sensitivity=1e-9, angle of rotation=0.05
-#             │   └── automatic_polycube_YYYYMMDD_HHMMSS
-#             │       └── polycube_withHexEx_1.3          # TODO compute
-#             │           └── global_padding              # TODO compute
-#             │               └── inner_smoothing_50      # TODO compute
-#             └── evocube_YYYYMMDD_HHMMSS
-#                 └── polycube_withHexEx_1.3
-#                     └── global_padding
-#                         └── inner_smoothing_50
+# ├── MAMBO
+# │   └── <every 'step' data folder>
+# │       └── Gmsh_0.1
+# │           ├── graphcut_labeling_1_6_1e-9_0.05         # compactness=1, fidelity=6, sensitivity=1e-9, angle of rotation=0.05
+# │           │   └── automatic_polycube_YYYYMMDD_HHMMSS
+# │           │       └── polycube_withHexEx_1.3          # TODO compute
+# │           │           └── global_padding              # TODO compute
+# │           │               └── inner_smoothing_50      # TODO compute
+# │           └── evocube_YYYYMMDD_HHMMSS
+# │               └── polycube_withHexEx_1.3
+# │                   └── global_padding
+# │                       └── inner_smoothing_50
+# └── OctreeMeshing
+#     └── <every 'tet-mesh' data folder>
+#         ├── graphcut_labeling_1_6_1e-9_0.05         # compactness=1, fidelity=6, sensitivity=1e-9, angle of rotation=0.05
+#         │   └── automatic_polycube_YYYYMMDD_HHMMSS
+#         │       └── polycube_withHexEx_1.3          # TODO compute
+#         │           └── global_padding              # TODO compute
+#         │               └── inner_smoothing_50      # TODO compute
+#         └── evocube_YYYYMMDD_HHMMSS
+#             └── polycube_withHexEx_1.3
+#                 └── global_padding
+#                     └── inner_smoothing_50
 
 # based on :
 # https://github.com/LIHPC-Computational-Geometry/HexMeshWorkshop/blob/ee4f61e239678bf9274cbc22e9d054664f01b1ec/modules/data_folder_types.py#L1318
@@ -31,7 +44,6 @@
 # use DataFolder.get_subfolders_generated_by() and check parameters value in the info.json
 
 from rich.prompt import Confirm
-from shutil import rmtree
 
 from dds import *
 
@@ -40,10 +52,10 @@ from dds import *
 GMSH_OUTPUT_MISSING_POLICY               = 'pass'
 GRAPHCUT_LABELING_OUTPUT_MISSING_POLICY  = 'run'
 AUTOMATIC_POLYCUBE_OUTPUT_MISSING_POLICY = 'run'
-EVOCUBE_OUTPUT_MISSING_POLICY            = 'pass'
-POLYCUBE_WITHHEXEX_OUTPUT_MISSING_POLICY = 'pass'
-GLOBAL_PADDING_OUTPUT_MISSING_POLICY     = 'pass'
-INNER_SMOOTHING_OUTPUT_MISSING_POLICY    = 'pass'
+EVOCUBE_OUTPUT_MISSING_POLICY            = 'run'
+POLYCUBE_WITHHEXEX_OUTPUT_MISSING_POLICY = 'run'
+GLOBAL_PADDING_OUTPUT_MISSING_POLICY     = 'run'
+INNER_SMOOTHING_OUTPUT_MISSING_POLICY    = 'run'
 
 RUNNING_ALGO_LINE_TEMPLATE            = "Running [green]{algo}[/] on [cyan]{path}[/]"
 EXISTING_OUTPUT_LINE_TEMPLATE         = "\[[bright_black]-[/]] [green]{algo}[/] on [cyan]{path}[/]"
@@ -136,11 +148,6 @@ def process_tet_mesh(tet_mesh_object: DataFolder):
     # generate a labeling with graphcut_labeling if not already done
     # this will be the initial labeling for automatic_polycube
 
-    if (tet_mesh_object.path / 'graphcut_labeling_1_3_1e-09_0.05').exists():
-        # old setting with fidelity == 3
-        rmtree(tet_mesh_object.path / 'graphcut_labeling_1_3_1e-09_0.05')
-        CONSOLE.print("\[[red]![/]] [cyan]{path}[/] removed".format(path=collapseuser(tet_mesh_object.path / 'graphcut_labeling_1_3_1e-09_0.05')))
-
     if not (tet_mesh_object.path / 'graphcut_labeling_1_6_1e-09_0.05').exists():
         if user_confirmed_or_choose_autorun(GRAPHCUT_LABELING_OUTPUT_MISSING_POLICY,MISSING_OUTPUT_LINE_TEMPLATE.format(algo='graphcut_labeling', path=collapseuser(tet_mesh_object.path))):
             with CONSOLE.status(RUNNING_ALGO_LINE_TEMPLATE.format(algo='graphcut_labeling', path=collapseuser(tet_mesh_object.path))) as status:
@@ -168,7 +175,10 @@ def process_tet_mesh(tet_mesh_object: DataFolder):
                     init_labeling_object.run('automatic_polycube', silent_output=True)
                 # here we assume automatic_polycube succeeded
                 CONSOLE.print(NEW_OUTPUT_LINE_TEMPLATE.format(algo='automatic_polycube', path=collapseuser(init_labeling_object.path)))
-                # TODO retrieve the path to the created folder, and append it to `labelings_on_which_to_extract_a_hex_mesh`
+                # retrieve the path to the created folder, and append it to `labelings_on_which_to_extract_a_hex_mesh`
+                labeling_subfolders_generated_by_automatic_polycube: list[Path] = init_labeling_object.get_subfolders_generated_by('automatic_polycube')
+                assert(len(labeling_subfolders_generated_by_automatic_polycube) == 1) # again, we assume automatic_polycube succeeded
+                labelings_on_which_to_extract_a_hex_mesh.append(labeling_subfolders_generated_by_automatic_polycube[0])
             else:
                 CONSOLE.print(IGNORING_MISSING_OUTPUT_LINE_TEMPLATE.format(algo='automatic_polycube', path=collapseuser(init_labeling_object.path)))
                 # don't append anything to `labelings_on_which_to_extract_a_hex_mesh`
@@ -189,7 +199,10 @@ def process_tet_mesh(tet_mesh_object: DataFolder):
                 tet_mesh_object.run('evocube', silent_output=True)
             # here we assume evocube succeeded
             CONSOLE.print(NEW_OUTPUT_LINE_TEMPLATE.format(algo='evocube', path=collapseuser(tet_mesh_object.path)))
-            # TODO retrieve the path to the created folder, and append it to `labelings_on_which_to_extract_a_hex_mesh`
+            # retrieve the path to the created folder, and append it to `labelings_on_which_to_extract_a_hex_mesh`
+            labeling_subfolders_generated_by_evocube: list[Path] = tet_mesh_object.get_subfolders_generated_by('evocube')
+            assert(len(labeling_subfolders_generated_by_evocube) == 1) # again, we assume evocube succeeded
+            labelings_on_which_to_extract_a_hex_mesh.append(labeling_subfolders_generated_by_evocube[0])
         else:
             CONSOLE.print(IGNORING_MISSING_OUTPUT_LINE_TEMPLATE.format(algo='evocube', path=collapseuser(tet_mesh_object.path)))
             # don't append anything to `labelings_on_which_to_extract_a_hex_mesh`
@@ -232,7 +245,11 @@ def main(input_folder: Path, arguments: list):
     if len(arguments) != 0:
         logging.fatal(f'batch_processing does not need other arguments than the input folder, but {arguments} were provided')
         exit(1)
-    assert((input_folder / 'MAMBO').exists())
-    for step_subfolder in sorted(get_subfolders_of_type(input_folder / 'MAMBO','step')):
-        step_object: DataFolder = DataFolder(step_subfolder)
-        process_step(step_object)
+    # assert((input_folder / 'MAMBO').exists())
+    # for step_subfolder in sorted(get_subfolders_of_type(input_folder / 'MAMBO','step')):
+    #     step_object: DataFolder = DataFolder(step_subfolder)
+    #     process_step(step_object)
+    assert((input_folder / 'OctreeMeshing' / 'cad').exists())
+    for tet_mesh_subfolder in sorted(get_subfolders_of_type(input_folder / 'OctreeMeshing' / 'cad','tet-mesh')):
+        tet_mesh_object: DataFolder = DataFolder(tet_mesh_subfolder)
+        process_tet_mesh(tet_mesh_object)
