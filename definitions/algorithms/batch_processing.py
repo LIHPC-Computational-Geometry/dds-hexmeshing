@@ -50,6 +50,8 @@ NEW_OUTPUT_LINE_TEMPLATE              = "\[[green]✓[/]] [green]{algo}[/] on [c
 MISSING_OUTPUT_LINE_TEMPLATE          = "No [green]{algo}[/] output inside [cyan]{path}[/]. Run {algo}?"
 IGNORING_MISSING_OUTPUT_LINE_TEMPLATE = "\[[dark_orange]●[/]] Ignoring missing [green]{algo}[/] output inside [cyan]{path}[/]"
 
+CONSOLE = Console(theme=Theme(inherit=False)) # better to create a global variable in dds.py ??
+
 def user_confirmed_or_choose_autorun(policy: str, confirmation_question: str) -> bool:
     if policy == 'run':
         return True
@@ -59,122 +61,149 @@ def user_confirmed_or_choose_autorun(policy: str, confirmation_question: str) ->
         return Confirm.ask(confirmation_question)
     else:
         raise RuntimeError(f"in user_confirmed_or_choose_autorun(), '{policy}' is not a valid policy")
+    
+def process_hex_mesh(init_hex_mesh_object: DataFolder):
+    assert(init_hex_mesh_object.type == 'hex-mesh')
+    if(init_hex_mesh_object.get_mesh_stats_dict()['cells']['nb'] == 0):
+        return # polycube_withHexEx created an empty hex-mesh, skip post-processing
+    if not (init_hex_mesh_object.path / 'global_padding').exists():
+        if user_confirmed_or_choose_autorun(GLOBAL_PADDING_OUTPUT_MISSING_POLICY,MISSING_OUTPUT_LINE_TEMPLATE.format(algo='global_padding', path=collapseuser(init_hex_mesh_object.path))):
+            with CONSOLE.status(RUNNING_ALGO_LINE_TEMPLATE.format(algo='global_padding', path=collapseuser(init_hex_mesh_object.path))) as status:
+                init_hex_mesh_object.run('global_padding', silent_output=True)
+            # here we assume global_padding succeeded
+            CONSOLE.print(NEW_OUTPUT_LINE_TEMPLATE.format(algo='global_padding', path=collapseuser(init_hex_mesh_object.path)))
+        else:
+            CONSOLE.print(IGNORING_MISSING_OUTPUT_LINE_TEMPLATE.format(algo='global_padding', path=collapseuser(init_hex_mesh_object.path)))
+            return
+    else:
+        # global_padding was already executed
+        CONSOLE.print(EXISTING_OUTPUT_LINE_TEMPLATE.format(algo='global_padding', path=collapseuser(init_hex_mesh_object.path)))
+    # instantiate the hex-mesh post-processed with global padding
+    global_padded_hex_mesh_object = DataFolder(init_hex_mesh_object.path / 'global_padding')
+    assert(global_padded_hex_mesh_object.type == 'hex-mesh')
+    if not (global_padded_hex_mesh_object.path / 'inner_smoothing_50').exists():
+        if user_confirmed_or_choose_autorun(INNER_SMOOTHING_OUTPUT_MISSING_POLICY,MISSING_OUTPUT_LINE_TEMPLATE.format(algo='inner_smoothing', path=collapseuser(global_padded_hex_mesh_object.path))):
+            with CONSOLE.status(RUNNING_ALGO_LINE_TEMPLATE.format(algo='inner_smoothing', path=collapseuser(global_padded_hex_mesh_object.path))) as status:
+                global_padded_hex_mesh_object.run('inner_smoothing', silent_output=True) # default nb step is 50
+            # here we assume inner_smoothing succeeded
+            CONSOLE.print(NEW_OUTPUT_LINE_TEMPLATE.format(algo='inner_smoothing', path=collapseuser(global_padded_hex_mesh_object.path)))
+        else:
+            CONSOLE.print(IGNORING_MISSING_OUTPUT_LINE_TEMPLATE.format(algo='inner_smoothing', path=collapseuser(global_padded_hex_mesh_object.path)))
+            return
+    else:
+        # inner smoothing was already executed
+        CONSOLE.print(EXISTING_OUTPUT_LINE_TEMPLATE.format(algo='inner_smoothing', path=collapseuser(global_padded_hex_mesh_object.path)))
+    # instantiate the hex-mesh post-processed with smoothing
+    smoothed_hex_mesh_object = DataFolder(global_padded_hex_mesh_object.path / 'inner_smoothing_50')
+    assert(smoothed_hex_mesh_object.type == 'hex-mesh')
+
+def process_labeling(labeling_object: DataFolder):
+    assert(labeling_object.type == 'labeling')
+    # hex-mesh extraction if not already done
+    if not (labeling_object.path / 'polycube_withHexEx_1.3').exists():
+        if user_confirmed_or_choose_autorun(POLYCUBE_WITHHEXEX_OUTPUT_MISSING_POLICY,MISSING_OUTPUT_LINE_TEMPLATE.format(algo='polycube_withHexEx', path=collapseuser(labeling_object.path))):
+            labeling_object.run('polycube_withHexEx', {'scale': 1.3}, silent_output=True)
+            # here we assume polycube_withHexEx succeeded
+        else:
+            CONSOLE.print(IGNORING_MISSING_OUTPUT_LINE_TEMPLATE.format(algo='polycube_withHexEx', path=collapseuser(labeling_object.path)))
+            return
+    else:
+        # polycube_withHexEx was already executed
+        CONSOLE.print(EXISTING_OUTPUT_LINE_TEMPLATE.format(algo='polycube_withHexEx', path=collapseuser(labeling_object.path)))
+    # instantiate the hex-mesh folder
+    init_hex_mesh_object: DataFolder = DataFolder(labeling_object.path / 'polycube_withHexEx_1.3')
+    process_hex_mesh(init_hex_mesh_object)
+
+def process_tet_mesh(tet_mesh_object: DataFolder):
+    assert(tet_mesh_object.type == 'tet-mesh')
+
+    # generate a labeling with graphcut_labeling if not already done
+
+    if not (tet_mesh_object.path / 'graphcut_labeling_1_3_1e-09_0.05').exists():
+        if user_confirmed_or_choose_autorun(GRAPHCUT_LABELING_OUTPUT_MISSING_POLICY,MISSING_OUTPUT_LINE_TEMPLATE.format(algo='graphcut_labeling', path=collapseuser(tet_mesh_object.path))):
+            with CONSOLE.status(RUNNING_ALGO_LINE_TEMPLATE.format(algo='graphcut_labeling', path=collapseuser(tet_mesh_object.path))) as status:
+                tet_mesh_object.run('graphcut_labeling', {'compactness': 1, 'fidelity': 3, 'sensitivity': 1e-9, 'angle_of_rotation': 0.05}, silent_output=True)
+            # here we assume graphcut_labeling succeeded
+            CONSOLE.print(NEW_OUTPUT_LINE_TEMPLATE.format(algo='graphcut_labeling', path=collapseuser(tet_mesh_object.path)))
+        else:
+            CONSOLE.print(IGNORING_MISSING_OUTPUT_LINE_TEMPLATE.format(algo='graphcut_labeling', path=collapseuser(tet_mesh_object.path)))
+            pass # go to the automatic_polycube & evocube section
+    else:
+        # graphcut_labeling was already executed
+        CONSOLE.print(EXISTING_OUTPUT_LINE_TEMPLATE.format(algo='graphcut_labeling', path=collapseuser(tet_mesh_object.path)))
+
+    labeling_subfolders_to_look_into: list[Path] = list()
+
+    # get all labeling generated by 'automatic_polycube'
+
+    labeling_subfolders_generated_by_automatic_polycube: list[Path] = tet_mesh_object.get_subfolders_generated_by('automatic_polycube')
+    assert(len(labeling_subfolders_generated_by_automatic_polycube) <= 1) # expecting 0 or 1 labeling generated by this algo, not more
+
+    # generate a labeling with automatic_polycube if not already done
+    
+    if len(labeling_subfolders_generated_by_automatic_polycube)==0:
+        if user_confirmed_or_choose_autorun(AUTOMATIC_POLYCUBE_OUTPUT_MISSING_POLICY,MISSING_OUTPUT_LINE_TEMPLATE.format(algo='automatic_polycube', path=collapseuser(tet_mesh_object.path))):
+            tet_mesh_object.run('automatic_polycube', silent_output=True)
+            # here we assume automatic_polycube succeeded
+            # TODO retrieve the path to the created folder, and append it to labeling_subfolders_to_look_into
+        else:
+            CONSOLE.print(IGNORING_MISSING_OUTPUT_LINE_TEMPLATE.format(algo='automatic_polycube', path=collapseuser(tet_mesh_object.path)))
+            # don't append anything to labeling_subfolders_to_look_into
+    else:
+        # automatic_polycube was already executed
+        CONSOLE.print(EXISTING_OUTPUT_LINE_TEMPLATE.format(algo='automatic_polycube', path=collapseuser(tet_mesh_object.path)))
+        labeling_subfolders_to_look_into.append(labeling_subfolders_generated_by_automatic_polycube[0])
+        
+    # get all labeling generated by 'evocube'
+
+    labeling_subfolders_generated_by_evocube: list[Path] = tet_mesh_object.get_subfolders_generated_by('evocube')
+    assert(len(labeling_subfolders_generated_by_evocube) <= 1) # expecting 0 or 1 labeling generated by this algo, not more
+
+    # generate a labeling with evocube if not already done
+
+    if len(labeling_subfolders_generated_by_evocube)==0:
+        if user_confirmed_or_choose_autorun(EVOCUBE_OUTPUT_MISSING_POLICY,MISSING_OUTPUT_LINE_TEMPLATE.format(algo='evocube', path=collapseuser(tet_mesh_object.path))):
+            tet_mesh_object.run('evocube', silent_output=True)
+            # here we assume evocube succeeded
+            # TODO retrieve the path to the created folder, and append it to labeling_subfolders_to_look_into
+        else:
+            CONSOLE.print(IGNORING_MISSING_OUTPUT_LINE_TEMPLATE.format(algo='evocube', path=collapseuser(tet_mesh_object.path)))
+            # don't append anything to labeling_subfolders_to_look_into
+    else:
+        # evocube was already executed
+        CONSOLE.print(EXISTING_OUTPUT_LINE_TEMPLATE.format(algo='evocube', path=collapseuser(tet_mesh_object.path)))
+        labeling_subfolders_to_look_into.append(labeling_subfolders_generated_by_evocube[0])
+
+    # loop with 2 iterations most of the time: 1 for the automatic_polycube labeling, 1 for the evocube labeling
+
+    for labeling_subfolder in labeling_subfolders_to_look_into:
+        # instantiate the labeling data folder
+        labeling_object: DataFolder = DataFolder(labeling_subfolder)
+        process_labeling(labeling_object)
+
+def process_step(step_object: DataFolder):
+    assert(step_object.type == 'step')
+    # tetrahedrization if not already done
+    if not (step_object.path / 'Gmsh_0.1').exists():
+        if user_confirmed_or_choose_autorun(GMSH_OUTPUT_MISSING_POLICY,MISSING_OUTPUT_LINE_TEMPLATE.format(algo='Gmsh', path=collapseuser(step_object.path))):
+            step_object.run('Gmsh', {'characteristic_length_factor': 0.1}, silent_output=True)
+            # here we assume Gmsh succeeded
+        else:
+            CONSOLE.print(IGNORING_MISSING_OUTPUT_LINE_TEMPLATE.format(algo='Gmsh', path=collapseuser(step_object.path)))
+            return # ignore this step 3D model
+    else:
+        # Gmsh was already executed
+        CONSOLE.print(EXISTING_OUTPUT_LINE_TEMPLATE.format(algo='Gmsh', path=collapseuser(step_object.path)))
+    # instantiate the tet mesh folder
+    tet_mesh_object: DataFolder = DataFolder(step_object.path / 'Gmsh_0.1')
+    process_tet_mesh(tet_mesh_object)
 
 def main(input_folder: Path, arguments: list):
     # check `arguments`
     if len(arguments) != 0:
         logging.fatal(f'batch_processing does not need other arguments than the input folder, but {arguments} were provided')
         exit(1)
-    console = Console(theme=Theme(inherit=False)) # better to create a global variable in dds.py ??
     assert((input_folder / 'MAMBO').exists())
     for step_subfolder in sorted(get_subfolders_of_type(input_folder / 'MAMBO','step')):
         step_object: DataFolder = DataFolder(step_subfolder)
-        # tetrahedrization if not already done
-        if not (step_subfolder / 'Gmsh_0.1').exists():
-            if user_confirmed_or_choose_autorun(GMSH_OUTPUT_MISSING_POLICY,MISSING_OUTPUT_LINE_TEMPLATE.format(algo='Gmsh', path=collapseuser(step_subfolder))):
-                step_object.run('Gmsh', {'characteristic_length_factor': 0.1}, silent_output=True)
-                # here we assume Gmsh succeeded
-            else:
-                console.print(IGNORING_MISSING_OUTPUT_LINE_TEMPLATE.format(algo='Gmsh', path=collapseuser(step_subfolder)))
-                continue # ignore this 'step_subfolder'
-        else:
-            # Gmsh was already executed
-            console.print(EXISTING_OUTPUT_LINE_TEMPLATE.format(algo='Gmsh', path=collapseuser(step_subfolder)))
-        # instantiate the tet mesh folder
-        tet_mesh_object: DataFolder = DataFolder(step_subfolder / 'Gmsh_0.1')
-        assert(tet_mesh_object.type == 'tet-mesh')
-        # generate a labeling with graphcut_labeling if not already done
-        if not (tet_mesh_object.path / 'graphcut_labeling_1_3_1e-09_0.05').exists():
-            if user_confirmed_or_choose_autorun(GRAPHCUT_LABELING_OUTPUT_MISSING_POLICY,MISSING_OUTPUT_LINE_TEMPLATE.format(algo='graphcut_labeling', path=collapseuser(tet_mesh_object.path))):
-                with console.status(RUNNING_ALGO_LINE_TEMPLATE.format(algo='graphcut_labeling', path=collapseuser(tet_mesh_object.path))) as status:
-                    tet_mesh_object.run('graphcut_labeling', {'compactness': 1, 'fidelity': 3, 'sensitivity': 1e-9, 'angle_of_rotation': 0.05}, silent_output=True)
-                # here we assume graphcut_labeling succeeded
-                console.print(NEW_OUTPUT_LINE_TEMPLATE.format(algo='graphcut_labeling', path=collapseuser(tet_mesh_object.path)))
-            else:
-                console.print(IGNORING_MISSING_OUTPUT_LINE_TEMPLATE.format(algo='graphcut_labeling', path=collapseuser(tet_mesh_object.path)))
-                pass # go to the automatic_polycube & evocube section
-        else:
-            # graphcut_labeling was already executed
-            console.print(EXISTING_OUTPUT_LINE_TEMPLATE.format(algo='graphcut_labeling', path=collapseuser(tet_mesh_object.path)))
-        # get all labeling generated by 'automatic_polycube'
-        labeling_subfolders_generated_by_automatic_polycube: list[Path] = tet_mesh_object.get_subfolders_generated_by('automatic_polycube')
-        assert(len(labeling_subfolders_generated_by_automatic_polycube) <= 1) # expecting 0 or 1 labeling generated by this algo, not more
-        labeling_subfolders_to_look_into: list[Path] = list()
-        if len(labeling_subfolders_generated_by_automatic_polycube)==0:
-            if user_confirmed_or_choose_autorun(AUTOMATIC_POLYCUBE_OUTPUT_MISSING_POLICY,MISSING_OUTPUT_LINE_TEMPLATE.format(algo='automatic_polycube', path=collapseuser(tet_mesh_object.path))):
-                tet_mesh_object.run('automatic_polycube', silent_output=True)
-                # here we assume automatic_polycube succeeded
-                # TODO retrieve the path to the created folder, and append it to labeling_subfolders_to_look_into
-            else:
-                console.print(IGNORING_MISSING_OUTPUT_LINE_TEMPLATE.format(algo='automatic_polycube', path=collapseuser(tet_mesh_object.path)))
-                # don't append anything to labeling_subfolders_to_look_into
-        else:
-            # automatic_polycube was already executed
-            console.print(EXISTING_OUTPUT_LINE_TEMPLATE.format(algo='automatic_polycube', path=collapseuser(tet_mesh_object.path)))
-            labeling_subfolders_to_look_into.append(labeling_subfolders_generated_by_automatic_polycube[0])
-        # get all labeling generated by 'evocube'
-        labeling_subfolders_generated_by_evocube: list[Path] = tet_mesh_object.get_subfolders_generated_by('evocube')
-        assert(len(labeling_subfolders_generated_by_evocube) <= 1) # expecting 0 or 1 labeling generated by this algo, not more
-        if len(labeling_subfolders_generated_by_evocube)==0:
-            if user_confirmed_or_choose_autorun(EVOCUBE_OUTPUT_MISSING_POLICY,MISSING_OUTPUT_LINE_TEMPLATE.format(algo='evocube', path=collapseuser(tet_mesh_object.path))):
-                tet_mesh_object.run('evocube', silent_output=True)
-                # here we assume evocube succeeded
-                # TODO retrieve the path to the created folder, and append it to labeling_subfolders_to_look_into
-            else:
-                console.print(IGNORING_MISSING_OUTPUT_LINE_TEMPLATE.format(algo='evocube', path=collapseuser(tet_mesh_object.path)))
-                # don't append anything to labeling_subfolders_to_look_into
-        else:
-            # evocube was already executed
-            console.print(EXISTING_OUTPUT_LINE_TEMPLATE.format(algo='evocube', path=collapseuser(tet_mesh_object.path)))
-            labeling_subfolders_to_look_into.append(labeling_subfolders_generated_by_evocube[0])
-        # loop with 2 iterations: 1 for the automatic_polycube labeling, 1 for the evocube labeling
-        for labeling_subfolder in labeling_subfolders_to_look_into:
-            # instantiate the labeling data folder
-            labeling_object: DataFolder = DataFolder(labeling_subfolder)
-            assert(labeling_object.type == 'labeling')
-            # hex-mesh extraction if not already done
-            if not (labeling_subfolder / 'polycube_withHexEx_1.3').exists():
-                if user_confirmed_or_choose_autorun(POLYCUBE_WITHHEXEX_OUTPUT_MISSING_POLICY,MISSING_OUTPUT_LINE_TEMPLATE.format(algo='polycube_withHexEx', path=collapseuser(labeling_object.path))):
-                    labeling_object.run('polycube_withHexEx', {'scale': 1.3}, silent_output=True)
-                    # here we assume polycube_withHexEx succeeded
-                else:
-                    console.print(IGNORING_MISSING_OUTPUT_LINE_TEMPLATE.format(algo='polycube_withHexEx', path=collapseuser(labeling_object.path)))
-                    continue
-            else:
-                # polycube_withHexEx was already executed
-                console.print(EXISTING_OUTPUT_LINE_TEMPLATE.format(algo='polycube_withHexEx', path=collapseuser(labeling_object.path)))
-            # instantiate the hex-mesh folder
-            init_hex_mesh_object: DataFolder = DataFolder(labeling_subfolder / 'polycube_withHexEx_1.3')
-            assert(init_hex_mesh_object.type == 'hex-mesh')
-            if(init_hex_mesh_object.get_mesh_stats_dict()['cells']['nb'] == 0):
-                continue # polycube_withHexEx created an empty hex-mesh, skip post-processing
-            if not (init_hex_mesh_object.path / 'global_padding').exists():
-                if user_confirmed_or_choose_autorun(GLOBAL_PADDING_OUTPUT_MISSING_POLICY,MISSING_OUTPUT_LINE_TEMPLATE.format(algo='global_padding', path=collapseuser(init_hex_mesh_object.path))):
-                    with console.status(RUNNING_ALGO_LINE_TEMPLATE.format(algo='global_padding', path=collapseuser(init_hex_mesh_object.path))) as status:
-                        init_hex_mesh_object.run('global_padding', silent_output=True)
-                    # here we assume global_padding succeeded
-                    console.print(NEW_OUTPUT_LINE_TEMPLATE.format(algo='global_padding', path=collapseuser(init_hex_mesh_object.path)))
-                else:
-                    console.print(IGNORING_MISSING_OUTPUT_LINE_TEMPLATE.format(algo='global_padding', path=collapseuser(init_hex_mesh_object.path)))
-                    continue
-            else:
-                # global_padding was already executed
-                console.print(EXISTING_OUTPUT_LINE_TEMPLATE.format(algo='global_padding', path=collapseuser(init_hex_mesh_object.path)))
-            # instantiate the hex-mesh post-processed with global padding
-            global_padded_hex_mesh_object = DataFolder(init_hex_mesh_object.path / 'global_padding')
-            assert(global_padded_hex_mesh_object.type == 'hex-mesh')
-            if not (global_padded_hex_mesh_object.path / 'inner_smoothing_50').exists():
-                if user_confirmed_or_choose_autorun(INNER_SMOOTHING_OUTPUT_MISSING_POLICY,MISSING_OUTPUT_LINE_TEMPLATE.format(algo='inner_smoothing', path=collapseuser(global_padded_hex_mesh_object.path))):
-                    with console.status(RUNNING_ALGO_LINE_TEMPLATE.format(algo='inner_smoothing', path=collapseuser(global_padded_hex_mesh_object.path))) as status:
-                        global_padded_hex_mesh_object.run('inner_smoothing', silent_output=True) # default nb step is 50
-                    # here we assume inner_smoothing succeeded
-                    console.print(NEW_OUTPUT_LINE_TEMPLATE.format(algo='inner_smoothing', path=collapseuser(global_padded_hex_mesh_object.path)))
-                else:
-                    console.print(IGNORING_MISSING_OUTPUT_LINE_TEMPLATE.format(algo='inner_smoothing', path=collapseuser(global_padded_hex_mesh_object.path)))
-                    continue
-            else:
-                # inner smoothing was already executed
-                console.print(EXISTING_OUTPUT_LINE_TEMPLATE.format(algo='inner_smoothing', path=collapseuser(global_padded_hex_mesh_object.path)))
-            # instantiate the hex-mesh post-processed with smoothing
-            smoothed_hex_mesh_object = DataFolder(global_padded_hex_mesh_object.path / 'inner_smoothing_50')
-            assert(smoothed_hex_mesh_object.type == 'hex-mesh')
+        process_step(step_object)
