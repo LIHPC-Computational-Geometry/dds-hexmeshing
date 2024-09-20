@@ -434,32 +434,48 @@ def main(input_folder: Path, arguments: list):
     assert(nb_CAD_2_meshing_failed['S'] == 0)
     assert(nb_CAD_2_meshing_failed['M'] == 0)
 
+    table = Table(title='Stats table')
+
+    table.add_column('Dataset/Subset')
+    table.add_column('Method')
+    table.add_column('Valid & monotone\nValid, non-monotone\nInvalid\nFailed')
+    table.add_column('avg(fidelity)')
+    table.add_column('Duration\n(speedup)')
+    table.add_column('min(SJ) ≥ 0')
+    table.add_column('overall min(SJ)\noverall avg(SJ)')
+
     for MAMBO_prefix in ['B','S','M']:
-        print(f"-- on MAMBO {MAMBO_prefix}, method = Evocube -------------")
-        print(f"{nb_meshing_succeeded_2_labeling_succeeded[MAMBO_prefix]['Evocube'] / nb_CAD[MAMBO_prefix] * 100:.1f} %")
-        print(f"{nb_meshing_succeeded_2_labeling_non_monotone[MAMBO_prefix]['Evocube'] / nb_CAD[MAMBO_prefix] * 100:.1f} %")
-        print(f"{nb_meshing_succeeded_2_labeling_invalid[MAMBO_prefix]['Evocube'] / nb_CAD[MAMBO_prefix] * 100:.1f} %")
-        print(f"{nb_meshing_succeeded_2_labeling_failed[MAMBO_prefix]['Evocube'] / nb_CAD[MAMBO_prefix] * 100:.1f} %")
+
         nb_labeling_generated = nb_meshing_succeeded_2_labeling_succeeded[MAMBO_prefix]['Evocube'] + nb_meshing_succeeded_2_labeling_non_monotone[MAMBO_prefix]['Evocube'] + nb_meshing_succeeded_2_labeling_invalid[MAMBO_prefix]['Evocube']
-        print(f"avg fidelity = {sum_avg_fidelities[MAMBO_prefix]['Evocube'] / nb_labeling_generated:.3f}")
-        print(f"duration = {duration[MAMBO_prefix]['Evocube']:.3f} s")
         nb_tried_hex_meshing = nb_meshing_succeeded_2_labeling_succeeded[MAMBO_prefix]['Evocube'] + nb_meshing_succeeded_2_labeling_non_monotone[MAMBO_prefix]['Evocube']
         nb_hex_meshes_with_positive_min_sj = nb_labeling_succeeded_2_hexmesh_positive_min_sj[MAMBO_prefix]['Evocube'] + nb_labeling_non_monotone_2_hexmesh_positive_min_sj[MAMBO_prefix]['Evocube']
-        print(f"{nb_hex_meshes_with_positive_min_sj / nb_tried_hex_meshing * 100:.1f} %")
-        print(f"{min_sj[MAMBO_prefix]['Evocube']:.3f}")
-        print(f"{avg_sj_sum[MAMBO_prefix]['Evocube'] / nb_tried_hex_meshing:.3f}")
+        table.add_row(
+            'MAMBO/' +  MAMBO_prefix,
+            'Evocube',
+            f"{nb_meshing_succeeded_2_labeling_succeeded[MAMBO_prefix]['Evocube'] / nb_CAD[MAMBO_prefix] * 100:.1f} %\n{nb_meshing_succeeded_2_labeling_non_monotone[MAMBO_prefix]['Evocube'] / nb_CAD[MAMBO_prefix] * 100:.1f} %\n{nb_meshing_succeeded_2_labeling_invalid[MAMBO_prefix]['Evocube'] / nb_CAD[MAMBO_prefix] * 100:.1f} %\n{nb_meshing_succeeded_2_labeling_failed[MAMBO_prefix]['Evocube'] / nb_CAD[MAMBO_prefix] * 100:.1f} %",
+            f"{sum_avg_fidelities[MAMBO_prefix]['Evocube'] / nb_labeling_generated:.3f}",
+            f"{duration[MAMBO_prefix]['Evocube']:.3f} s",
+            f"{nb_hex_meshes_with_positive_min_sj / nb_tried_hex_meshing * 100:.1f} %",
+            f"{min_sj[MAMBO_prefix]['Evocube']:.3f}\n{avg_sj_sum[MAMBO_prefix]['Evocube'] / nb_tried_hex_meshing:.3f}"
+        )
 
-        print(f"-- on MAMBO {MAMBO_prefix}, method = Ours_2024-03 -------------")
-        print(f"{nb_meshing_succeeded_2_labeling_succeeded[MAMBO_prefix]['Ours_2024-03'] / nb_CAD[MAMBO_prefix] * 100:.1f} %")
-        print(f"{nb_meshing_succeeded_2_labeling_non_monotone[MAMBO_prefix]['Ours_2024-03'] / nb_CAD[MAMBO_prefix] * 100:.1f} %")
-        print(f"{nb_meshing_succeeded_2_labeling_invalid[MAMBO_prefix]['Ours_2024-03'] / nb_CAD[MAMBO_prefix] * 100:.1f} %")
-        print(f"{nb_meshing_succeeded_2_labeling_failed[MAMBO_prefix]['Ours_2024-03'] / nb_CAD[MAMBO_prefix] * 100:.1f} %")
+        table.add_section()
+
         nb_labeling_generated = nb_meshing_succeeded_2_labeling_succeeded[MAMBO_prefix]['Ours_2024-03'] + nb_meshing_succeeded_2_labeling_non_monotone[MAMBO_prefix]['Ours_2024-03'] + nb_meshing_succeeded_2_labeling_invalid[MAMBO_prefix]['Ours_2024-03']
-        print(f"avg fidelity = {sum_avg_fidelities[MAMBO_prefix]['Ours_2024-03'] / nb_labeling_generated:.3f}")
-        print(f"duration = {duration[MAMBO_prefix]['Ours_2024-03']:.3f} s")
-        print(f"speedup = {duration[MAMBO_prefix]['Evocube'] / duration[MAMBO_prefix]['Ours_2024-03']:.1f}")
         nb_tried_hex_meshing = nb_meshing_succeeded_2_labeling_succeeded[MAMBO_prefix]['Ours_2024-03'] + nb_meshing_succeeded_2_labeling_non_monotone[MAMBO_prefix]['Ours_2024-03']
         nb_hex_meshes_with_positive_min_sj = nb_labeling_succeeded_2_hexmesh_positive_min_sj[MAMBO_prefix]['Ours_2024-03'] + nb_labeling_non_monotone_2_hexmesh_positive_min_sj[MAMBO_prefix]['Ours_2024-03']
-        print(f"{nb_hex_meshes_with_positive_min_sj / nb_tried_hex_meshing * 100:.1f} %")
-        print(f"{min_sj[MAMBO_prefix]['Ours_2024-03']:.3f}")
-        print(f"{avg_sj_sum[MAMBO_prefix]['Ours_2024-03'] / nb_tried_hex_meshing:.3f}")
+        table.add_row(
+            'MAMBO/' +  MAMBO_prefix,
+            'Ours_2024-03',
+            f"{nb_meshing_succeeded_2_labeling_succeeded[MAMBO_prefix]['Ours_2024-03'] / nb_CAD[MAMBO_prefix] * 100:.1f} %\n{nb_meshing_succeeded_2_labeling_non_monotone[MAMBO_prefix]['Ours_2024-03'] / nb_CAD[MAMBO_prefix] * 100:.1f} %\n{nb_meshing_succeeded_2_labeling_invalid[MAMBO_prefix]['Ours_2024-03'] / nb_CAD[MAMBO_prefix] * 100:.1f} %\n{nb_meshing_succeeded_2_labeling_failed[MAMBO_prefix]['Ours_2024-03'] / nb_CAD[MAMBO_prefix] * 100:.1f} %",
+            f"{sum_avg_fidelities[MAMBO_prefix]['Ours_2024-03'] / nb_labeling_generated:.3f}",
+            f"{duration[MAMBO_prefix]['Ours_2024-03']:.3f} s\n({duration[MAMBO_prefix]['Evocube'] / duration[MAMBO_prefix]['Ours_2024-03']:.1f})",
+            f"{nb_hex_meshes_with_positive_min_sj / nb_tried_hex_meshing * 100:.1f} %",
+            f"{min_sj[MAMBO_prefix]['Ours_2024-03']:.3f}\n{avg_sj_sum[MAMBO_prefix]['Ours_2024-03'] / nb_tried_hex_meshing:.3f}"
+        )
+
+        table.add_section()
+
+    
+    console = Console()
+    console.print(table)
