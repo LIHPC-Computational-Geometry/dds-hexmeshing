@@ -1,24 +1,24 @@
 #!/usr/bin/env python
 
-# Specific file accessors for 'labeling' data subfolders
+# Specific file accessors for 'labeling' data folders
 
 from json import load
 
 # own module
 from dds import DataFolder, log
 
-def get_labeling_stats_dict(self: DataFolder) -> dict:
+def get_labeling_stats_dict(self: DataFolder, silent_output: bool = False) -> dict:
     assert(self.type == 'labeling')
-    return load(open(self.get_file('LABELING_STATS_JSON',True))) # compute if missing and load the JSON file
+    return load(open(self.get_file('LABELING_STATS_JSON',must_exist=True,silent_output=silent_output))) # compute if missing and load the JSON file
 
-def has_valid_labeling(self: DataFolder) -> bool:
+def has_valid_labeling(self: DataFolder, silent_output: bool = False) -> bool:
     assert(self.type == 'labeling')
-    stats = self.get_labeling_stats_dict()
+    stats = self.get_labeling_stats_dict(silent_output=silent_output)
     return stats['charts']['invalid'] == 0 and stats['boundaries']['invalid'] == 0 and stats['corners']['invalid'] == 0
 
-def nb_turning_points(self: DataFolder) -> int:
+def nb_turning_points(self: DataFolder, silent_output: bool = False) -> int:
     assert(self.type == 'labeling')
-    stats = self.get_labeling_stats_dict()
+    stats = self.get_labeling_stats_dict(silent_output=silent_output)
     return int(stats['turning-points']['nb'])
 
 def compute_labeling_similarity_with(self: DataFolder, comparand: DataFolder) -> float:

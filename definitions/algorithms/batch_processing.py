@@ -80,7 +80,7 @@ def process_hex_mesh(init_hex_mesh_object: DataFolder):
     Run global padding then inner smoothing on the output
     """
     assert(init_hex_mesh_object.type == 'hex-mesh')
-    if(init_hex_mesh_object.get_mesh_stats_dict()['cells']['nb'] == 0):
+    if(init_hex_mesh_object.get_mesh_stats_dict(silent_output=True)['cells']['nb'] == 0):
         return # polycube_withHexEx created an empty hex-mesh, skip post-processing
     if not (init_hex_mesh_object.path / 'global_padding').exists():
         if user_confirmed_or_choose_autorun(GLOBAL_PADDING_OUTPUT_MISSING_POLICY,MISSING_OUTPUT_LINE_TEMPLATE.format(algo='global_padding', path=collapseuser(init_hex_mesh_object.path))):

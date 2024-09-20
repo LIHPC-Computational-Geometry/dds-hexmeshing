@@ -216,7 +216,7 @@ def get_subfolders_generated_by(path: Path, generator_name: str) -> list[Path]:
 # Execute either <algo_name>.yml or <algo_name>.py
 # The fist one must be executed on an instance of DataFolder
 # The second has not this constraint (any folder, eg the parent folder of many DataFolder)
-def run(path: Path, algo_name: str, arguments_as_list: list = list(), silent_output: bool = None):
+def run(path: Path, algo_name: str, arguments_as_list: list = list(), silent_output: bool = False):
     YAML_filepath: Path = Path('definitions/algorithms') / (algo_name + '.yml')
     if not YAML_filepath.exists():
         # it can be the name of a custom algorithm, defined in an <algo_name>.py
@@ -250,7 +250,7 @@ def run(path: Path, algo_name: str, arguments_as_list: list = list(), silent_out
             log.error(f"No '=' in supplemental argument '{arg}'")
             exit(1)
     data_folder = DataFolder(path)
-    data_folder.run(algo,arguments,silent_output)
+    data_folder.run(algo,arguments,silent_output=silent_output)
 
 class DataFolderInstantiationError(Exception):
     """
@@ -315,7 +315,7 @@ class DataFolder():
         console = Console()
         console.print(table)
         
-    def auto_generate_missing_file(self, filename_keyword: str):
+    def auto_generate_missing_file(self, filename_keyword: str, silent_output: bool = False):
         # Idea : parse all algorithms until we found one where 'filename_keyword' is an output file
         # and where
         # - the algo is transformative (it doesn't create a subfolder)
@@ -351,7 +351,7 @@ class DataFolder():
                             exit(1)
                     # all input files exist
                     log.debug(f"auto_generate_missing_file('{filename_keyword}') on {self.path} : the solution found is to run {filename_keyword}")
-                    self.run(YAML_algo_filename.stem)
+                    self.run(YAML_algo_filename.stem, silent_output=silent_output)
                     return
                 else:
                     # this transformative algorithm does not create the file we need
@@ -359,7 +359,7 @@ class DataFolder():
         log.fatal(f"auto_generate_missing_file('{filename_keyword}') on {self.path} : no solution found")
         exit(1)
         
-    def get_file(self, filename_keyword: str, must_exist: bool = False) -> Path:
+    def get_file(self, filename_keyword: str, must_exist: bool = False, silent_output: bool = False) -> Path:
         # transform filename keyword into actual filename by reading the YAML describing the data folder type
         YAML_filepath: Path = Path('definitions/data_folder_types') / (self.type + '.yml')
         if not YAML_filepath.exists():
@@ -377,7 +377,7 @@ class DataFolder():
             if (not must_exist) or (must_exist and path.exists()):
                 return path
             log.debug(f"get_file('{filename_keyword}',{must_exist}) on {self.path} : launching auto_generate_missing_file()")
-            self.auto_generate_missing_file(filename_keyword)
+            self.auto_generate_missing_file(filename_keyword, silent_output=silent_output)
             if path.exists():
                 return path # successful auto-generation
             raise Exception(f'Missing file {path}')
