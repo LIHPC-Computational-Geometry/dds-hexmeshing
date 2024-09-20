@@ -15,6 +15,7 @@ def main(input_folder: Path, arguments: list):
         exit(1)
 
     print(f"Parsing {input_folder}/MAMBO/<'step' data folders>/{GMSH_OUPUT_FOLDER_NAME}")
+    print(f"and {input_folder}/OctreeMeshing/cad")
     print('---------')
 
     min_nb_tetrahedra: Optional[int] = None
@@ -22,12 +23,10 @@ def main(input_folder: Path, arguments: list):
     max_nb_tetrahedra: Optional[int] = None
     max_nb_tetrahedra_location = ''
 
-    for level_minus_1_folder in get_subfolders_of_type(input_folder / 'MAMBO', 'step'):
+    for tet_mesh_path in [(x / GMSH_OUPUT_FOLDER_NAME) for x in get_subfolders_of_type(input_folder / 'MAMBO', 'step') if (x / GMSH_OUPUT_FOLDER_NAME).exists()] \
+    + get_subfolders_of_type(input_folder / 'OctreeMeshing' / 'cad', 'tet-mesh'):
 
-        if not (level_minus_1_folder / GMSH_OUPUT_FOLDER_NAME).exists():
-            continue
-
-        tet_folder: DataFolder = DataFolder(level_minus_1_folder / GMSH_OUPUT_FOLDER_NAME)
+        tet_folder: DataFolder = DataFolder(tet_mesh_path)
         assert(tet_folder.type == 'tet-mesh')
         nb_tetrahedra = tet_folder.get_tet_mesh_stats_dict()['cells']['nb'] # see definitions/algorithms/tet-mesh.accessors.py
 
