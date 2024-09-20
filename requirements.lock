@@ -38,6 +38,10 @@ matplotlib-inline==0.1.6
     # via ipython
 mdurl==0.1.2
     # via markdown-it-py
+meshio==5.3.5
+    # via dds
+numpy==2.1.1
+    # via meshio
 parse==1.20.2
     # via dds
 parso==0.8.3
@@ -63,6 +67,7 @@ questionary==2.0.1
     # via dds
 rich==13.6.0
     # via dds
+    # via meshio
 six==1.16.0
     # via asttokens
 stack-data==0.6.3
