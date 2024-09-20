@@ -242,22 +242,24 @@ def main(input_folder: Path, arguments: list):
     nb_labeling_succeeded_2_hexmesh_positive_min_sj['M']['graphcut'] = 0
     nb_labeling_succeeded_2_hexmesh_positive_min_sj['M']['Ours_2024-09'] = 0
 
-    min_sj = dict()
-    min_sj['B'] = dict()
-    min_sj['B']['Evocube'] = 0.0
-    min_sj['B']['Ours_2024-03'] = 0.0
-    min_sj['B']['graphcut'] = 0.0
-    min_sj['B']['Ours_2024-09'] = 0.0
-    min_sj['S'] = dict()
-    min_sj['S']['Evocube'] = 0.0
-    min_sj['S']['Ours_2024-03'] = 0.0
-    min_sj['S']['graphcut'] = 0.0
-    min_sj['S']['Ours_2024-09'] = 0.0
-    min_sj['M'] = dict()
-    min_sj['M']['Evocube'] = 0.0
-    min_sj['M']['Ours_2024-03'] = 0.0
-    min_sj['M']['graphcut'] = 0.0
-    min_sj['M']['Ours_2024-09'] = 0.0
+    min_sj_sum = dict()
+    min_sj_sum['B'] = dict()
+    min_sj_sum['B']['Evocube'] = 0.0
+    min_sj_sum['B']['Ours_2024-03'] = 0.0
+    min_sj_sum['B']['graphcut'] = 0.0
+    min_sj_sum['B']['Ours_2024-09'] = 0.0
+    min_sj_sum['S'] = dict()
+    min_sj_sum['S']['Evocube'] = 0.0
+    min_sj_sum['S']['Ours_2024-03'] = 0.0
+    min_sj_sum['S']['graphcut'] = 0.0
+    min_sj_sum['S']['Ours_2024-09'] = 0.0
+    min_sj_sum['M'] = dict()
+    min_sj_sum['M']['Evocube'] = 0.0
+    min_sj_sum['M']['Ours_2024-03'] = 0.0
+    min_sj_sum['M']['graphcut'] = 0.0
+    min_sj_sum['M']['Ours_2024-09'] = 0.0
+    # To have the global average, divide by the number of tried hex-mesh computations,
+    # that is the number of valid but non-monotone boundaries + number of succeeded
 
     avg_sj_sum = dict()
     avg_sj_sum['B'] = dict()
@@ -331,10 +333,11 @@ def main(input_folder: Path, arguments: list):
                 if 'quality' in hex_mesh_folder.get_mesh_stats_dict()['cells']:
                     avg_sj_sum[MAMBO_subset]['Evocube'] += hex_mesh_folder.get_mesh_stats_dict()['cells']['quality']['hex_SJ']['avg']
                     hexmesh_minSJ = hex_mesh_folder.get_mesh_stats_dict()['cells']['quality']['hex_SJ']['min']
-                    min_sj[MAMBO_subset]['Evocube'] = min(hexmesh_minSJ, min_sj[MAMBO_subset]['Evocube'])
+                    min_sj_sum[MAMBO_subset]['Evocube'] += hexmesh_minSJ
                 else:
                     # HexEx failed, no cells in output file
                     avg_sj_sum[MAMBO_subset]['Evocube'] += -1.0 # assume worse value
+                    min_sj_sum[MAMBO_subset]['Evocube'] += -1.0 # assume worse value
             
             # update the counters
             if not labeling_folder.has_valid_labeling():
@@ -394,10 +397,11 @@ def main(input_folder: Path, arguments: list):
                 if 'quality' in hex_mesh_folder.get_mesh_stats_dict()['cells']:
                     avg_sj_sum[MAMBO_subset]['Ours_2024-03'] += hex_mesh_folder.get_mesh_stats_dict()['cells']['quality']['hex_SJ']['avg']
                     hexmesh_minSJ = hex_mesh_folder.get_mesh_stats_dict()['cells']['quality']['hex_SJ']['min']
-                    min_sj[MAMBO_subset]['Ours_2024-03'] = min(hexmesh_minSJ, min_sj[MAMBO_subset]['Ours_2024-03'])
+                    min_sj_sum[MAMBO_subset]['Ours_2024-03'] += hexmesh_minSJ
                 else:
                     # HexEx failed, no cells in output file
                     avg_sj_sum[MAMBO_subset]['Ours_2024-03'] += -1.0 # assume worse value
+                    min_sj_sum[MAMBO_subset]['Ours_2024-03'] += -1.0 # assume worse value
             
             # update the counters
             if not labeling_folder.has_valid_labeling():
@@ -442,7 +446,7 @@ def main(input_folder: Path, arguments: list):
     table.add_column('avg(fidelity)')
     table.add_column('Duration\n(speedup)')
     table.add_column('min(SJ) ≥ 0')
-    table.add_column('overall min(SJ)\noverall avg(SJ)')
+    table.add_column('avg min(SJ)\navg avg(SJ)')
 
     for MAMBO_prefix in ['B','S','M']:
 
@@ -456,7 +460,7 @@ def main(input_folder: Path, arguments: list):
             f"{sum_avg_fidelities[MAMBO_prefix]['Evocube'] / nb_labeling_generated:.3f}",
             f"{duration[MAMBO_prefix]['Evocube']:.3f} s",
             f"{nb_hex_meshes_with_positive_min_sj / nb_tried_hex_meshing * 100:.1f} %",
-            f"{min_sj[MAMBO_prefix]['Evocube']:.3f}\n{avg_sj_sum[MAMBO_prefix]['Evocube'] / nb_tried_hex_meshing:.3f}"
+            f"{min_sj_sum[MAMBO_prefix]['Evocube'] / nb_tried_hex_meshing:.3f}\n{avg_sj_sum[MAMBO_prefix]['Evocube'] / nb_tried_hex_meshing:.3f}"
         )
 
         table.add_section()
@@ -471,7 +475,7 @@ def main(input_folder: Path, arguments: list):
             f"{sum_avg_fidelities[MAMBO_prefix]['Ours_2024-03'] / nb_labeling_generated:.3f}",
             f"{duration[MAMBO_prefix]['Ours_2024-03']:.3f} s\n({duration[MAMBO_prefix]['Evocube'] / duration[MAMBO_prefix]['Ours_2024-03']:.1f})",
             f"{nb_hex_meshes_with_positive_min_sj / nb_tried_hex_meshing * 100:.1f} %",
-            f"{min_sj[MAMBO_prefix]['Ours_2024-03']:.3f}\n{avg_sj_sum[MAMBO_prefix]['Ours_2024-03'] / nb_tried_hex_meshing:.3f}"
+            f"{min_sj_sum[MAMBO_prefix]['Ours_2024-03'] / nb_tried_hex_meshing:.3f}\n{avg_sj_sum[MAMBO_prefix]['Ours_2024-03'] / nb_tried_hex_meshing:.3f}"
         )
 
         table.add_section()
