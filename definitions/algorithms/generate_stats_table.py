@@ -549,7 +549,7 @@ def main(input_folder: Path, arguments: list):
             'Ours_2024-03',
             f"{nb_meshing_succeeded_2_labeling_succeeded[MAMBO_prefix]['Ours_2024-03'] / nb_CAD[MAMBO_prefix] * 100:.1f} %\n{nb_meshing_succeeded_2_labeling_non_monotone[MAMBO_prefix]['Ours_2024-03'] / nb_CAD[MAMBO_prefix] * 100:.1f} %\n{nb_meshing_succeeded_2_labeling_invalid[MAMBO_prefix]['Ours_2024-03'] / nb_CAD[MAMBO_prefix] * 100:.1f} %\n{nb_meshing_succeeded_2_labeling_failed[MAMBO_prefix]['Ours_2024-03'] / nb_CAD[MAMBO_prefix] * 100:.1f} %",
             f"{sum_avg_fidelities[MAMBO_prefix]['Ours_2024-03'] / nb_labeling_generated:.3f}",
-            f"{duration[MAMBO_prefix]['Ours_2024-03']:.3f} s\n({duration[MAMBO_prefix]['Evocube'] / duration[MAMBO_prefix]['Ours_2024-03']:.1f})",
+            f"{duration[MAMBO_prefix]['Ours_2024-03']:.3f} s\n({duration[MAMBO_prefix]['Evocube'] / duration[MAMBO_prefix]['Ours_2024-03']:.1f})", # speedup relative to Evocube
             f"{nb_hex_meshes_with_positive_min_sj / nb_tried_hex_meshing * 100:.1f} %",
             f"{min_sj_sum[MAMBO_prefix]['Ours_2024-03'] / nb_tried_hex_meshing:.3f}\n{avg_sj_sum[MAMBO_prefix]['Ours_2024-03'] / nb_tried_hex_meshing:.3f}"
         )
@@ -571,12 +571,13 @@ def main(input_folder: Path, arguments: list):
 
         assert(nb_init_labeling_generated == nb_CAD[MAMBO_prefix]) # assert tetrahedrization & graphcut_labeling did not failed. easier for the stats
         nb_labeling_ours_generated = nb_init_labeling_2_ours_labeling_succeeded[MAMBO_prefix] + nb_init_labeling_2_ours_labeling_non_monotone[MAMBO_prefix] + nb_init_labeling_2_ours_labeling_invalid[MAMBO_prefix]
+        total_duration = duration[MAMBO_prefix]['graphcut'] + duration[MAMBO_prefix]['Ours_2024-09'] # init labeling duration + ours labeling optimization duration
         table.add_row(
             'MAMBO/' +  MAMBO_prefix,
             'Ours_2024-09',
             f"{nb_init_labeling_2_ours_labeling_succeeded[MAMBO_prefix] / nb_CAD[MAMBO_prefix] * 100:.1f} %\n{nb_init_labeling_2_ours_labeling_non_monotone[MAMBO_prefix] / nb_CAD[MAMBO_prefix] * 100:.1f} %\n{nb_init_labeling_2_ours_labeling_invalid[MAMBO_prefix] / nb_CAD[MAMBO_prefix] * 100:.1f} %\n{nb_init_labeling_2_ours_labeling_failed[MAMBO_prefix] / nb_CAD[MAMBO_prefix] * 100:.1f} %",
             f"{sum_avg_fidelities[MAMBO_prefix]['Ours_2024-09'] / nb_labeling_ours_generated:.3f}",
-            f"{duration[MAMBO_prefix]['Ours_2024-09']:.3f} s\n({duration[MAMBO_prefix]['Evocube'] / duration[MAMBO_prefix]['Ours_2024-09']:.1f})",
+            f"{total_duration:.3f} s\n({duration[MAMBO_prefix]['Evocube'] / total_duration:.1f})", # speedup relative to Evocube
             "-",
             "-"
         )
@@ -585,3 +586,4 @@ def main(input_folder: Path, arguments: list):
 
     console = Console()
     console.print(table)
+    console.print('*init labeling duration (graphcut) + ours duration (automatic_polycube)')
