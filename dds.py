@@ -196,7 +196,7 @@ def get_datetime_key_of_algo_in_info_file(path: Path, algo_name: str) -> Optiona
 
 def get_subfolders_of_type(path: Path, data_folder_type: str) -> list[Path]:
     out = list()
-    for subfolder in [x for x in path.iterdir() if x.is_dir()]:
+    for subfolder in [x for x in sorted(path.iterdir()) if x.is_dir()]:
         inferred_type = type_inference(subfolder)
         if inferred_type == data_folder_type:
             out.append(subfolder)
@@ -204,7 +204,7 @@ def get_subfolders_of_type(path: Path, data_folder_type: str) -> list[Path]:
 
 def get_subfolders_generated_by(path: Path, generator_name: str) -> list[Path]:
     out = list()
-    for subfolder in [x for x in path.iterdir() if x.is_dir()]:
+    for subfolder in [x for x in sorted(path.iterdir()) if x.is_dir()]:
         if (subfolder / 'info.json').exists():
             with open(subfolder / 'info.json') as json_file:
                 json_dict = json.load(json_file)
