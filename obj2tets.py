@@ -18,8 +18,6 @@ import sys
 file_name = sys.argv[1]
 
 salome.salome_init()
-import SalomePyQt
-sgPyQt=SalomePyQt.SalomePyQt()
 
 import SMESH, SALOMEDS
 from salome.smesh import smeshBuilder
@@ -49,9 +47,9 @@ MG_CADSurf_Parameters_1.SetGradation( 1.05 )
 MG_CADSurf_Parameters_1.SetChordalError( -1 )
 MG_CADSurf_Parameters_1.SetCorrectSurfaceIntersection( False )
 MG_Tetra_1 = Mesh_1.Tetrahedron(algo=smeshBuilder.MG_Tetra,geom=None)
-t0=time.time()
+t0=time.monotonic()
 isDone = Mesh_1.Compute()
-t1=time.time()
+t1=time.monotonic()
 compute_time = t1-t0
 
 if not isDone:
