@@ -35,68 +35,75 @@ def main(input_folder: Path, arguments: list):
     nb_meshing_succeeded_2_labeling_failed['B']['Evocube'] = 0
     nb_meshing_succeeded_2_labeling_failed['B']['Ours_2024-03'] = 0
     nb_meshing_succeeded_2_labeling_failed['B']['graphcut'] = 0 # aka initial labeling for Ours_2024-09
-    nb_meshing_succeeded_2_labeling_failed['B']['Ours_2024-09'] = 0
     nb_meshing_succeeded_2_labeling_failed['S'] = dict()
     nb_meshing_succeeded_2_labeling_failed['S']['Evocube'] = 0
     nb_meshing_succeeded_2_labeling_failed['S']['Ours_2024-03'] = 0
     nb_meshing_succeeded_2_labeling_failed['S']['graphcut'] = 0
-    nb_meshing_succeeded_2_labeling_failed['S']['Ours_2024-09'] = 0
     nb_meshing_succeeded_2_labeling_failed['M'] = dict()
     nb_meshing_succeeded_2_labeling_failed['M']['Evocube'] = 0
     nb_meshing_succeeded_2_labeling_failed['M']['Ours_2024-03'] = 0
     nb_meshing_succeeded_2_labeling_failed['M']['graphcut'] = 0
-    nb_meshing_succeeded_2_labeling_failed['M']['Ours_2024-09'] = 0
 
     nb_meshing_succeeded_2_labeling_invalid = dict()
     nb_meshing_succeeded_2_labeling_invalid['B'] = dict()
     nb_meshing_succeeded_2_labeling_invalid['B']['Evocube'] = 0
     nb_meshing_succeeded_2_labeling_invalid['B']['Ours_2024-03'] = 0
     nb_meshing_succeeded_2_labeling_invalid['B']['graphcut'] = 0
-    nb_meshing_succeeded_2_labeling_invalid['B']['Ours_2024-09'] = 0
     nb_meshing_succeeded_2_labeling_invalid['S'] = dict()
     nb_meshing_succeeded_2_labeling_invalid['S']['Evocube'] = 0
     nb_meshing_succeeded_2_labeling_invalid['S']['Ours_2024-03'] = 0
     nb_meshing_succeeded_2_labeling_invalid['S']['graphcut'] = 0
-    nb_meshing_succeeded_2_labeling_invalid['S']['Ours_2024-09'] = 0
     nb_meshing_succeeded_2_labeling_invalid['M'] = dict()
     nb_meshing_succeeded_2_labeling_invalid['M']['Evocube'] = 0
     nb_meshing_succeeded_2_labeling_invalid['M']['Ours_2024-03'] = 0
     nb_meshing_succeeded_2_labeling_invalid['M']['graphcut'] = 0
-    nb_meshing_succeeded_2_labeling_invalid['M']['Ours_2024-09'] = 0
 
     nb_meshing_succeeded_2_labeling_non_monotone = dict()
     nb_meshing_succeeded_2_labeling_non_monotone['B'] = dict()
     nb_meshing_succeeded_2_labeling_non_monotone['B']['Evocube'] = 0
     nb_meshing_succeeded_2_labeling_non_monotone['B']['Ours_2024-03'] = 0
     nb_meshing_succeeded_2_labeling_non_monotone['B']['graphcut'] = 0
-    nb_meshing_succeeded_2_labeling_non_monotone['B']['Ours_2024-09'] = 0
     nb_meshing_succeeded_2_labeling_non_monotone['S'] = dict()
     nb_meshing_succeeded_2_labeling_non_monotone['S']['Evocube'] = 0
     nb_meshing_succeeded_2_labeling_non_monotone['S']['Ours_2024-03'] = 0
     nb_meshing_succeeded_2_labeling_non_monotone['S']['graphcut'] = 0
-    nb_meshing_succeeded_2_labeling_non_monotone['S']['Ours_2024-09'] = 0
     nb_meshing_succeeded_2_labeling_non_monotone['M'] = dict()
     nb_meshing_succeeded_2_labeling_non_monotone['M']['Evocube'] = 0
     nb_meshing_succeeded_2_labeling_non_monotone['M']['Ours_2024-03'] = 0
     nb_meshing_succeeded_2_labeling_non_monotone['M']['graphcut'] = 0
-    nb_meshing_succeeded_2_labeling_non_monotone['M']['Ours_2024-09'] = 0
 
     nb_meshing_succeeded_2_labeling_succeeded = dict()
     nb_meshing_succeeded_2_labeling_succeeded['B'] = dict()
     nb_meshing_succeeded_2_labeling_succeeded['B']['Evocube'] = 0
     nb_meshing_succeeded_2_labeling_succeeded['B']['Ours_2024-03'] = 0
     nb_meshing_succeeded_2_labeling_succeeded['B']['graphcut'] = 0
-    nb_meshing_succeeded_2_labeling_succeeded['B']['Ours_2024-09'] = 0
     nb_meshing_succeeded_2_labeling_succeeded['S'] = dict()
     nb_meshing_succeeded_2_labeling_succeeded['S']['Evocube'] = 0
     nb_meshing_succeeded_2_labeling_succeeded['S']['Ours_2024-03'] = 0
     nb_meshing_succeeded_2_labeling_succeeded['S']['graphcut'] = 0
-    nb_meshing_succeeded_2_labeling_succeeded['S']['Ours_2024-09'] = 0
     nb_meshing_succeeded_2_labeling_succeeded['M'] = dict()
     nb_meshing_succeeded_2_labeling_succeeded['M']['Evocube'] = 0
     nb_meshing_succeeded_2_labeling_succeeded['M']['Ours_2024-03'] = 0
     nb_meshing_succeeded_2_labeling_succeeded['M']['graphcut'] = 0
-    nb_meshing_succeeded_2_labeling_succeeded['M']['Ours_2024-09'] = 0
+
+    # labeling outcomes for Ours_2024-09
+
+    nb_init_labeling_2_ours_labeling_failed = dict()
+    nb_init_labeling_2_ours_labeling_failed['B'] = 0
+    nb_init_labeling_2_ours_labeling_failed['S'] = 0
+    nb_init_labeling_2_ours_labeling_failed['M'] = 0
+    nb_init_labeling_2_ours_labeling_invalid = dict()
+    nb_init_labeling_2_ours_labeling_invalid['B'] = 0
+    nb_init_labeling_2_ours_labeling_invalid['S'] = 0
+    nb_init_labeling_2_ours_labeling_invalid['M'] = 0
+    nb_init_labeling_2_ours_labeling_non_monotone = dict()
+    nb_init_labeling_2_ours_labeling_non_monotone['B'] = 0
+    nb_init_labeling_2_ours_labeling_non_monotone['S'] = 0
+    nb_init_labeling_2_ours_labeling_non_monotone['M'] = 0
+    nb_init_labeling_2_ours_labeling_succeeded = dict()
+    nb_init_labeling_2_ours_labeling_succeeded['B'] = 0
+    nb_init_labeling_2_ours_labeling_succeeded['S'] = 0
+    nb_init_labeling_2_ours_labeling_succeeded['M'] = 0
 
     # sum of average fidelities
 
@@ -302,6 +309,9 @@ def main(input_folder: Path, arguments: list):
         nb_CAD_2_meshing_succeeded[MAMBO_subset] += 1
 
         surface_labeling_filename,_ = translate_filename_keyword('SURFACE_LABELING_TXT')
+
+        # analyse the labeling generated by evocube
+
         labeling_subfolders_generated_by_evocube: list[Path] = tet_folder.get_subfolders_generated_by('evocube')
         assert(len(labeling_subfolders_generated_by_evocube) <= 1)
         if ( (len(labeling_subfolders_generated_by_evocube) == 0) or \
@@ -440,14 +450,14 @@ def main(input_folder: Path, arguments: list):
             nb_meshing_succeeded_2_labeling_failed[MAMBO_subset]['graphcut'] += 1
         else:
             # instantiate the labeling folder
-            labeling_folder: DataFolder = DataFolder(labeling_subfolders_generated_by_graphcut[0])
-            assert(labeling_folder.type == 'labeling')
+            init_labeling_folder: DataFolder = DataFolder(labeling_subfolders_generated_by_graphcut[0])
+            assert(init_labeling_folder.type == 'labeling')
             
             # retrieve datetime, labeling stats and feature edges info
-            ISO_datetime = labeling_folder.get_datetime_key_of_algo_in_info_file('graphcut_labeling')
+            ISO_datetime = init_labeling_folder.get_datetime_key_of_algo_in_info_file('graphcut_labeling')
             assert(ISO_datetime is not None)
-            graphcut_duration = labeling_folder.get_info_dict()[ISO_datetime]['duration'][0]
-            labeling_stats = labeling_folder.get_labeling_stats_dict()
+            graphcut_duration = init_labeling_folder.get_info_dict()[ISO_datetime]['duration'][0]
+            labeling_stats = init_labeling_folder.get_labeling_stats_dict()
 
             # update avg fidelity sum
             sum_avg_fidelities[MAMBO_subset]['graphcut'] += labeling_stats['fidelity']['avg']
@@ -456,13 +466,45 @@ def main(input_folder: Path, arguments: list):
             duration[MAMBO_subset]['graphcut'] += graphcut_duration
             
             # update the counters
-            if not labeling_folder.has_valid_labeling():
+            if not init_labeling_folder.has_valid_labeling():
                 nb_meshing_succeeded_2_labeling_invalid[MAMBO_subset]['graphcut'] += 1
-            elif labeling_folder.nb_turning_points() != 0:
+            elif init_labeling_folder.nb_turning_points() != 0:
                 nb_meshing_succeeded_2_labeling_non_monotone[MAMBO_subset]['graphcut'] += 1
             else:
                 # so we have a valid labeling with no turning-points
                 nb_meshing_succeeded_2_labeling_succeeded[MAMBO_subset]['graphcut'] += 1
+
+            labeling_subfolders_generated_by_ours: list[Path] = init_labeling_folder.get_subfolders_generated_by('automatic_polycube')
+            assert(len(labeling_subfolders_generated_by_ours) <= 1)
+            if ( (len(labeling_subfolders_generated_by_ours) == 0) or \
+                not (labeling_subfolders_generated_by_ours[0] / surface_labeling_filename).exists() ):
+                # there is an init labeling but automatic_polycube failed to write a labeling
+                nb_init_labeling_2_ours_labeling_failed[MAMBO_subset] += 1
+            else:
+                # instantiate the labeling folder
+                labeling_ours_folder: DataFolder = DataFolder(labeling_subfolders_generated_by_ours[0])
+                assert(labeling_ours_folder.type == 'labeling')
+                
+                # retrieve datetime, labeling stats and feature edges info
+                ISO_datetime = labeling_ours_folder.get_datetime_key_of_algo_in_info_file('automatic_polycube')
+                assert(ISO_datetime is not None)
+                ours_duration = labeling_ours_folder.get_info_dict()[ISO_datetime]['duration'][0]
+                labeling_stats = labeling_ours_folder.get_labeling_stats_dict()
+
+                # update avg fidelity sum
+                sum_avg_fidelities[MAMBO_subset]['Ours_2024-09'] += labeling_stats['fidelity']['avg']
+
+                # update duration sum
+                duration[MAMBO_subset]['Ours_2024-09'] += ours_duration
+                
+                # update the counters
+                if not labeling_ours_folder.has_valid_labeling():
+                    nb_init_labeling_2_ours_labeling_invalid[MAMBO_subset] += 1
+                elif labeling_ours_folder.nb_turning_points() != 0:
+                    nb_init_labeling_2_ours_labeling_non_monotone[MAMBO_subset] += 1
+                else:
+                    # so we have a valid labeling with no turning-points
+                    nb_init_labeling_2_ours_labeling_succeeded[MAMBO_subset] += 1
     
     # end of data folder parsing
 
@@ -514,19 +556,31 @@ def main(input_folder: Path, arguments: list):
 
         table.add_section()
 
-        nb_labeling_generated = nb_meshing_succeeded_2_labeling_succeeded[MAMBO_prefix]['graphcut'] + nb_meshing_succeeded_2_labeling_non_monotone[MAMBO_prefix]['graphcut'] + nb_meshing_succeeded_2_labeling_invalid[MAMBO_prefix]['graphcut']
-        nb_tried_hex_meshing = nb_meshing_succeeded_2_labeling_succeeded[MAMBO_prefix]['graphcut'] + nb_meshing_succeeded_2_labeling_non_monotone[MAMBO_prefix]['graphcut']
+        nb_init_labeling_generated = nb_meshing_succeeded_2_labeling_succeeded[MAMBO_prefix]['graphcut'] + nb_meshing_succeeded_2_labeling_non_monotone[MAMBO_prefix]['graphcut'] + nb_meshing_succeeded_2_labeling_invalid[MAMBO_prefix]['graphcut']
         table.add_row(
             'MAMBO/' +  MAMBO_prefix,
             'graphcut',
             f"{nb_meshing_succeeded_2_labeling_succeeded[MAMBO_prefix]['graphcut'] / nb_CAD[MAMBO_prefix] * 100:.1f} %\n{nb_meshing_succeeded_2_labeling_non_monotone[MAMBO_prefix]['graphcut'] / nb_CAD[MAMBO_prefix] * 100:.1f} %\n{nb_meshing_succeeded_2_labeling_invalid[MAMBO_prefix]['graphcut'] / nb_CAD[MAMBO_prefix] * 100:.1f} %\n{nb_meshing_succeeded_2_labeling_failed[MAMBO_prefix]['graphcut'] / nb_CAD[MAMBO_prefix] * 100:.1f} %",
-            f"{sum_avg_fidelities[MAMBO_prefix]['graphcut'] / nb_labeling_generated:.3f}",
+            f"{sum_avg_fidelities[MAMBO_prefix]['graphcut'] / nb_init_labeling_generated:.3f}",
             f"{duration[MAMBO_prefix]['graphcut']:.3f} s",
             "-",
             "-"
         )
 
         table.add_section()
+
+        assert(nb_init_labeling_generated == nb_CAD[MAMBO_prefix]) # assert tetrahedrization & graphcut_labeling did not failed. easier for the stats
+        nb_labeling_ours_generated = nb_init_labeling_2_ours_labeling_succeeded[MAMBO_prefix] + nb_init_labeling_2_ours_labeling_non_monotone[MAMBO_prefix] + nb_init_labeling_2_ours_labeling_invalid[MAMBO_prefix]
+        table.add_row(
+            'MAMBO/' +  MAMBO_prefix,
+            'Ours_2024-09',
+            f"{nb_init_labeling_2_ours_labeling_succeeded[MAMBO_prefix] / nb_CAD[MAMBO_prefix] * 100:.1f} %\n{nb_init_labeling_2_ours_labeling_non_monotone[MAMBO_prefix] / nb_CAD[MAMBO_prefix] * 100:.1f} %\n{nb_init_labeling_2_ours_labeling_invalid[MAMBO_prefix] / nb_CAD[MAMBO_prefix] * 100:.1f} %\n{nb_init_labeling_2_ours_labeling_failed[MAMBO_prefix] / nb_CAD[MAMBO_prefix] * 100:.1f} %",
+            f"{sum_avg_fidelities[MAMBO_prefix]['Ours_2024-09'] / nb_labeling_ours_generated:.3f}",
+            f"{duration[MAMBO_prefix]['Ours_2024-09']:.3f} s\n({duration[MAMBO_prefix]['Evocube'] / duration[MAMBO_prefix]['Ours_2024-09']:.1f})",
+            "-",
+            "-"
+        )
+
         table.add_section()
 
     console = Console()
