@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 
-# parse `input_folder` / 'MAMBO' / <'step' data folders> / 'Gmsh_0.1' or 'Gmsh_0.3'
+# parse `input_folder` / 'MAMBO' / <'step' data folders> / 'Gmsh_0.1' or 'Gmsh_0.15'
 # and print min & max number of tetrahedra
 
 from dds import *
 
-GMSH_OUPUT_FOLDER_NAME = 'Gmsh_0.3' # 'Gmsh_0.1' or 'Gmsh_0.3'
+GMSH_OUPUT_FOLDER_NAME = 'Gmsh_0.15' # 'Gmsh_0.1' or 'Gmsh_0.15'
 
 def main(input_folder: Path, arguments: list):
 
