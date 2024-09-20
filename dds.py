@@ -595,7 +595,7 @@ class DataFolder():
                 log.debug(f"run('{algo_name}',...) on {self.path} : ⤷ we must look into a (parent) folder of type '{its_data_folder_type}'")
                 closest_parent_of_this_type: DataFolder = self.get_closest_parent_of_type(its_data_folder_type,True)
                 log.debug(f"run('{algo_name}',...) on {self.path} : ⤷ the closest is {closest_parent_of_this_type.path}")
-                input_file_path = closest_parent_of_this_type.get_file(input_filename_keyword, True)
+                input_file_path = closest_parent_of_this_type.get_file(input_filename_keyword, must_exist=True, silent_output=silent_output)
                 all_arguments[input_file_argument] = input_file_path
             if 'output_files' in YAML_content[self.type]['arguments']:
                 for output_file_argument in YAML_content[self.type]['arguments']['output_files']:
@@ -604,7 +604,7 @@ class DataFolder():
                         exit(1)
                     output_file_path = None
                     if output_folder_path is None: # case transformative algorithm, no output folder created
-                        output_file_path = self.get_file(YAML_content[self.type]['arguments']['output_files'][output_file_argument], False)
+                        output_file_path = self.get_file(YAML_content[self.type]['arguments']['output_files'][output_file_argument], must_exist=False, silent_output=silent_output)
                     else: # case generative algorithm
                         output_file_path = output_folder_path / translate_filename_keyword(YAML_content[self.type]['arguments']['output_files'][output_file_argument])[0]
                     all_arguments[output_file_argument] = output_file_path
