@@ -1,0 +1,5 @@
+filenames: {
+  STL: CAD.stl
+}
+distinctive_content: [STL]
+default_view: graphite

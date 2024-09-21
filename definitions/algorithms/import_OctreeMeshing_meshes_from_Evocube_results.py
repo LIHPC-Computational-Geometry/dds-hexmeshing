@@ -5,9 +5,10 @@
 # I tried with Gmsh (see tutorial 13 and issue 1598) -> `classifySurfaces` misses important sharp edges (eg on cad/cimplex)
 # So the best is to copy the meshes Evocube mysteriously generated
 #
-# However, 2 meshes are too coarse to allow a valid labeling (see Evocube Fig.12)
+# However, 3 meshes are too coarse to allow a valid labeling (see Evocube Fig.12)
 # - bearing_nut_support_plate_31
 # - main_linkage_arm_6a_scaled_unpositioned_back
+# - team2
 # For these models, I manually generated a more fine mesh after running this script
 
 from dds import *
