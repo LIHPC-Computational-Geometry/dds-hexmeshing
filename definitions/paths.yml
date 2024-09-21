@@ -69,3 +69,8 @@ HEXSMOOTHING: ~/.local/hexsmoothing/build_Release/
 # Fast and minimalist 3D viewer
 # Path to the binary
 F3D: /usr/bin/f3d
+
+# https://www.salome-platform.org/
+# The open source platform for numerical simulation
+# Path to the binaries folder
+SALOME: ~/.local/SALOME/SALOME-9.12.0-native-UB22.04-SRC/

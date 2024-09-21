@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Generate a tetrahedral mesh with MeshGems/MG-CADSurf through SALOME
+# Generate a tetrahedral mesh with MeshGems/MG-CADSurf & MG-Tetra through SALOME
 # from a STL triangle mesh (eg OctreeMeshing/cad dataset)
 # Thanks Christophe!
 
@@ -12,7 +12,7 @@ import time
 import salome
 import meshio
 import sys
-from shutil import rmtree
+import os
 
 assert(len(sys.argv)==3)
 input_STL = sys.argv[1]
@@ -62,4 +62,4 @@ try:
 except:
   print(f'ExportGMF({output_MEDIT}) failed')
 
-rmtree(input_STL_as_MEDIT)
+os.remove(input_STL_as_MEDIT)

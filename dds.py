@@ -7,7 +7,6 @@ import logging
 from argparse import ArgumentParser
 from typing import Optional
 import time
-from icecream import ic
 from os import mkdir
 from os.path import expanduser
 from sys import exit
@@ -459,6 +458,8 @@ class DataFolder():
                 input_file_path = closest_parent_of_this_type.get_file(input_filename_keyword, True)
                 all_arguments[input_file_argument] = input_file_path
             command_line = f'{executable_path} {command_line.format(**all_arguments)}'
+            if 'prefix' in YAML_content['executable']:
+                command_line = YAML_content['executable']['prefix'] + ' ' + command_line
             # execution
             console = Console()# execute the command line
             console.print(Rule(f'beginning of [magenta]{collapseuser(executable_path)}'))
@@ -553,17 +554,28 @@ class DataFolder():
                     if other_argument in all_arguments:
                         log.error(f"{YAML_filepath} has multiple arguments named '{input_file_argument}' in '{self.type}/arguments")
                         exit(1)
-                    all_arguments[other_argument] = YAML_content[self.type]['arguments']['others'][other_argument]['default']
-                    # infer argument data type from default value
-                    data_type = type(all_arguments[other_argument])
-                    if other_argument in arguments:
-                        # overwrite default value with user-given value
-                        if data_type == bool:
-                            # thank Keith Gaughan https://stackoverflow.com/a/715455
-                            all_arguments[other_argument] = arguments[other_argument].lower() in ['true', '1', 't', 'y', 'yes']
-                        else:
-                            all_arguments[other_argument] = data_type(arguments[other_argument])
-                        arguments.pop(other_argument)
+                    # there are 2 kind of other arguments
+                    # - a setting, whose default value can be overwritten from the command line
+                    # - a constant adjacent filename
+                    if 'default' in YAML_content[self.type]['arguments']['others'][other_argument]:
+                        all_arguments[other_argument] = YAML_content[self.type]['arguments']['others'][other_argument]['default']
+                        # infer argument data type from default value
+                        data_type = type(all_arguments[other_argument])
+                        if other_argument in arguments:
+                            # overwrite default value with user-given value
+                            if data_type == bool:
+                                # thank Keith Gaughan https://stackoverflow.com/a/715455
+                                all_arguments[other_argument] = arguments[other_argument].lower() in ['true', '1', 't', 'y', 'yes']
+                            else:
+                                all_arguments[other_argument] = data_type(arguments[other_argument])
+                            arguments.pop(other_argument)
+                    elif 'adjacent_file' in YAML_content[self.type]['arguments']['others'][other_argument]:
+                        adj_file: Path = YAML_filepath.parent / YAML_content[self.type]['arguments']['others'][other_argument]['adjacent_file']
+                        assert(adj_file.exists())
+                        all_arguments[other_argument] = str(adj_file.absolute())
+                    else:
+                        log.fatal(f"'{other_argument} in '{YAML_filepath} {self.type}/arguments/others has neither a 'default' nor a 'adjacent_file' field")
+                        exit(1)
             if len(arguments):
                 log.warning(f'Some arguments given to run() are not used by the algorithm : {list(arguments.keys())}')
             # get current date and time
@@ -609,6 +621,8 @@ class DataFolder():
                         output_file_path = output_folder_path / translate_filename_keyword(YAML_content[self.type]['arguments']['output_files'][output_file_argument])[0]
                     all_arguments[output_file_argument] = output_file_path
             command_line = f'{executable_path} {command_line.format(**all_arguments)}'
+            if 'prefix' in YAML_content[self.type]['executable']:
+                command_line = YAML_content[self.type]['executable']['prefix'] + ' ' + command_line
             # fill/create the info.json file
             info_file = dict()
             info_file_path = self.path / 'info.json' if output_folder_path is None else output_folder_path / 'info.json'
