@@ -1,21 +1,23 @@
 #!/usr/bin/env python
 
 # Generate a tetrahedral mesh with MeshGems/MG-CADSurf through SALOME
-# from a STL-like .obj triangle mesh (eg OctreeMeshing/cad dataset)
+# from a STL triangle mesh (eg OctreeMeshing/cad dataset)
 # Thanks Christophe!
 
 # Execute WITH BASH and not zsh:
-#   source /path/to/SALOME/env_launch.sh && /usr/bin/python obj2tets.py mesh.obj
-# -> creates mesh.obj.in.mesh
-#        and mesh.obj.out.mesh
+#   source /path/to/SALOME/env_launch.sh && /usr/bin/python obj2tets.py CAD.stl tet.mesh
 
 import sys
 import time
 import salome
 import meshio
 import sys
+from shutil import rmtree
 
-file_name = sys.argv[1]
+assert(len(sys.argv)==3)
+input_STL = sys.argv[1]
+input_STL_as_MEDIT = input_STL + ".mesh"
+output_MEDIT = sys.argv[2]
 
 salome.salome_init()
 
@@ -26,11 +28,11 @@ smesh = smeshBuilder.New()
 if salome.sg.hasDesktop():
   smesh_gui = salome.ImportComponentGUI('SMESH')
 
-mesh = meshio.read(file_name)
-mesh.write(file_name + ".in.mesh")
+mesh = meshio.read(input_STL)
+mesh.write(input_STL_as_MEDIT)
 
-(Mesh_1, error) = smesh.CreateMeshesFromGMF(file_name + ".in.mesh")
-Mesh_1.SetName(file_name)
+(Mesh_1, error) = smesh.CreateMeshesFromGMF(input_STL_as_MEDIT)
+Mesh_1.SetName(input_STL)
 
 bbox_values = smesh.BoundingBox(Mesh_1)
 scaling_coeff = 100 / (max(bbox_values) - min(bbox_values))
@@ -56,7 +58,8 @@ if not isDone:
   raise Exception("Error when computing mesh")
 
 try:
-  Mesh_1.ExportGMF(file_name + ".out.mesh",Mesh_1)
+  Mesh_1.ExportGMF(output_MEDIT,Mesh_1)
 except:
-  print(f'ExportGMF({file_name+".out.mesh"}) failed')
+  print(f'ExportGMF({output_MEDIT}) failed')
 
+rmtree(input_STL_as_MEDIT)
