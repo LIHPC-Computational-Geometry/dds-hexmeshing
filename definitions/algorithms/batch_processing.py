@@ -4,7 +4,7 @@
 #   and all 'tet-mesh' data folders inside `input_folder` / 'OctreeMeshing' / 'cad'.
 # For each of them,
 # (if not already done) generate a tet-mesh with Gmsh. For each of them,
-# (if not already done) generate a labeling with automatic_polycube, and one with evocube. For each of them,
+# (if not already done) generate a labeling with graphcut_labeling then one with automatic_polycube on the output, and one with evocube. For the last two,
 # (if not already done) generate a hex-mesh with polycube_withHexEx. For each of them,
 # (if not already done) generate a hex-mesh with global_padding. For each of them,
 # (if not already done) generate a hex-mesh with inner_smoothing.
@@ -16,9 +16,9 @@
 # │       └── Gmsh_0.1
 # │           ├── graphcut_labeling_1_6_1e-9_0.05         # compactness=1, fidelity=6, sensitivity=1e-9, angle of rotation=0.05
 # │           │   └── automatic_polycube_YYYYMMDD_HHMMSS
-# │           │       └── polycube_withHexEx_1.3          # TODO compute
-# │           │           └── global_padding              # TODO compute
-# │           │               └── inner_smoothing_50      # TODO compute
+# │           │       └── polycube_withHexEx_1.3
+# │           │           └── global_padding
+# │           │               └── inner_smoothing_50
 # │           └── evocube_YYYYMMDD_HHMMSS
 # │               └── polycube_withHexEx_1.3
 # │                   └── global_padding
@@ -27,9 +27,9 @@
 #     └── <every 'tet-mesh' data folder>
 #         ├── graphcut_labeling_1_6_1e-9_0.05         # compactness=1, fidelity=6, sensitivity=1e-9, angle of rotation=0.05
 #         │   └── automatic_polycube_YYYYMMDD_HHMMSS
-#         │       └── polycube_withHexEx_1.3          # TODO compute
-#         │           └── global_padding              # TODO compute
-#         │               └── inner_smoothing_50      # TODO compute
+#         │       └── polycube_withHexEx_1.3
+#         │           └── global_padding
+#         │               └── inner_smoothing_50
 #         └── evocube_YYYYMMDD_HHMMSS
 #             └── polycube_withHexEx_1.3
 #                 └── global_padding
@@ -41,7 +41,7 @@
 
 # Note: the code rely on hard-coded folder names, like 'polycube_withHexEx_1.3'
 # but we should leave the user free to rename all folders,
-# use DataFolder.get_subfolders_generated_by() and check parameters value in the info.json
+# TODO use DataFolder.get_subfolders_generated_by() and check parameters value in the info.json
 
 from rich.prompt import Confirm
 
@@ -50,9 +50,9 @@ from dds import *
 # Per algo policy when an output is missing
 # 'ask', 'run' or 'pass'
 GMSH_OUTPUT_MISSING_POLICY               = 'pass'
-GRAPHCUT_LABELING_OUTPUT_MISSING_POLICY  = 'run'
-AUTOMATIC_POLYCUBE_OUTPUT_MISSING_POLICY = 'run'
-EVOCUBE_OUTPUT_MISSING_POLICY            = 'run'
+GRAPHCUT_LABELING_OUTPUT_MISSING_POLICY  = 'pass'
+AUTOMATIC_POLYCUBE_OUTPUT_MISSING_POLICY = 'pass'
+EVOCUBE_OUTPUT_MISSING_POLICY            = 'pass'
 POLYCUBE_WITHHEXEX_OUTPUT_MISSING_POLICY = 'run'
 GLOBAL_PADDING_OUTPUT_MISSING_POLICY     = 'run'
 INNER_SMOOTHING_OUTPUT_MISSING_POLICY    = 'run'
@@ -245,10 +245,10 @@ def main(input_folder: Path, arguments: list):
     if len(arguments) != 0:
         logging.fatal(f'batch_processing does not need other arguments than the input folder, but {arguments} were provided')
         exit(1)
-    # assert((input_folder / 'MAMBO').exists())
-    # for step_subfolder in sorted(get_subfolders_of_type(input_folder / 'MAMBO','step')):
-    #     step_object: DataFolder = DataFolder(step_subfolder)
-    #     process_step(step_object)
+    assert((input_folder / 'MAMBO').exists())
+    for step_subfolder in sorted(get_subfolders_of_type(input_folder / 'MAMBO','step')):
+        step_object: DataFolder = DataFolder(step_subfolder)
+        process_step(step_object)
     assert((input_folder / 'OctreeMeshing' / 'cad').exists())
     for tet_mesh_subfolder in sorted(get_subfolders_of_type(input_folder / 'OctreeMeshing' / 'cad','tet-mesh')):
         tet_mesh_object: DataFolder = DataFolder(tet_mesh_subfolder)
