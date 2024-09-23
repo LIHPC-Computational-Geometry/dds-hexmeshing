@@ -18,6 +18,8 @@ from rich.logging import RichHandler
 from rich.theme import Theme
 from rich.panel import Panel
 from rich.table import Table
+from rich.tree import Tree
+from rich import print
 import subprocess_tee
 import importlib.util
 from math import floor
@@ -211,6 +213,23 @@ def get_subfolders_generated_by(path: Path, generator_name: str) -> list[Path]:
                     if 'GenerativeAlgorithm' in per_algo_info.keys() and per_algo_info['GenerativeAlgorithm'] == generator_name:
                         out.append(subfolder)
     return out
+
+def folder_content_as_trees(folder: Path) -> list[Tree]:
+    list_of_branches = list()
+    for subfolder in folder.iterdir():
+        new_branch = Tree(subfolder.name)
+        if subfolder.is_dir():
+            new_branch = Tree(subfolder.name)
+            for subbranches in folder_content_as_trees(subfolder):
+                new_branch.add(subbranches)
+        list_of_branches.append(new_branch)
+    return list_of_branches
+
+def print_folder_as_tree(folder: Path):
+    tree = Tree(str(folder))
+    for subfolder in folder_content_as_trees(folder):
+        tree.add(subfolder)
+    print(tree)
 
 # Execute either <algo_name>.yml or <algo_name>.py
 # The fist one must be executed on an instance of DataFolder
