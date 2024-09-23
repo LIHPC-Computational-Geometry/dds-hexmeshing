@@ -883,17 +883,21 @@ if __name__ == "__main__":
 
     if args.action == 'typeof':
         assert(len(args.supp_args)==1)
-        print(type_inference(Path(args.supp_args[0])))
+        path = Path(args.supp_args[0])
+        assert(path.exists())
+        print(type_inference(path))
         exit(0)
     if args.action == 'run':
         assert(len(args.supp_args)>=2)
         algo = args.supp_args[0]
         path = Path(args.supp_args[1])
+        assert(path.exists())
         run(path,algo,args.supp_args[2:])
         exit(0)
     if args.action == 'view':
         assert(len(args.supp_args) in [1,2])
         path = Path(args.supp_args[0])
+        assert(path.exists())
         if len(args.supp_args) == 2:
             view_name = args.supp_args[1]
             DataFolder(path).view(view_name)
@@ -904,6 +908,7 @@ if __name__ == "__main__":
     if args.action == 'history':
         assert(len(args.supp_args)==1)
         path = Path(args.supp_args[0])
+        assert(path.exists())
         DataFolder(path).print_history()
         exit(0)
     if args.action == 'help':
