@@ -3,7 +3,6 @@ description:
 tet-mesh: { # case of 'HexBox' applied on a 'tet-mesh' subfolder
   executable: {
     path: HEXBOX,
-    filename: ,
     command_line: '{mesh}'
   },
   output_folder: 'HexBox_%d',
