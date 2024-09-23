@@ -118,7 +118,7 @@ def get_declared_views(data_folder_type: str) -> list[str]:
     Find all <data_folder_type>.*.yml in definitions/data_folder_types/
     But doest not check the content of the view definition.
     """
-    return [x.named['view_name'] for x in [parse(data_folder_type + ".{view_name}.yml", file.name) for file in Path('definitions/data_folder_types').iterdir() if file.is_file()] if x is not None]
+    return [x.named['view_name'] for x in [parse(data_folder_type + ".{view_name}.yml", file.name) for file in Path('definitions/data_folder_types').iterdir() if file.is_file()] if x is not None] # type: ignore | evaluate_result=True by default for parse() -> x cannot be of type Match
 
 def get_declared_algorithms_as_YAML() -> list[str]:
     return [x.stem for x in Path('definitions/algorithms').iterdir() if x.is_file() and x.suffix == '.yml']
@@ -247,7 +247,9 @@ def run(path: Path, algo_name: str, arguments_as_list: list = list(), silent_out
             name="ext_module",
             location=script_filepath,
         )
+        assert(spec is not None)
         ext_module = importlib.util.module_from_spec(spec)
+        assert(spec.loader is not None)
         spec.loader.exec_module(ext_module)
 
         console = Console()
@@ -282,7 +284,7 @@ class DataFolder():
 
     def __init__(self,path: Path):
         self.path: Path = Path(path) # in case the argument was a str
-        self.type: str = type_inference(self.path)
+        self.type: Optional[str] = type_inference(self.path)
         if self.type is None:
             raise DataFolderInstantiationError(self.path)
         # if this data folder type has specific accessors, load their definition
@@ -292,7 +294,9 @@ class DataFolder():
                 name="ext_module",
                 location=accessors_definition_file,
             )
+            assert(spec is not None)
             ext_module = importlib.util.module_from_spec(spec)
+            assert(spec.loader is not None)
             spec.loader.exec_module(ext_module)
 
     def __str__(self) -> str:
@@ -320,7 +324,9 @@ class DataFolder():
         table = Table()
         table.add_column("Datetime", style="cyan")
         table.add_column("Name")
-        for datetime, algo_info in self.get_info_dict().items(): # for each top-level entry in info.json
+        info_dict = self.get_info_dict()
+        assert(info_dict is not None)
+        for datetime, algo_info in info_dict.items(): # for each top-level entry in info.json
             datetime = ISO_datetime_to_readable_datetime(datetime)
             algo_name = '?'
             if 'GenerativeAlgorithm' in algo_info:
@@ -379,6 +385,7 @@ class DataFolder():
         
     def get_file(self, filename_keyword: str, must_exist: bool = False, silent_output: bool = False) -> Path:
         # transform filename keyword into actual filename by reading the YAML describing the data folder type
+        assert(self.type is not None)
         YAML_filepath: Path = Path('definitions/data_folder_types') / (self.type + '.yml')
         if not YAML_filepath.exists():
             log.error(f'{YAML_filepath} does not exist')
@@ -414,6 +421,7 @@ class DataFolder():
         return parent.get_closest_parent_of_type(data_folder_type,False)
     
     def view(self, view_name: Optional[str] = None):
+        assert(self.type is not None)
         if view_name is None:
             view_name = get_default_view_name(self.type)
             if view_name is None:
@@ -450,6 +458,7 @@ class DataFolder():
             executable_filename: Optional[str] = None
             if 'filename' in YAML_content['executable']:
                 executable_filename = YAML_content['executable']['filename']
+                assert(executable_filename is not None)
                 executable_path = executable_path / executable_filename
             if not executable_path.exists():
                 log.error(f"There is no {executable_filename} in {paths[path_keyword]}. Required by {YAML_filepath} algorithm")
@@ -485,7 +494,7 @@ class DataFolder():
             subprocess_tee.run(command_line, shell=True, capture_output=True, tee=True)
             console.print(Rule(f'end of [magenta]{collapseuser(executable_path)}'))
     
-    def execute_algo_preprocessing(self, console: Console, algo_name: str, output_subfolder: Path, arguments: dict, silent_output: bool) -> dict:
+    def execute_algo_preprocessing(self, console: Console, algo_name: str, output_subfolder: Optional[Path], arguments: dict, silent_output: bool) -> dict:
         script_filepath: Path = Path('definitions/algorithms') / (algo_name + '.pre.py')
         if not script_filepath.exists():
             return dict() # no preprocessing defined for this algorithm
@@ -494,7 +503,9 @@ class DataFolder():
             name="ext_module",
             location=script_filepath,
         )
+        assert(spec is not None)
         ext_module = importlib.util.module_from_spec(spec)
+        assert(spec.loader is not None)
         spec.loader.exec_module(ext_module)
         if not silent_output:
             console.print(Rule(f'beginning of {script_filepath.name} pre_processing()'))
@@ -503,7 +514,7 @@ class DataFolder():
             console.print(Rule(f'end of {script_filepath.name} pre_processing()'))
         return data_from_preprocessing
     
-    def execute_algo_postprocessing(self, console: Console, algo_name: str, output_subfolder: Optional[Path], arguments: dict, data_from_preprocessing: dict, silent_output: bool) -> dict:
+    def execute_algo_postprocessing(self, console: Console, algo_name: str, output_subfolder: Optional[Path], arguments: dict, data_from_preprocessing: dict, silent_output: bool):
         script_filepath: Path = Path('definitions/algorithms') / (algo_name + '.post.py')
         if not script_filepath.exists():
             return # no postprocessing defined for this algorithm
@@ -512,7 +523,9 @@ class DataFolder():
             name="ext_module",
             location=script_filepath,
         )
+        assert(spec is not None)
         ext_module = importlib.util.module_from_spec(spec)
+        assert(spec.loader is not None)
         spec.loader.exec_module(ext_module)
         if not silent_output:
             console.print(Rule(f'beginning of {script_filepath.name} post_processing()'))
@@ -558,6 +571,7 @@ class DataFolder():
             executable_filename: Optional[str] = None
             if 'filename' in YAML_content[self.type]['executable']:
                 executable_filename = YAML_content[self.type]['executable']['filename']
+                assert(executable_filename is not None)
                 executable_path = executable_path / executable_filename
             if not executable_path.exists():
                 log.error(f"There is no {executable_filename} in {paths[path_keyword]}. Required by {YAML_filepath} algorithm")
@@ -571,7 +585,7 @@ class DataFolder():
             if 'others' in YAML_content[self.type]['arguments']:
                 for other_argument in YAML_content[self.type]['arguments']['others']:
                     if other_argument in all_arguments:
-                        log.error(f"{YAML_filepath} has multiple arguments named '{input_file_argument}' in '{self.type}/arguments")
+                        log.error(f"{YAML_filepath} has multiple arguments named '{other_argument}' in '{self.type}/arguments")
                         exit(1)
                     # there are 2 kind of other arguments
                     # - a setting, whose default value can be overwritten from the command line
@@ -607,6 +621,7 @@ class DataFolder():
                 output_folder = YAML_content[self.type]['output_folder']
                 output_folder = output_folder.format(**all_arguments).replace('%d',start_datetime_filesystem)
                 output_folder_path = self.path / output_folder
+                assert(output_folder_path is not None)
                 if output_folder_path.exists():
                     log.error(f"The output folder to create ({output_folder_path}) already exists")
                     exit(1)
@@ -821,7 +836,9 @@ def print_help_on_algorithm(algo_name: str):
             path_keyword: str = YAML_content[input_folder_type]['executable']['path']
             executable_path = None
             try:
-                executable_path = translate_path_keyword(path_keyword).expanduser()
+                executable_path = translate_path_keyword(path_keyword)
+                assert(executable_path is not None)
+                executable_path = executable_path.expanduser()
             except InvalidPathKeywordError:
                 log.fatal(f"'{path_keyword}' is referenced in {YAML_filepath} at '{input_folder_type}/executable/path' but does not exist in definitions/paths.yml")
                 exit(1)
@@ -832,6 +849,7 @@ def print_help_on_algorithm(algo_name: str):
             executable_filename: Optional[str] = None
             if 'filename' in YAML_content[input_folder_type]['executable']:
                 executable_filename = YAML_content[input_folder_type]['executable']['filename']
+                assert(executable_filename is not None)
                 executable_path = executable_path / executable_filename
             if not executable_path.exists():
                 log.error(f"There is no {executable_filename} in {executable_path}. Required by {YAML_filepath} algorithm")
@@ -935,8 +953,8 @@ dds.py [r]run[/] [bright_green]algo_name[/] [cyan]path/to/input/folder[/] \[algo
     | |   | |
   __| | __| |___ 
  / _` |/ _` / __|
-| (_| | (_| \__ \\
- \__,_|\__,_|___/
+| (_| | (_| \\__ \\
+ \\__,_|\\__,_|___/
 
 Semantic data folders
 

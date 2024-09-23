@@ -9,8 +9,9 @@ from os import curdir, unlink
 # own module
 from dds import *
 
-def post_processing(input_subfolder: DataFolder, output_subfolder: Path, arguments: dict, data_from_pre_processing: dict, silent_output: bool):
+def post_processing(input_subfolder: DataFolder, output_subfolder: Optional[Path], arguments: dict, data_from_pre_processing: dict, silent_output: bool):
     assert(input_subfolder.type == 'marchinghex_grid')
+    assert(output_subfolder is not None)
 
     # It may be interesting to read the last printed line to have the average Hausdorff distance between the domain and the hex-mesh
     

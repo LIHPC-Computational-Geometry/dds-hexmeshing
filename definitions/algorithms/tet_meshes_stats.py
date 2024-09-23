@@ -31,7 +31,7 @@ def main(input_folder: Path, arguments: list):
 
         tet_folder: DataFolder = DataFolder(tet_mesh_path)
         assert(tet_folder.type == 'tet-mesh')
-        nb_tetrahedra = tet_folder.get_tet_mesh_stats_dict()['cells']['nb'] # see definitions/algorithms/tet-mesh.accessors.py
+        nb_tetrahedra = tet_folder.get_tet_mesh_stats_dict()['cells']['nb'] # type: ignore | see ../data_folder_types/tet-mesh.accessors.py
 
         if nb_tetrahedra >= 300000:
             console.print(f'[cyan]{collapseuser(tet_folder.path)}[/] has 300k or more tetrahedra ({nb_tetrahedra})')

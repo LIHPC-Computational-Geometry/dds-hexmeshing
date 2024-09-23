@@ -9,8 +9,9 @@ from os import unlink
 # own module
 from dds import *
 
-def post_processing(input_subfolder: DataFolder, output_subfolder: Path, arguments: dict, data_from_pre_processing: dict, silent_output: bool):
+def post_processing(input_subfolder: DataFolder, output_subfolder: Optional[Path], arguments: dict, data_from_pre_processing: dict, silent_output: bool):
     assert(input_subfolder.type == 'labeling')
+    assert(output_subfolder is not None)
 
     # The executable also writes debug files
     for debug_filename in [

@@ -9,7 +9,7 @@
 
 import sys
 import time
-import salome
+import salome # type: ignore
 import meshio
 import sys
 import os
@@ -21,8 +21,8 @@ output_MEDIT = sys.argv[2]
 
 salome.salome_init()
 
-import SMESH, SALOMEDS
-from salome.smesh import smeshBuilder
+import SMESH, SALOMEDS  # type: ignore
+from salome.smesh import smeshBuilder  # type: ignore
 
 smesh = smeshBuilder.New()
 if salome.sg.hasDesktop():

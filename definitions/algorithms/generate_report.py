@@ -111,7 +111,7 @@ def main(input_folder: Path, arguments: list):
             continue
 
         nb_CAD_2_meshing_succeeded += 1
-        surface_mesh_stats = tet_mesh_object.get_surface_mesh_stats_dict()
+        surface_mesh_stats = tet_mesh_object.get_surface_mesh_stats_dict() # type: ignore | see ../data_folder_types/tet-mesh.accessors.py
         ours_row['nb_vertices'] = surface_mesh_stats['vertices']['nb']
         ours_row['nb_facets']   = surface_mesh_stats['facets']['nb']
         ours_row['area_sd']     = surface_mesh_stats['facets']['area']['sd']
@@ -140,8 +140,10 @@ def main(input_folder: Path, arguments: list):
             # retrieve datetime, labeling stats and feature edges info
             ISO_datetime = labeling_object.get_datetime_key_of_algo_in_info_file('evocube')
             assert(ISO_datetime is not None)
-            Evocube_duration = labeling_object.get_info_dict()[ISO_datetime]['duration'][0]
-            labeling_stats = labeling_object.get_labeling_stats_dict()
+            labeling_info_dict = labeling_object.get_info_dict()
+            assert(labeling_info_dict is not None)
+            Evocube_duration = labeling_info_dict[ISO_datetime]['duration'][0]
+            labeling_stats = labeling_object.get_labeling_stats_dict() # type: ignore | see ../data_folder_types/labeling.accessors.py
             evocube_row['nb_charts']                = labeling_stats['charts']['nb']
             evocube_row['nb_boundaries']            = labeling_stats['boundaries']['nb']
             evocube_row['nb_corners']               = labeling_stats['corners']['nb']
@@ -150,8 +152,8 @@ def main(input_folder: Path, arguments: list):
             evocube_row['nb_invalid_corners']       = labeling_stats['corners']['invalid']
             evocube_row['min_fidelity']             = labeling_stats['fidelity']['min']
             evocube_row['avg_fidelity']             = labeling_stats['fidelity']['avg']
-            evocube_row['valid']                    = labeling_object.has_valid_labeling()
-            evocube_row['nb_turning_points']        = labeling_object.nb_turning_points() # == labeling_stats['turning-points']['nb']
+            evocube_row['valid']                    = labeling_object.has_valid_labeling() # type: ignore | see ../data_folder_types/labeling.accessors.py
+            evocube_row['nb_turning_points']        = labeling_object.nb_turning_points() # type: ignore | see ../data_folder_types/labeling.accessors.py
             evocube_row['duration']                 = Evocube_duration
             total_feature_edges = labeling_stats['feature-edges']['removed'] + labeling_stats['feature-edges']['lost'] + labeling_stats['feature-edges']['preserved']
             assert(total_feature_edges == surface_mesh_stats['edges']['nb'])
@@ -172,9 +174,9 @@ def main(input_folder: Path, arguments: list):
                     raise OSError()
                 postprocessed_hexmesh_object = DataFolder(labeling_object.path / 'polycube_withHexEx_1.3' / 'global_padding' / 'inner_smoothing_50')
                 assert(postprocessed_hexmesh_object.type == "hex-mesh")
-                if 'quality' in postprocessed_hexmesh_object.get_mesh_stats_dict()['cells']:
-                    evocube_row['minSJ'] = postprocessed_hexmesh_object.get_mesh_stats_dict()['cells']['quality']['hex_SJ']['min']
-                    evocube_row['avgSJ'] = postprocessed_hexmesh_object.get_mesh_stats_dict()['cells']['quality']['hex_SJ']['avg']
+                if 'quality' in postprocessed_hexmesh_object.get_mesh_stats_dict()['cells']: # type: ignore | see ../data_folder_types/hex-mesh.accessors.py
+                    evocube_row['minSJ'] = postprocessed_hexmesh_object.get_mesh_stats_dict()['cells']['quality']['hex_SJ']['min'] # type: ignore | see ../data_folder_types/hex-mesh.accessors.py
+                    evocube_row['avgSJ'] = postprocessed_hexmesh_object.get_mesh_stats_dict()['cells']['quality']['hex_SJ']['avg'] # type: ignore | see ../data_folder_types/hex-mesh.accessors.py
                     # copy the hex-mesh surface as glTF
                     glb_hexmesh_file: Path = postprocessed_hexmesh_object.get_file('HEX_MESH_SURFACE_GLB',True) # will be autocomputed
                     glb_hexmesh_filename = CAD_name + '_hexmesh_evocube.glb'
@@ -208,8 +210,10 @@ def main(input_folder: Path, arguments: list):
             # retrieve datetime, labeling stats and feature edges info
             ISO_datetime = labeling_object.get_datetime_key_of_algo_in_info_file('automatic_polycube')
             assert(ISO_datetime is not None)
-            ours_duration = labeling_object.get_info_dict()[ISO_datetime]['duration'][0]
-            labeling_stats = labeling_object.get_labeling_stats_dict()
+            labeling_info_dict = labeling_object.get_info_dict()
+            assert(labeling_info_dict is not None)
+            ours_duration = labeling_info_dict[ISO_datetime]['duration'][0]
+            labeling_stats = labeling_object.get_labeling_stats_dict() # type: ignore | see ../data_folder_types/labeling.accessors.py
             ours_row['nb_charts']                = labeling_stats['charts']['nb']
             ours_row['nb_boundaries']            = labeling_stats['boundaries']['nb']
             ours_row['nb_corners']               = labeling_stats['corners']['nb']
@@ -218,8 +222,8 @@ def main(input_folder: Path, arguments: list):
             ours_row['nb_invalid_corners']       = labeling_stats['corners']['invalid']
             ours_row['min_fidelity']             = labeling_stats['fidelity']['min']
             ours_row['avg_fidelity']             = labeling_stats['fidelity']['avg']
-            ours_row['valid']                    = labeling_object.has_valid_labeling()
-            ours_row['nb_turning_points']        = labeling_object.nb_turning_points() # == labeling_stats['turning-points']['nb']
+            ours_row['valid']                    = labeling_object.has_valid_labeling() # type: ignore | see ../data_folder_types/labeling.accessors.py
+            ours_row['nb_turning_points']        = labeling_object.nb_turning_points() # type: ignore | see ../data_folder_types/labeling.accessors.py
             ours_row['duration']                 = ours_duration
             ours_row['speedup']                  = None if Evocube_duration is None else (Evocube_duration / ours_duration)
             total_feature_edges = labeling_stats['feature-edges']['removed'] + labeling_stats['feature-edges']['lost'] + labeling_stats['feature-edges']['preserved']
@@ -241,9 +245,9 @@ def main(input_folder: Path, arguments: list):
                     raise OSError()
                 postprocessed_hexmesh_object = DataFolder(labeling_object.path / 'polycube_withHexEx_1.3' / 'global_padding' / 'inner_smoothing_50')
                 assert(postprocessed_hexmesh_object.type == "hex-mesh")
-                if 'quality' in postprocessed_hexmesh_object.get_mesh_stats_dict()['cells']:
-                    ours_row['minSJ'] = postprocessed_hexmesh_object.get_mesh_stats_dict()['cells']['quality']['hex_SJ']['min']
-                    ours_row['avgSJ'] = postprocessed_hexmesh_object.get_mesh_stats_dict()['cells']['quality']['hex_SJ']['avg']
+                if 'quality' in postprocessed_hexmesh_object.get_mesh_stats_dict()['cells']: # type: ignore | see ../data_folder_types/hex-mesh.accessors.py
+                    ours_row['minSJ'] = postprocessed_hexmesh_object.get_mesh_stats_dict()['cells']['quality']['hex_SJ']['min'] # type: ignore | see ../data_folder_types/hex-mesh.accessors.py
+                    ours_row['avgSJ'] = postprocessed_hexmesh_object.get_mesh_stats_dict()['cells']['quality']['hex_SJ']['avg'] # type: ignore | see ../data_folder_types/hex-mesh.accessors.py
                     # copy the hex-mesh surface as glTF
                     glb_hexmesh_file: Path = postprocessed_hexmesh_object.get_file('HEX_MESH_SURFACE_GLB',True) # will be autocomputed
                     glb_hexmesh_filename = CAD_name + '_hexmesh_evocube.glb'
@@ -254,12 +258,13 @@ def main(input_folder: Path, arguments: list):
                 pass
             
             # update the counters for the Sankey diagram
-            if not labeling_object.has_valid_labeling():
+            if not labeling_object.has_valid_labeling(): # type: ignore | see ../data_folder_types/labeling.accessors.py
                 nb_meshing_succeeded_2_labeling_invalid += 1
-            elif labeling_object.nb_turning_points() != 0:
+            elif labeling_object.nb_turning_points() != 0: # type: ignore | see ../data_folder_types/labeling.accessors.py
                 nb_meshing_succeeded_2_labeling_non_monotone += 1
                 if ours_row['glb_hexmesh'] is not None:
                     # an hex-mesh was successfully generated
+                    assert(ours_row['minSJ'] is not None)
                     if ours_row['minSJ'] < 0.0:
                         nb_labeling_non_monotone_2_hexmesh_negative_min_sj += 1
                     else:
@@ -272,6 +277,7 @@ def main(input_folder: Path, arguments: list):
                 nb_meshing_succeeded_2_labeling_succeeded += 1
                 if ours_row['glb_hexmesh'] is not None:
                     # an hex-mesh was successfully generated
+                    assert(ours_row['minSJ'] is not None)
                     if ours_row['minSJ'] < 0.0:
                         nb_labeling_succeeded_2_hexmesh_negative_min_sj += 1
                     else:

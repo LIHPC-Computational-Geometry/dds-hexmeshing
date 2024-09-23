@@ -13,4 +13,4 @@ def get_mesh_stats_dict(self: DataFolder, silent_output: bool = False) -> dict:
 
 # add this function to the class, as method
 log.info(f"Adding get_mesh_stats_dict() as DataFolder method for when type == 'hex-mesh'")
-DataFolder.get_mesh_stats_dict = get_mesh_stats_dict
+DataFolder.get_mesh_stats_dict = get_mesh_stats_dict # type: ignore

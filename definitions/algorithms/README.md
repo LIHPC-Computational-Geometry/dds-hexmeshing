@@ -35,13 +35,13 @@ input_type: {
 
 Prototype for a pre-processing Python script (`{name}.pre.py`):
 ```python
-def pre_processing(input_subfolder: DataFolder, output_subfolder: Path, arguments: dict, silent_output: bool) -> dict:
+def pre_processing(input_subfolder: DataFolder, output_subfolder: Optional[Path], arguments: dict, silent_output: bool) -> dict:
     # your code here
 ```
 
 Prototype for a post-processing Python script (`{name}.post.py`):
 ```python
-def post_processing(input_subfolder: DataFolder, output_subfolder: Path, arguments: dict, data_from_pre_processing: dict, silent_output: bool):
+def post_processing(input_subfolder: DataFolder, output_subfolder: Optional[Path], arguments: dict, data_from_pre_processing: dict, silent_output: bool):
     # your code here
 ```
 

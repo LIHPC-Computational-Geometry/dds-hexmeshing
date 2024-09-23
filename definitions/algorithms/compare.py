@@ -23,8 +23,8 @@ def main(input_folder: Path, arguments: list):
     # TODO assert they have a common parent?
     if folder1.type == 'hex-mesh':
         # get stats
-        folder1_stats = folder1.get_mesh_stats_dict() # method defined in ../data_folder_types/hex-mesh.accessors.py
-        folder2_stats = folder2.get_mesh_stats_dict()
+        folder1_stats = folder1.get_mesh_stats_dict() # type: ignore | see ../data_folder_types/hex-mesh.accessors.py
+        folder2_stats = folder2.get_mesh_stats_dict() # type: ignore | see ../data_folder_types/hex-mesh.accessors.py
         # for each one we have:
         #   vertices/nb
         #   vertices/principal_axes/* (not interesting here)

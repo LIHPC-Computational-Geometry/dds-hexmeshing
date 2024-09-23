@@ -8,8 +8,9 @@ from os import unlink
 # own module
 from dds import *
 
-def post_processing(input_subfolder: DataFolder, output_subfolder: Path, arguments: dict, data_from_pre_processing: dict, silent_output: bool):
+def post_processing(input_subfolder: DataFolder, output_subfolder: Optional[Path], arguments: dict, data_from_pre_processing: dict, silent_output: bool):
     assert(input_subfolder.type == 'tet-mesh')
+    assert(output_subfolder is not None)
 
     # read labeling.yml to get some filenames
     with open(Path(__file__).parent.parent / 'data_folder_types/labeling.yml') as YAML_stream:

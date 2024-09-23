@@ -58,10 +58,10 @@ GLOBAL_PADDING_OUTPUT_MISSING_POLICY     = 'run'
 INNER_SMOOTHING_OUTPUT_MISSING_POLICY    = 'run'
 
 RUNNING_ALGO_LINE_TEMPLATE            = "Running [green]{algo}[/] on [cyan]{path}[/]"
-EXISTING_OUTPUT_LINE_TEMPLATE         = "\[[bright_black]-[/]] [green]{algo}[/] on [cyan]{path}[/]"
-NEW_OUTPUT_LINE_TEMPLATE              = "\[[green]✓[/]] [green]{algo}[/] on [cyan]{path}[/]"
+EXISTING_OUTPUT_LINE_TEMPLATE         = "\[[bright_black]-[/]] [green]{algo}[/] on [cyan]{path}[/]" # type: ignore
+NEW_OUTPUT_LINE_TEMPLATE              = "\[[green]✓[/]] [green]{algo}[/] on [cyan]{path}[/]" # type: ignore
 MISSING_OUTPUT_LINE_TEMPLATE          = "No [green]{algo}[/] output inside [cyan]{path}[/]. Run {algo}?"
-IGNORING_MISSING_OUTPUT_LINE_TEMPLATE = "\[[dark_orange]●[/]] Ignoring missing [green]{algo}[/] output inside [cyan]{path}[/]"
+IGNORING_MISSING_OUTPUT_LINE_TEMPLATE = "\[[dark_orange]●[/]] Ignoring missing [green]{algo}[/] output inside [cyan]{path}[/]" # type: ignore
 
 CONSOLE = Console(theme=Theme(inherit=False)) # better to create a global variable in dds.py ??
 
@@ -80,7 +80,7 @@ def process_hex_mesh(init_hex_mesh_object: DataFolder):
     Run global padding then inner smoothing on the output
     """
     assert(init_hex_mesh_object.type == 'hex-mesh')
-    if(init_hex_mesh_object.get_mesh_stats_dict(silent_output=True)['cells']['nb'] == 0):
+    if(init_hex_mesh_object.get_mesh_stats_dict(silent_output=True)['cells']['nb'] == 0): # type: ignore
         return # polycube_withHexEx created an empty hex-mesh, skip post-processing
     if not (init_hex_mesh_object.path / 'global_padding').exists():
         if user_confirmed_or_choose_autorun(GLOBAL_PADDING_OUTPUT_MISSING_POLICY,MISSING_OUTPUT_LINE_TEMPLATE.format(algo='global_padding', path=collapseuser(init_hex_mesh_object.path))):

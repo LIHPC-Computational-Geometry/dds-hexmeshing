@@ -327,9 +327,11 @@ def main(input_folder: Path, arguments: list):
             # retrieve datetime, labeling stats and feature edges info
             ISO_datetime = labeling_folder.get_datetime_key_of_algo_in_info_file('evocube')
             assert(ISO_datetime is not None)
-            Evocube_duration = labeling_folder.get_info_dict()[ISO_datetime]['duration'][0]
+            labeling_info_dict = labeling_folder.get_info_dict()
+            assert(labeling_info_dict is not None)
+            Evocube_duration = labeling_info_dict[ISO_datetime]['duration'][0]
 
-            labeling_stats = labeling_folder.get_labeling_stats_dict()
+            labeling_stats = labeling_folder.get_labeling_stats_dict() # type: ignore | see ../data_folder_types/labeling.accessors.py
 
             # update avg fidelity sum
             sum_avg_fidelities[MAMBO_subset]['Evocube'] += labeling_stats['fidelity']['avg']
@@ -341,9 +343,9 @@ def main(input_folder: Path, arguments: list):
             hexmesh_minSJ = None
             if (labeling_folder.path / 'polycube_withHexEx_1.3/global_padding/inner_smoothing_50').exists():
                 hex_mesh_folder: DataFolder = DataFolder(labeling_folder.path / 'polycube_withHexEx_1.3/global_padding/inner_smoothing_50')
-                if 'quality' in hex_mesh_folder.get_mesh_stats_dict()['cells']:
-                    avg_sj_sum[MAMBO_subset]['Evocube'] += hex_mesh_folder.get_mesh_stats_dict()['cells']['quality']['hex_SJ']['avg']
-                    hexmesh_minSJ = hex_mesh_folder.get_mesh_stats_dict()['cells']['quality']['hex_SJ']['min']
+                if 'quality' in hex_mesh_folder.get_mesh_stats_dict()['cells']: # type: ignore | see ../data_folder_types/hex-mesh.accessors.py
+                    avg_sj_sum[MAMBO_subset]['Evocube'] += hex_mesh_folder.get_mesh_stats_dict()['cells']['quality']['hex_SJ']['avg'] # type: ignore | see ../data_folder_types/hex-mesh.accessors.py
+                    hexmesh_minSJ = hex_mesh_folder.get_mesh_stats_dict()['cells']['quality']['hex_SJ']['min'] # type: ignore | see ../data_folder_types/hex-mesh.accessors.py
                     min_sj_sum[MAMBO_subset]['Evocube'] += hexmesh_minSJ
                 else:
                     # HexEx failed, no cells in output file
@@ -351,9 +353,9 @@ def main(input_folder: Path, arguments: list):
                     min_sj_sum[MAMBO_subset]['Evocube'] += -1.0 # assume worse value
             
             # update the counters
-            if not labeling_folder.has_valid_labeling():
+            if not labeling_folder.has_valid_labeling(): # type: ignore | see ../data_folder_types/labeling.accessors.py
                 nb_meshing_succeeded_2_labeling_invalid[MAMBO_subset]['Evocube'] += 1
-            elif labeling_folder.nb_turning_points() != 0:
+            elif labeling_folder.nb_turning_points() != 0: # type: ignore | see ../data_folder_types/labeling.accessors.py
                 nb_meshing_succeeded_2_labeling_non_monotone[MAMBO_subset]['Evocube'] += 1
                 if hexmesh_minSJ is not None:
                     # an hex-mesh was successfully generated
@@ -392,8 +394,10 @@ def main(input_folder: Path, arguments: list):
             # retrieve datetime, labeling stats and feature edges info
             ISO_datetime = labeling_folder.get_datetime_key_of_algo_in_info_file('automatic_polycube')
             assert(ISO_datetime is not None)
-            ours_duration = labeling_folder.get_info_dict()[ISO_datetime]['duration'][0]
-            labeling_stats = labeling_folder.get_labeling_stats_dict()
+            labeling_info_dict = labeling_folder.get_info_dict()
+            assert(labeling_info_dict is not None)
+            ours_duration = labeling_info_dict[ISO_datetime]['duration'][0] 
+            labeling_stats = labeling_folder.get_labeling_stats_dict() # type: ignore | see ../data_folder_types/labeling.accessors.py
 
             # update avg fidelity sum
             sum_avg_fidelities[MAMBO_subset]['Ours_2024-03'] += labeling_stats['fidelity']['avg']
@@ -405,9 +409,9 @@ def main(input_folder: Path, arguments: list):
             hexmesh_minSJ = None
             if (labeling_folder.path / 'polycube_withHexEx_1.3/global_padding/inner_smoothing_50').exists():
                 hex_mesh_folder: DataFolder = DataFolder(labeling_folder.path / 'polycube_withHexEx_1.3/global_padding/inner_smoothing_50')
-                if 'quality' in hex_mesh_folder.get_mesh_stats_dict()['cells']:
-                    avg_sj_sum[MAMBO_subset]['Ours_2024-03'] += hex_mesh_folder.get_mesh_stats_dict()['cells']['quality']['hex_SJ']['avg']
-                    hexmesh_minSJ = hex_mesh_folder.get_mesh_stats_dict()['cells']['quality']['hex_SJ']['min']
+                if 'quality' in hex_mesh_folder.get_mesh_stats_dict()['cells']: # type: ignore | see ../data_folder_types/hex-mesh.accessors.py
+                    avg_sj_sum[MAMBO_subset]['Ours_2024-03'] += hex_mesh_folder.get_mesh_stats_dict()['cells']['quality']['hex_SJ']['avg'] # type: ignore | see ../data_folder_types/hex-mesh.accessors.py
+                    hexmesh_minSJ = hex_mesh_folder.get_mesh_stats_dict()['cells']['quality']['hex_SJ']['min'] # type: ignore | see ../data_folder_types/hex-mesh.accessors.py
                     min_sj_sum[MAMBO_subset]['Ours_2024-03'] += hexmesh_minSJ
                 else:
                     # HexEx failed, no cells in output file
@@ -415,9 +419,9 @@ def main(input_folder: Path, arguments: list):
                     min_sj_sum[MAMBO_subset]['Ours_2024-03'] += -1.0 # assume worse value
             
             # update the counters
-            if not labeling_folder.has_valid_labeling():
+            if not labeling_folder.has_valid_labeling(): # type: ignore | see ../data_folder_types/labeling.accessors.py
                 nb_meshing_succeeded_2_labeling_invalid[MAMBO_subset]['Ours_2024-03'] += 1
-            elif labeling_folder.nb_turning_points() != 0:
+            elif labeling_folder.nb_turning_points() != 0: # type: ignore | see ../data_folder_types/labeling.accessors.py
                 nb_meshing_succeeded_2_labeling_non_monotone[MAMBO_subset]['Ours_2024-03'] += 1
                 if hexmesh_minSJ is not None:
                     # an hex-mesh was successfully generated
@@ -457,8 +461,10 @@ def main(input_folder: Path, arguments: list):
             # retrieve datetime, labeling stats and feature edges info
             ISO_datetime = init_labeling_folder.get_datetime_key_of_algo_in_info_file('graphcut_labeling')
             assert(ISO_datetime is not None)
-            graphcut_duration = init_labeling_folder.get_info_dict()[ISO_datetime]['duration'][0]
-            labeling_stats = init_labeling_folder.get_labeling_stats_dict()
+            init_labeling_info_dict = init_labeling_folder.get_info_dict()
+            assert(init_labeling_info_dict is not None)
+            graphcut_duration = init_labeling_info_dict[ISO_datetime]['duration'][0]
+            labeling_stats = init_labeling_folder.get_labeling_stats_dict() # type: ignore | see ../data_folder_types/labeling.accessors.py
 
             # update avg fidelity sum
             sum_avg_fidelities[MAMBO_subset]['graphcut'] += labeling_stats['fidelity']['avg']
@@ -467,9 +473,9 @@ def main(input_folder: Path, arguments: list):
             duration[MAMBO_subset]['graphcut'] += graphcut_duration
             
             # update the counters
-            if not init_labeling_folder.has_valid_labeling():
+            if not init_labeling_folder.has_valid_labeling(): # type: ignore | see ../data_folder_types/labeling.accessors.py
                 nb_meshing_succeeded_2_labeling_invalid[MAMBO_subset]['graphcut'] += 1
-            elif init_labeling_folder.nb_turning_points() != 0:
+            elif init_labeling_folder.nb_turning_points() != 0: # type: ignore | see ../data_folder_types/labeling.accessors.py
                 nb_meshing_succeeded_2_labeling_non_monotone[MAMBO_subset]['graphcut'] += 1
             else:
                 # so we have a valid labeling with no turning-points
@@ -489,8 +495,10 @@ def main(input_folder: Path, arguments: list):
                 # retrieve datetime, labeling stats and feature edges info
                 ISO_datetime = labeling_ours_folder.get_datetime_key_of_algo_in_info_file('automatic_polycube')
                 assert(ISO_datetime is not None)
-                ours_duration = labeling_ours_folder.get_info_dict()[ISO_datetime]['duration'][0]
-                labeling_stats = labeling_ours_folder.get_labeling_stats_dict()
+                ours_labeling_info_dict = labeling_ours_folder.get_info_dict()
+                assert(ours_labeling_info_dict is not None)
+                ours_duration = ours_labeling_info_dict[ISO_datetime]['duration'][0]
+                labeling_stats = labeling_ours_folder.get_labeling_stats_dict()  # type: ignore | see ../data_folder_types/labeling.accessors.py
 
                 # update avg fidelity sum
                 sum_avg_fidelities[MAMBO_subset]['Ours_2024-09'] += labeling_stats['fidelity']['avg']
@@ -499,9 +507,9 @@ def main(input_folder: Path, arguments: list):
                 duration[MAMBO_subset]['Ours_2024-09'] += ours_duration
                 
                 # update the counters
-                if not labeling_ours_folder.has_valid_labeling():
+                if not labeling_ours_folder.has_valid_labeling():  # type: ignore | see ../data_folder_types/labeling.accessors.py
                     nb_init_labeling_2_ours_labeling_invalid[MAMBO_subset] += 1
-                elif labeling_ours_folder.nb_turning_points() != 0:
+                elif labeling_ours_folder.nb_turning_points() != 0:  # type: ignore | see ../data_folder_types/labeling.accessors.py
                     nb_init_labeling_2_ours_labeling_non_monotone[MAMBO_subset] += 1
                 else:
                     # so we have a valid labeling with no turning-points

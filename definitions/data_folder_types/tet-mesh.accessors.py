@@ -17,6 +17,6 @@ def get_surface_mesh_stats_dict(self: DataFolder, silent_output: bool = False) -
 
 # add these functions to the class, as methods
 log.info(f"Adding get_tet_mesh_stats_dict() as DataFolder method for when type == 'tet-mesh'")
-DataFolder.get_tet_mesh_stats_dict = get_tet_mesh_stats_dict
+DataFolder.get_tet_mesh_stats_dict = get_tet_mesh_stats_dict # type: ignore
 log.info(f"Adding get_surface_mesh_stats_dict() as DataFolder method for when type == 'tet-mesh'")
-DataFolder.get_surface_mesh_stats_dict = get_surface_mesh_stats_dict
+DataFolder.get_surface_mesh_stats_dict = get_surface_mesh_stats_dict # type: ignore

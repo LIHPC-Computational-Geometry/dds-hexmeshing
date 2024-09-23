@@ -27,7 +27,7 @@ def post_processing(input_subfolder: DataFolder, arguments: dict, data_from_pre_
             if arguments['keep_debug_files']:
                 if not silent_output:
                     print(f'Renaming {debug_filename}...')
-                move(debug_filename, input_subfolder / f'rb_generate_deformation.{debug_filename}')
+                move(debug_filename, input_subfolder.path / f'rb_generate_deformation.{debug_filename}')
             else:
                 if not silent_output:
                     print(f'Removing {debug_filename}...')
