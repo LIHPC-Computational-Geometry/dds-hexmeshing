@@ -216,7 +216,7 @@ def get_subfolders_generated_by(path: Path, generator_name: str) -> list[Path]:
 
 def folder_content_as_trees(folder: Path) -> list[Tree]:
     list_of_branches = list()
-    for subfolder in folder.iterdir():
+    for subfolder in sorted(folder.iterdir()):
         new_branch = Tree(subfolder.name)
         if subfolder.is_dir():
             new_branch = Tree(subfolder.name)
