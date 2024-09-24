@@ -1,0 +1,19 @@
+description: |
+  Extract the surface triangle mesh of a tetrahedral mesh, and write a mesh containing both
+tet-mesh: { # case of 'extract_surface+volume' applied on a 'tet-mesh' subfolder
+  executable: {
+    path: AUTOMATIC_POLYCUBE,
+    filename: extract_surface,
+    command_line: '{tet_mesh} {output_mesh} {surface_map} write-cells=1'
+  },
+  # no `output_folder` -> transformative algorithm
+  arguments: {
+    input_files: {
+      tet_mesh: TET_MESH_MEDIT
+    },
+    output_files: {
+      output_mesh: SURFACE_AND_VOLUME_MEDIT,
+      surface_map: SURFACE_MAP_TXT
+    }
+  }
+}

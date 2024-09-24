@@ -53,9 +53,9 @@ GMSH_OUTPUT_MISSING_POLICY               = 'pass'
 GRAPHCUT_LABELING_OUTPUT_MISSING_POLICY  = 'pass'
 AUTOMATIC_POLYCUBE_OUTPUT_MISSING_POLICY = 'pass'
 EVOCUBE_OUTPUT_MISSING_POLICY            = 'pass'
-POLYCUBE_WITHHEXEX_OUTPUT_MISSING_POLICY = 'run'
-GLOBAL_PADDING_OUTPUT_MISSING_POLICY     = 'run'
-INNER_SMOOTHING_OUTPUT_MISSING_POLICY    = 'run'
+POLYCUBE_WITHHEXEX_OUTPUT_MISSING_POLICY = 'pass'
+GLOBAL_PADDING_OUTPUT_MISSING_POLICY     = 'pass'
+INNER_SMOOTHING_OUTPUT_MISSING_POLICY    = 'pass'
 
 RUNNING_ALGO_LINE_TEMPLATE            = "Running [green]{algo}[/] on [cyan]{path}[/]"
 EXISTING_OUTPUT_LINE_TEMPLATE         = "\[[bright_black]-[/]] [green]{algo}[/] on [cyan]{path}[/]" # type: ignore
@@ -224,21 +224,30 @@ def process_step(step_object: DataFolder):
     """
     assert(step_object.type == 'step')
     # tetrahedrization if not already done
-    if not (step_object.path / 'Gmsh_0.1').exists():
-        if user_confirmed_or_choose_autorun(GMSH_OUTPUT_MISSING_POLICY,MISSING_OUTPUT_LINE_TEMPLATE.format(algo='Gmsh', path=collapseuser(step_object.path))):
-            with CONSOLE.status(RUNNING_ALGO_LINE_TEMPLATE.format(algo='Gmsh', path=collapseuser(step_object.path))) as status:
-                step_object.run('Gmsh', {'characteristic_length_factor': 0.1}, silent_output=True)
-            # here we assume Gmsh succeeded
-            CONSOLE.print(NEW_OUTPUT_LINE_TEMPLATE.format(algo='Gmsh', path=collapseuser(step_object.path)))
-        else:
-            CONSOLE.print(IGNORING_MISSING_OUTPUT_LINE_TEMPLATE.format(algo='Gmsh', path=collapseuser(step_object.path)))
-            return # ignore this step 3D model
-    else:
-        # Gmsh was already executed
-        CONSOLE.print(EXISTING_OUTPUT_LINE_TEMPLATE.format(algo='Gmsh', path=collapseuser(step_object.path)))
+    # if not (step_object.path / 'Gmsh_0.1').exists():
+    #     if user_confirmed_or_choose_autorun(GMSH_OUTPUT_MISSING_POLICY,MISSING_OUTPUT_LINE_TEMPLATE.format(algo='Gmsh', path=collapseuser(step_object.path))):
+    #         with CONSOLE.status(RUNNING_ALGO_LINE_TEMPLATE.format(algo='Gmsh', path=collapseuser(step_object.path))) as status:
+    #             step_object.run('Gmsh', {'characteristic_length_factor': 0.1}, silent_output=True)
+    #         # here we assume Gmsh succeeded
+    #         CONSOLE.print(NEW_OUTPUT_LINE_TEMPLATE.format(algo='Gmsh', path=collapseuser(step_object.path)))
+    #     else:
+    #         CONSOLE.print(IGNORING_MISSING_OUTPUT_LINE_TEMPLATE.format(algo='Gmsh', path=collapseuser(step_object.path)))
+    #         return # ignore this step 3D model
+    # else:
+    #     # Gmsh was already executed
+    #     CONSOLE.print(EXISTING_OUTPUT_LINE_TEMPLATE.format(algo='Gmsh', path=collapseuser(step_object.path)))
     # instantiate the tet mesh folder
-    tet_mesh_object: DataFolder = DataFolder(step_object.path / 'Gmsh_0.1')
-    process_tet_mesh(tet_mesh_object)
+    # tet_mesh_object: DataFolder = DataFolder(step_object.path / 'Gmsh_0.1')
+    # process_tet_mesh(tet_mesh_object)
+    coarser_tet_mesh_for_PolyCut = DataFolder(step_object.path / 'Gmsh_0.15')
+    if not coarser_tet_mesh_for_PolyCut.get_file('SURFACE_AND_VOLUME_MEDIT', must_exist=False, silent_output=True).exists():
+        with CONSOLE.status(RUNNING_ALGO_LINE_TEMPLATE.format(algo='extract_surface+volume', path=collapseuser(coarser_tet_mesh_for_PolyCut.path))) as status:
+            coarser_tet_mesh_for_PolyCut.run('extract_surface+volume', silent_output=True)
+        # here we assume extract_surface+volume succeeded
+        CONSOLE.print(NEW_OUTPUT_LINE_TEMPLATE.format(algo='extract_surface+volume', path=collapseuser(coarser_tet_mesh_for_PolyCut.path)))
+    else:
+        # extract_surface+volume has already been run
+        CONSOLE.print(EXISTING_OUTPUT_LINE_TEMPLATE.format(algo='extract_surface+volume', path=collapseuser(coarser_tet_mesh_for_PolyCut.path)))
 
 def main(input_folder: Path, arguments: list):
     # check `arguments`
@@ -249,7 +258,7 @@ def main(input_folder: Path, arguments: list):
     for step_subfolder in sorted(get_subfolders_of_type(input_folder / 'MAMBO','step')):
         step_object: DataFolder = DataFolder(step_subfolder)
         process_step(step_object)
-    assert((input_folder / 'OctreeMeshing' / 'cad').exists())
-    for tet_mesh_subfolder in sorted(get_subfolders_of_type(input_folder / 'OctreeMeshing' / 'cad','tet-mesh')):
-        tet_mesh_object: DataFolder = DataFolder(tet_mesh_subfolder)
-        process_tet_mesh(tet_mesh_object)
+    # assert((input_folder / 'OctreeMeshing' / 'cad').exists())
+    # for tet_mesh_subfolder in sorted(get_subfolders_of_type(input_folder / 'OctreeMeshing' / 'cad','tet-mesh')):
+    #     tet_mesh_object: DataFolder = DataFolder(tet_mesh_subfolder)
+    #     process_tet_mesh(tet_mesh_object)
