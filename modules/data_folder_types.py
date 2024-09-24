@@ -173,23 +173,6 @@ class AbstractDataFolder(ABC):
             return dict() # empty dict
         with open(self.path / 'info.json') as info_json_file:
             return load(info_json_file)
-        
-    def print_history(self):
-        table = Table()
-        table.add_column("Datetime", style="cyan")
-        table.add_column("Name")
-        for datetime, algo_info in self.get_info_dict().items(): # for each top-level entry in info.json
-            datetime = ISO_datetime_to_readable_datetime(datetime)
-            algo_name = '?'
-            if 'GenerativeAlgorithm' in algo_info:
-                algo_name = algo_info['GenerativeAlgorithm']
-            elif 'InteractiveGenerativeAlgorithm' in algo_info:
-                algo_name = algo_info['InteractiveGenerativeAlgorithm']
-            elif 'TransformativeAlgorithm' in algo_info:
-                algo_name = algo_info['TransformativeAlgorithm']
-            table.add_row(datetime,algo_name)
-        console = Console()
-        console.print(table)
 
     # if the algo was executed several times on this data folder,
     # return the first occurence in the info.json file
