@@ -231,6 +231,39 @@ def print_folder_as_tree(folder: Path):
         tree.add(subfolder)
     print(tree)
 
+def list_children(path: Path, type_filter: Optional[list[str]] = None, algo_filter: Optional[list[str]] = None, recursive: bool = False) -> list[tuple[Path,Optional[str],Optional[str]]]:
+    children: list[tuple[Path,Optional[str],Optional[str]]] = list() # list of tuples, each item being (subfolder path, type, generative algo)
+    for subfolder in [x for x in sorted(path.iterdir()) if x.is_dir()]:
+        type_str: Optional[str] = type_inference(subfolder)
+        algo_str: Optional[str] = get_generative_algorithm(subfolder)
+        if (type_filter is None or (type_str is not None and type_filter is not None and type_str in type_filter)) and \
+           (algo_filter is None or (algo_str is not None and algo_filter is not None and algo_str in algo_filter)):
+            children.append((subfolder,type_str,algo_str))
+        if recursive: # and instantiated_subfolder is not None:
+            # children.extend(instantiated_subfolder.list_children(type_filter,algo_filter,True))
+            children.extend(list_children(subfolder,type_filter,algo_filter,True))
+    return children
+
+def print_children(path: Path, type_filter: Optional[list[str]] = None, algo_filter: Optional[list[str]] = None, recursive: bool = False, parent_tree: Optional[Tree] = None):
+    tree: Tree = parent_tree if parent_tree is not None else Tree('',hide_root=True)
+    subtree: Optional[Tree] = None
+    for (subpath,type_str,algo_str) in list_children(path,None,None,False): # type filtering & recursion needed to be managed outside list_children()
+        # filter: should this path be printed?
+        if (type_filter is None or (type_str is not None and type_filter is not None and type_str in type_filter)) and \
+           (algo_filter is None or (algo_str is not None and algo_filter is not None and algo_str in algo_filter)):
+            # kind of display: list/tree
+            subtree = tree.add(f'[orange1]{subpath}[/] [bright_black]?[/]' if type_str is None else f'{subpath} [bright_black]{type_str}[/]')
+            if type_filter is not None or algo_filter is not None:
+                subtree = tree # for recursive calls, add elements to `tree` and not to the just-added branch -> print a list (hide_root is on)
+            #else: for recursive calls, add elements to the just-added branch (`subtree`) -> print a tree
+        if recursive:# and type_str is not None:
+            # DataFolder(subpath).print_children(type_filter,algo_filter,True,subtree)
+            print_children(subpath,type_filter,algo_filter,True,subtree)
+        # else : recursivity is off, or `subpath` cannot be instantiated
+    if parent_tree is None: # if we are in the top-level function call
+        console = Console()
+        console.print(tree)
+
 # Execute either <algo_name>.yml or <algo_name>.py
 # The fist one must be executed on an instance of DataFolder
 # The second has not this constraint (any folder, eg the parent folder of many DataFolder)
@@ -338,6 +371,12 @@ class DataFolder():
             table.add_row(datetime,algo_name)
         console = Console()
         console.print(table)
+    
+    def list_children(self, type_filter: Optional[list[str]] = None, algo_filter: Optional[list[str]] = None, recursive: bool = False) -> list:
+        return list_children(self.path,type_filter,algo_filter,recursive)
+    
+    def print_children(self, type_filter: Optional[list[str]] = None, algo_filter: Optional[list[str]] = None, recursive: bool = False, parent_tree: Optional[Tree] = None):
+        print_children(self.path,type_filter,algo_filter,recursive,parent_tree)
         
     def auto_generate_missing_file(self, filename_keyword: str, silent_output: bool = False):
         # Idea : parse all algorithms until we found one where 'filename_keyword' is an output file
@@ -871,7 +910,7 @@ if __name__ == "__main__":
     
     parser.add_argument(
         'action',
-        choices = ['typeof', 'run', 'view', 'history', 'help']
+        choices = ['typeof', 'run', 'view', 'history','children', 'help']
     )
     
     parser.add_argument(
@@ -910,6 +949,12 @@ if __name__ == "__main__":
         path = Path(args.supp_args[0])
         assert(path.exists())
         DataFolder(path).print_history()
+        exit(0)
+    if args.action == 'children':
+        assert(len(args.supp_args)==1)
+        path = Path(args.supp_args[0])
+        assert(path.exists())
+        print_children(path,recursive=True)
         exit(0)
     if args.action == 'help':
         assert(len(args.supp_args)<=1)
@@ -950,7 +995,7 @@ dds.py [r]run[/] [bright_green]algo_name[/] [cyan]path/to/input/folder[/] \[algo
             for algo in get_declared_algorithms_as_YAML():
                 yield Text(f'     • {algo}')
             for algo in get_declared_algorithms_as_Python_script():
-                yield Text(f'     • {algo} (Python script)')
+                yield Text.from_markup(f'     • {algo} [yellow](Python script)[/]')
 
         help_panels = Group(
             Text.from_markup("""\
@@ -977,7 +1022,12 @@ dds.py [r]history[/] [cyan]path/to/input/folder[/]
 
     Print the history of algorithms run on a [cyan]data folder[/]\
             """)),
-            Panel("""\
+            Panel(Text.from_markup("""\
+dds.py [r]children[/] [cyan]path/to/input/folder[/]
+
+    Print the children tree of a [cyan]folder[/], with the type of each of them.\
+            """)),
+            Panel(Text.from_markup("""\
 dds.py [r]help[/] \[[bright_green]name[/]]
 
     Print this message.
@@ -985,7 +1035,7 @@ dds.py [r]help[/] \[[bright_green]name[/]]
     If one of them has this name, print info about it.
     Else, parse defined algorithms.
     If one of them has this name, print info about it.\
-            """)
+            """))
         )
         console.print(help_panels)
         exit(0)

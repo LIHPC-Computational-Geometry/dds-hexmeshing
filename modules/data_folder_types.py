@@ -124,49 +124,6 @@ class AbstractDataFolder(ABC):
                 # TODO special management of 'multiple classes recognize the folder XXX'
                 Exception('get_closest_parent_of_type() found an invalid parent folder before the requested folder type')
             return parent.get_closest_parent_of_type(type_str) # recursive exploration
-        
-    def list_children(self, type_filter = [], algo_filter = [], recursive=True) -> list:
-        children = list() # list of tuples : subfolder path & type
-        for subfolder in [x for x in sorted(self.path.iterdir()) if x.is_dir()]:
-            instanciated_subfolder = None
-            algo_str = AbstractDataFolder.get_generative_algorithm(subfolder) # TODO only if there is an algo_filter
-            algo_str = '?' if algo_str == None else algo_str
-            try:
-                instanciated_subfolder = AbstractDataFolder.instantiate(subfolder)
-            except Exception:
-                pass # ignore exception raised when type inference failed
-            type_str = '?' if instanciated_subfolder == None else instanciated_subfolder.type()
-            if (type_filter == [] or type_str in type_filter) and \
-               (algo_filter == [] or algo_str in algo_filter):
-                children.append((subfolder,type_str))
-            if recursive and instanciated_subfolder != None:
-                children.extend(instanciated_subfolder.list_children(type_filter,algo_filter,True))
-        return children
-        
-    def print_children(self, type_filter = [], algo_filter = [], recursive=False, parent_tree=None, cached_data_folder_path = Settings.path('data_folder')):
-        path_str = lambda path : path.name if ((type_filter != [] or algo_filter != []) ^ recursive) else str(path.relative_to(cached_data_folder_path)) # folder name or relative path
-        formatted_text = lambda path, type_str: f'[orange1]{path_str(path)}[/] [bright_black]{type_str}[/]' if type_str == '?' \
-                                                    else f'{path_str(path)} [bright_black]{type_str}[/]' # defaut formatting, and formatting in case of an unknown folder type
-        tree = parent_tree if parent_tree != None else Tree('',hide_root=True)
-        subtree = None
-        for path,type_str in self.list_children([],[],False): # type filtering & recursion needed to be managed outside list_children()
-            algo_str = AbstractDataFolder.get_generative_algorithm(path) # TODO avoid 2nd call? (already one in list_children())
-            algo_str = '?' if algo_str == None else algo_str
-            # filter: should this path be printed?
-            if (type_filter == [] or type_str in type_filter) and \
-               (algo_filter == [] or algo_str in algo_filter):
-                # kind of display: list/tree
-                if type_filter != [] or algo_filter != []:
-                    tree.add(formatted_text(path,type_str))
-                    subtree = tree # for recursive calls, add elements to 'tree' and not to the just-added branch -> print a list (hide root is on)
-                else:
-                    subtree = tree.add(formatted_text(path,type_str)) # add a branch to 'tree'. for recursive calls, add elements to the just-added branch
-            if recursive and type_str != '?':
-                AbstractDataFolder.instantiate(path).print_children(type_filter,algo_filter,True,subtree,cached_data_folder_path)
-            # else : recusivity is off, or 'path' cannot be instanciated
-        if parent_tree == None: # if we are in the top-level function call
-            console = Console()
-            console.print(tree)
 
     def get_info_dict(self) -> dict:
         if not (self.path / 'info.json').exists():
