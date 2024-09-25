@@ -96,7 +96,8 @@ def translate_path_keyword(path_keyword: str) -> Optional[Path]:
         return Path(paths[path_keyword])
 
 def get_declared_data_folder_types() -> list[str]:
-    return [x.stem for x in Path('definitions/data_folder_types').iterdir() if x.is_file() and x.suffix == '.yml' and x.stem.count('.') == 0]
+    return [x.stem for x in sorted(Path('definitions/data_folder_types').iterdir()) if x.is_file() and x.suffix == '.yml' and x.stem.count('.') == 0]
+# TODO use a custom key for sorted() like lambda x: str.casefold(str(x)
 
 def get_default_view_name(data_folder_type: str) -> Optional[str]:
     YAML_filepath: Path = Path('definitions/data_folder_types') / (data_folder_type + '.yml')
@@ -118,13 +119,15 @@ def get_declared_views(data_folder_type: str) -> list[str]:
     Find all <data_folder_type>.*.yml in definitions/data_folder_types/
     But doest not check the content of the view definition.
     """
-    return [x.named['view_name'] for x in [parse(data_folder_type + ".{view_name}.yml", file.name) for file in Path('definitions/data_folder_types').iterdir() if file.is_file()] if x is not None] # type: ignore | evaluate_result=True by default for parse() -> x cannot be of type Match
+    return [x.named['view_name'] for x in [parse(data_folder_type + ".{view_name}.yml", file.name) for file in sorted(Path('definitions/data_folder_types').iterdir()) if file.is_file()] if x is not None] # type: ignore | evaluate_result=True by default for parse() -> x cannot be of type Match
 
 def get_declared_algorithms_as_YAML() -> list[str]:
-    return [x.stem for x in Path('definitions/algorithms').iterdir() if x.is_file() and x.suffix == '.yml']
+    return [x.stem for x in sorted(Path('definitions/algorithms').iterdir()) if x.is_file() and x.suffix == '.yml']
+# TODO use a custom key for sorted() like lambda x: str.casefold(str(x)
 
 def get_declared_algorithms_as_Python_script() -> list[str]:
-    return [x.stem for x in Path('definitions/algorithms').iterdir() if x.is_file() and x.suffix == '.py' and x.stem.count('.') == 0]
+    return [x.stem for x in sorted(Path('definitions/algorithms').iterdir()) if x.is_file() and x.suffix == '.py' and x.stem.count('.') == 0]
+# TODO use a custom key for sorted() like lambda x: str.casefold(str(x)
 
 def is_instance_of(path: Path, data_folder_type: str) -> bool:
     YAML_filepath: Path = Path('definitions/data_folder_types') / (data_folder_type + '.yml')
@@ -910,7 +913,7 @@ if __name__ == "__main__":
     
     parser.add_argument(
         'action',
-        choices = ['typeof', 'run', 'view', 'history','children', 'help']
+        choices = ['typeof', 'run', 'view', 'history','children','help']
     )
     
     parser.add_argument(
