@@ -295,7 +295,7 @@ def run_PolyCut_pipeline(tet_mesh_object: DataFolder):
 
     # Write durations in a dedicated file
     # After each stage, in case the next one has to be manually stopped
-    with open(tet_mesh_object.path / 'PolyCut_3' / 'PolyCut.durations.json','x') as durations_json:
+    with open(tet_mesh_object.path / 'PolyCut_3' / 'PolyCut.durations.json','w') as durations_json:
         json.dump(polycut_durations,durations_json, indent=4)
     
     executable = POLYCUT_PATH / 'polycut.exe'
@@ -318,7 +318,7 @@ def run_PolyCut_pipeline(tet_mesh_object: DataFolder):
 
     # Write durations in a dedicated file
     # After each stage, in case the next one has to be manually stopped
-    with open(tet_mesh_object.path / 'PolyCut_3' / 'PolyCut.durations.json','x') as durations_json:
+    with open(tet_mesh_object.path / 'PolyCut_3' / 'PolyCut.durations.json','w') as durations_json:
         json.dump(polycut_durations,durations_json, indent=4)
 
     executable = POLYCUT_PATH / 'cusy2.exe'
@@ -344,7 +344,7 @@ def run_PolyCut_pipeline(tet_mesh_object: DataFolder):
 
     # Write durations in a dedicated file
     # After each stage, in case the next one has to be manually stopped
-    with open(tet_mesh_object.path / 'PolyCut_3' / 'PolyCut.durations.json','x') as durations_json:
+    with open(tet_mesh_object.path / 'PolyCut_3' / 'PolyCut.durations.json','w') as durations_json:
         json.dump(polycut_durations,durations_json, indent=4)
 
     executable = POLYCUT_PATH / 'optimizer.exe'
@@ -367,7 +367,7 @@ def run_PolyCut_pipeline(tet_mesh_object: DataFolder):
 
     # Write durations in a dedicated file
     # After each stage, in case the next one has to be manually stopped
-    with open(tet_mesh_object.path / 'PolyCut_3' / 'PolyCut.durations.json','x') as durations_json:
+    with open(tet_mesh_object.path / 'PolyCut_3' / 'PolyCut.durations.json','w') as durations_json:
         json.dump(polycut_durations,durations_json, indent=4)
 
     executable = POLYCUT_PATH / 'integerizer.exe'
@@ -390,7 +390,7 @@ def run_PolyCut_pipeline(tet_mesh_object: DataFolder):
 
     # Write durations in a dedicated file
     # After each stage, in case the next one has to be manually stopped
-    with open(tet_mesh_object.path / 'PolyCut_3' / 'PolyCut.durations.json','x') as durations_json:
+    with open(tet_mesh_object.path / 'PolyCut_3' / 'PolyCut.durations.json','w') as durations_json:
         json.dump(polycut_durations,durations_json, indent=4)
 
     executable = POLYCUT_PATH / 'vtu2mesh.exe'
@@ -413,7 +413,7 @@ def run_PolyCut_pipeline(tet_mesh_object: DataFolder):
 
     # Write durations in a dedicated file
     # After each stage, in case the next one has to be manually stopped
-    with open(tet_mesh_object.path / 'PolyCut_3' / 'PolyCut.durations.json','x') as durations_json:
+    with open(tet_mesh_object.path / 'PolyCut_3' / 'PolyCut.durations.json','w') as durations_json:
         json.dump(polycut_durations,durations_json, indent=4)
 
     executable = POLYCUT_PATH / 'untangler.exe'
@@ -467,7 +467,7 @@ def run_PolyCut_pipeline(tet_mesh_object: DataFolder):
 
     # Write durations in a dedicated file
     # After each stage, in case the next one has to be manually stopped
-    with open(tet_mesh_object.path / 'PolyCut_3' / 'PolyCut.durations.json','x') as durations_json:
+    with open(tet_mesh_object.path / 'PolyCut_3' / 'PolyCut.durations.json','w') as durations_json:
         json.dump(polycut_durations,durations_json, indent=4)
 
 def process_step(step_object: DataFolder):
