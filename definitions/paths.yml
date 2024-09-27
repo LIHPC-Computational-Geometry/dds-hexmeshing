@@ -74,3 +74,17 @@ F3D: /usr/bin/f3d
 # The open source platform for numerical simulation
 # Path to the binaries folder
 SALOME: ~/.local/SALOME/SALOME-9.12.0-native-UB22.04-SRC/
+
+# http://www.cs.ubc.ca/labs/imager/tr/2018/HexDemo/
+# Polycube-based automatic hex-mesh generation
+# Labeling algo is PolyCut itselft:
+#   "PolyCut: Monotone Graph-Cuts for PolyCube Base-Complex Construction"
+#   Livesu, Vining, Sheffer, Gregson, Scateni
+#   ACM Transactions on Graphics, Volume 32, Issue 6 (SIGGRAPH ASIA 2013 Papers)
+#   http://www.cs.ubc.ca/labs/imager/tr/2013/polycut/
+# Hex-mesh untangler is:
+#   "Practical Hex-Mesh Optimization via Edge-Cone Rectification"
+#   Livesu, Sheffer, Vining, Tarini
+#   ACM Transactions on Graphics (SIGGRAPH 2015)
+#   http://www.cs.ubc.ca/labs/imager/tr/2015/untangler/
+POLYCUT: C:\Users\sm266019\Downloads\polycut_public_release_20180929

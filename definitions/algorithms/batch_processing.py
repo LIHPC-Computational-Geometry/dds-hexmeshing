@@ -44,6 +44,8 @@
 # TODO use DataFolder.get_subfolders_generated_by() and check parameters value in the info.json
 
 from rich.prompt import Confirm
+import subprocess
+from shutil import move
 
 from dds import *
 
@@ -53,6 +55,7 @@ GMSH_OUTPUT_MISSING_POLICY               = 'pass'
 GRAPHCUT_LABELING_OUTPUT_MISSING_POLICY  = 'pass'
 AUTOMATIC_POLYCUBE_OUTPUT_MISSING_POLICY = 'pass'
 EVOCUBE_OUTPUT_MISSING_POLICY            = 'pass'
+POLYCUT_OUTPUT_MISSING_POLICY            = 'run' # on Windows only
 POLYCUBE_WITHHEXEX_OUTPUT_MISSING_POLICY = 'pass'
 GLOBAL_PADDING_OUTPUT_MISSING_POLICY     = 'pass'
 INNER_SMOOTHING_OUTPUT_MISSING_POLICY    = 'pass'
@@ -62,6 +65,13 @@ EXISTING_OUTPUT_LINE_TEMPLATE         = "\[[bright_black]-[/]] [green]{algo}[/] 
 NEW_OUTPUT_LINE_TEMPLATE              = "\[[green]✓[/]] [green]{algo}[/] on [cyan]{path}[/]" # type: ignore
 MISSING_OUTPUT_LINE_TEMPLATE          = "No [green]{algo}[/] output inside [cyan]{path}[/]. Run {algo}?"
 IGNORING_MISSING_OUTPUT_LINE_TEMPLATE = "\[[dark_orange]●[/]] Ignoring missing [green]{algo}[/] output inside [cyan]{path}[/]" # type: ignore
+
+POLYCUT_PATH = translate_path_keyword('POLYCUT')
+SURFACE_MESH_OBJ,_ = translate_filename_keyword('SURFACE_MESH_OBJ')
+SURFACE_MAP_TXT,_ = translate_filename_keyword('SURFACE_MAP_TXT')
+SURFACE_MESH_STATS_JSON,_ = translate_filename_keyword('SURFACE_MESH_STATS_JSON')
+SURFACE_MESH_GLB,_ = translate_filename_keyword('SURFACE_MESH_GLB')
+HEX_MESH_MEDIT,_ = translate_filename_keyword('HEX_MESH_MEDIT')
 
 CONSOLE = Console(theme=Theme(inherit=False)) # better to create a global variable in dds.py ??
 
@@ -218,11 +228,255 @@ def process_tet_mesh(tet_mesh_object: DataFolder):
         labeling_object: DataFolder = DataFolder(labeling_folder)
         process_labeling(labeling_object)
 
+def run_PolyCut_pipeline(tet_mesh_object: DataFolder):
+    assert(POLYCUT_PATH is not None)
+
+    if (tet_mesh_object.path / 'PolyCut_3').exists():
+        # Here we expect the whole pipeline has already been executed
+        CONSOLE.print(EXISTING_OUTPUT_LINE_TEMPLATE.format(algo='mesh2vtu.exe', path=collapseuser(tet_mesh_object.path)))
+        CONSOLE.print(EXISTING_OUTPUT_LINE_TEMPLATE.format(algo='polycut.exe', path=collapseuser(tet_mesh_object.path)))
+        CONSOLE.print(EXISTING_OUTPUT_LINE_TEMPLATE.format(algo='cusy2.exe', path=collapseuser(tet_mesh_object.path)))
+        CONSOLE.print(EXISTING_OUTPUT_LINE_TEMPLATE.format(algo='optimizer.exe', path=collapseuser(tet_mesh_object.path)))
+        CONSOLE.print(EXISTING_OUTPUT_LINE_TEMPLATE.format(algo='integerizer.exe', path=collapseuser(tet_mesh_object.path)))
+        CONSOLE.print(EXISTING_OUTPUT_LINE_TEMPLATE.format(algo='vtu2mesh.exe', path=collapseuser(tet_mesh_object.path)))
+        CONSOLE.print(EXISTING_OUTPUT_LINE_TEMPLATE.format(algo='untangler.exe', path=collapseuser(tet_mesh_object.path)))
+        return
+    
+    # For some tet meshes, PolyCut last forever
+    # Also noticed by Evocube authors, see section 4.1:
+    # "On some inputs, we had to stop labeling optimization after one hour without progress"
+    # Here I manually stop `batch_processing` and run it again.
+    # The problematic mesh is skipped because the 'PolyCut_3' subfolder already exists
+
+    polycut_durations = dict() # will store per-executable seconds (float)
+    polycut_durations['mesh2vtu'] = None
+    polycut_durations['polycut'] = None
+    polycut_durations['cusy2'] = None
+    polycut_durations['optimizer'] = None
+    polycut_durations['integerizer'] = None
+    polycut_durations['vtu2mesh'] = None
+    polycut_durations['untangler'] = None
+
+    mkdir(tet_mesh_object.path / 'PolyCut_3')
+    mkdir(tet_mesh_object.path / 'PolyCut_3' / 'optimizer_100')
+    mkdir(tet_mesh_object.path / 'PolyCut_3' / 'optimizer_100' / 'untangler')
+
+    medit_tet_mesh_with_surface = tet_mesh_object.get_file('SURFACE_AND_VOLUME_MEDIT', must_exist=True, silent_output=True)
+    vtu_tet_mesh = tet_mesh_object.path / (medit_tet_mesh_with_surface.stem + '.vtu')
+    vtu_tet_mesh_segm = tet_mesh_object.path / 'PolyCut_3' / (medit_tet_mesh_with_surface.stem + '_segm.vtu') # output of polycut.exe
+    vtu_tet_mesh_segm_deform = tet_mesh_object.path / 'PolyCut_3' / (medit_tet_mesh_with_surface.stem + '_segm_deform.vtu') # output of cusy2.exe
+    vtu_tet_mesh_segm_deform_opt = tet_mesh_object.path / 'PolyCut_3' / 'optimizer_100' / (medit_tet_mesh_with_surface.stem + '_segm_deform_opt.vtu') # output of optimizer.exe
+    vtu_hex_mesh = tet_mesh_object.path / 'PolyCut_3' / 'optimizer_100' / HEX_MESH_MEDIT.replace('.mesh','.vtu') # output of integerizer.exe
+    medit_hex_mesh = tet_mesh_object.path / 'PolyCut_3' / 'optimizer_100' / HEX_MESH_MEDIT # output of vtu2mesh.exe
+    medit_hex_mesh_untangled = tet_mesh_object.path / 'PolyCut_3' / 'optimizer_100' / 'untangler' / HEX_MESH_MEDIT # output of untangler.exe
+
+    # first, convert the MEDIT triangles + tetrahedra mesh to .vtu with the provided converter
+
+    # 'subprocess_tee' package does not seem to work on Windows
+    # -> use the 'subprocess' package
+    # /!\ stdout and stderr are of type 'bytes', not 'str'
+
+    executable = POLYCUT_PATH / 'mesh2vtu.exe'
+    command_line = f'{executable} {medit_tet_mesh_with_surface} {vtu_tet_mesh}'
+    with CONSOLE.status(RUNNING_ALGO_LINE_TEMPLATE.format(algo="mesh2vtu.exe",path=collapseuser(tet_mesh_object.path))) as status:
+        chrono_start = time.monotonic()
+        completed_process = subprocess.run(command_line, shell=True, capture_output=True)
+        chrono_stop = time.monotonic()
+        polycut_durations['mesh2vtu'] = chrono_stop - chrono_start
+        if completed_process.stdout != b'': # if the subprocess wrote something in standard output
+            f = open(tet_mesh_object.path / 'PolyCut_3' / 'mesh2vtu.stdout.txt','xb')# x = create new file
+            f.write(completed_process.stdout)
+            f.close()
+        if completed_process.stderr != b'': # if the subprocess wrote something in standard error
+            f = open(tet_mesh_object.path / 'PolyCut_3' / 'mesh2vtu.stderr.txt','xb')
+            f.write(completed_process.stderr)
+            f.close()
+    CONSOLE.print(NEW_OUTPUT_LINE_TEMPLATE.format(algo='mesh2vtu.exe', path=collapseuser(tet_mesh_object.path)))
+
+    # Write durations in a dedicated file
+    # After each stage, in case the next one has to be manually stopped
+    with open(tet_mesh_object.path / 'PolyCut_3' / 'PolyCut.durations.json','x') as durations_json:
+        json.dump(polycut_durations,durations_json, indent=4)
+    
+    executable = POLYCUT_PATH / 'polycut.exe'
+    command_line = f'{executable} {vtu_tet_mesh} {vtu_tet_mesh_segm} 3' # compactness factor of 3 by default
+    with CONSOLE.status(RUNNING_ALGO_LINE_TEMPLATE.format(algo="polycut.exe",path=collapseuser(tet_mesh_object.path))) as status:
+        chrono_start = time.monotonic()
+        completed_process = subprocess.run(command_line, shell=True, capture_output=True)
+        chrono_stop = time.monotonic()
+        polycut_durations['polycut'] = chrono_stop - chrono_start
+        if completed_process.stdout != b'': # if the subprocess wrote something in standard output
+            f = open(tet_mesh_object.path / 'PolyCut_3' / 'PolyCut.stdout.txt','xb')# x = create new file
+            f.write(completed_process.stdout)
+            f.close()
+        if completed_process.stderr != b'': # if the subprocess wrote something in standard error
+            f = open(tet_mesh_object.path / 'PolyCut_3' / 'PolyCut.stderr.txt','xb')
+            f.write(completed_process.stderr)
+            f.close()
+    CONSOLE.print(NEW_OUTPUT_LINE_TEMPLATE.format(algo='polycut.exe', path=collapseuser(tet_mesh_object.path)))
+    # polycut.exe does not write other files, only `vtu_tet_mesh_segm`
+
+    # Write durations in a dedicated file
+    # After each stage, in case the next one has to be manually stopped
+    with open(tet_mesh_object.path / 'PolyCut_3' / 'PolyCut.durations.json','x') as durations_json:
+        json.dump(polycut_durations,durations_json, indent=4)
+
+    executable = POLYCUT_PATH / 'cusy2.exe'
+    command_line = f'{executable} {vtu_tet_mesh_segm} {vtu_tet_mesh_segm_deform}'
+    with CONSOLE.status(RUNNING_ALGO_LINE_TEMPLATE.format(algo="cusy2.exe",path=collapseuser(tet_mesh_object.path))) as status:
+        chrono_start = time.monotonic()
+        completed_process = subprocess.run(command_line, shell=True, capture_output=True)
+        chrono_stop = time.monotonic()
+        polycut_durations['cusy2'] = chrono_stop - chrono_start
+        if completed_process.stdout != b'': # if the subprocess wrote something in standard output
+            f = open(tet_mesh_object.path / 'PolyCut_3' / 'cusy2.stdout.txt','xb')# x = create new file
+            f.write(completed_process.stdout)
+            f.close()
+        if completed_process.stderr != b'': # if the subprocess wrote something in standard error
+            f = open(tet_mesh_object.path / 'PolyCut_3' / 'cusy2.stderr.txt','xb')
+            f.write(completed_process.stderr)
+            f.close()
+    CONSOLE.print(NEW_OUTPUT_LINE_TEMPLATE.format(algo='cusy2.exe', path=collapseuser(tet_mesh_object.path)))
+    # In addition to `vtu_tet_mesh_segm_deform`, cusy2.exe writes:
+    # - `tet_mesh_object.path` / 'PolyCut_3' / 'segmentation_XYZ.obj'
+    # - `tet_mesh_object.path` / 'PolyCut_3' / 'segmentation.mtl'
+    # and it removes `vtu_tet_mesh_segm`
+
+    # Write durations in a dedicated file
+    # After each stage, in case the next one has to be manually stopped
+    with open(tet_mesh_object.path / 'PolyCut_3' / 'PolyCut.durations.json','x') as durations_json:
+        json.dump(polycut_durations,durations_json, indent=4)
+
+    executable = POLYCUT_PATH / 'optimizer.exe'
+    command_line = f'{executable} {vtu_tet_mesh_segm_deform} {vtu_tet_mesh_segm_deform_opt} 100' # element size (minimum hex size) of 100 by default
+    with CONSOLE.status(RUNNING_ALGO_LINE_TEMPLATE.format(algo="optimizer.exe",path=collapseuser(tet_mesh_object.path))) as status:
+        chrono_start = time.monotonic()
+        completed_process = subprocess.run(command_line, shell=True, capture_output=True)
+        chrono_stop = time.monotonic()
+        polycut_durations['optimizer'] = chrono_stop - chrono_start
+        if completed_process.stdout != b'': # if the subprocess wrote something in standard output
+            f = open(tet_mesh_object.path / 'PolyCut_3' / 'optimizer_100' / 'optimizer.stdout.txt','xb')# x = create new file
+            f.write(completed_process.stdout)
+            f.close()
+        if completed_process.stderr != b'': # if the subprocess wrote something in standard error
+            f = open(tet_mesh_object.path / 'PolyCut_3' / 'optimizer_100' / 'optimizer.stderr.txt','xb')
+            f.write(completed_process.stderr)
+            f.close()
+    CONSOLE.print(NEW_OUTPUT_LINE_TEMPLATE.format(algo='optimizer.exe', path=collapseuser(tet_mesh_object.path)))
+    # optimizer.exe does not write other files, only `vtu_tet_mesh_segm_deform_opt`
+
+    # Write durations in a dedicated file
+    # After each stage, in case the next one has to be manually stopped
+    with open(tet_mesh_object.path / 'PolyCut_3' / 'PolyCut.durations.json','x') as durations_json:
+        json.dump(polycut_durations,durations_json, indent=4)
+
+    executable = POLYCUT_PATH / 'integerizer.exe'
+    command_line = f'{executable} {vtu_tet_mesh_segm_deform_opt} {vtu_hex_mesh}'
+    with CONSOLE.status(RUNNING_ALGO_LINE_TEMPLATE.format(algo="integerizer.exe",path=collapseuser(tet_mesh_object.path))) as status:
+        chrono_start = time.monotonic()
+        completed_process = subprocess.run(command_line, shell=True, capture_output=True)
+        chrono_stop = time.monotonic()
+        polycut_durations['integerizer'] = chrono_stop - chrono_start
+        if completed_process.stdout != b'': # if the subprocess wrote something in standard output
+            f = open(tet_mesh_object.path / 'PolyCut_3'/ 'optimizer_100' / 'integerizer.stdout.txt','xb')# x = create new file
+            f.write(completed_process.stdout)
+            f.close()
+        if completed_process.stderr != b'': # if the subprocess wrote something in standard error
+            f = open(tet_mesh_object.path / 'PolyCut_3'/ 'optimizer_100' / 'integerizer.stderr.txt','xb')
+            f.write(completed_process.stderr)
+            f.close()
+    CONSOLE.print(NEW_OUTPUT_LINE_TEMPLATE.format(algo='integerizer.exe', path=collapseuser(tet_mesh_object.path)))
+    # integerizer.exe does not write other files, only `vtu_hex_mesh`
+
+    # Write durations in a dedicated file
+    # After each stage, in case the next one has to be manually stopped
+    with open(tet_mesh_object.path / 'PolyCut_3' / 'PolyCut.durations.json','x') as durations_json:
+        json.dump(polycut_durations,durations_json, indent=4)
+
+    executable = POLYCUT_PATH / 'vtu2mesh.exe'
+    command_line = f'{executable} {vtu_hex_mesh} {medit_hex_mesh}'
+    with CONSOLE.status(RUNNING_ALGO_LINE_TEMPLATE.format(algo="vtu2mesh.exe",path=collapseuser(tet_mesh_object.path))) as status:
+        chrono_start = time.monotonic()
+        completed_process = subprocess.run(command_line, shell=True, capture_output=True)
+        chrono_stop = time.monotonic()
+        polycut_durations['vtu2mesh'] = chrono_stop - chrono_start
+        if completed_process.stdout != b'': # if the subprocess wrote something in standard output
+            f = open(tet_mesh_object.path / 'PolyCut_3'/ 'optimizer_100' / 'vtu2mesh.stdout.txt','xb')# x = create new file
+            f.write(completed_process.stdout)
+            f.close()
+        if completed_process.stderr != b'': # if the subprocess wrote something in standard error
+            f = open(tet_mesh_object.path / 'PolyCut_3'/ 'optimizer_100' / 'vtu2mesh.stderr.txt','xb')
+            f.write(completed_process.stderr)
+            f.close()
+    CONSOLE.print(NEW_OUTPUT_LINE_TEMPLATE.format(algo='vtu2mesh.exe', path=collapseuser(tet_mesh_object.path)))
+    # vtu2mesh.exe does not write other files, only `medit_hex_mesh`
+
+    # Write durations in a dedicated file
+    # After each stage, in case the next one has to be manually stopped
+    with open(tet_mesh_object.path / 'PolyCut_3' / 'PolyCut.durations.json','x') as durations_json:
+        json.dump(polycut_durations,durations_json, indent=4)
+
+    executable = POLYCUT_PATH / 'untangler.exe'
+    command_line = f'{executable} --in {medit_hex_mesh}'
+    with CONSOLE.status(RUNNING_ALGO_LINE_TEMPLATE.format(algo="untangler.exe",path=collapseuser(tet_mesh_object.path))) as status:
+        chrono_start = time.monotonic()
+        completed_process = subprocess.run(command_line, shell=True, capture_output=True)
+        chrono_stop = time.monotonic()
+        polycut_durations['untangler'] = chrono_stop - chrono_start
+        if completed_process.stdout != b'': # if the subprocess wrote something in standard output
+            f = open(tet_mesh_object.path / 'PolyCut_3'/ 'optimizer_100' / 'untangler' / 'untangler.stdout.txt','xb')# x = create new file
+            f.write(completed_process.stdout)
+            f.close()
+        if completed_process.stderr != b'': # if the subprocess wrote something in standard error
+            f = open(tet_mesh_object.path / 'PolyCut_3'/ 'optimizer_100' / 'untangler' / 'untangler.stderr.txt','xb')
+            f.write(completed_process.stderr)
+            f.close()
+    CONSOLE.print(NEW_OUTPUT_LINE_TEMPLATE.format(algo='untangler.exe', path=collapseuser(tet_mesh_object.path)))
+    # untangler.exe writes:
+    # - `tet_mesh_object.path` / 'PolyCut_3' / 'optimizer_100' / 'hex_features.obj'
+    # - `tet_mesh_object.path` / 'PolyCut_3' / 'optimizer_100' / 'hex_highest_quality.mesh'
+    # - `tet_mesh_object.path` / 'PolyCut_3' / 'optimizer_100' / 'hex_scaled.mesh'
+    # - `tet_mesh_object.path` / 'PolyCut_3' / 'optimizer_100' / 'hex_smooth.mesh'
+    # - `tet_mesh_object.path` / 'PolyCut_3' / 'optimizer_100' / 'hex_smooth_scaled.mesh'
+    # Move them inside the 'untangler' subfolder we created earlier
+    if (tet_mesh_object.path / 'PolyCut_3' / 'optimizer_100' / 'hex_features.obj').exists():
+        move(
+            tet_mesh_object.path / 'PolyCut_3' / 'optimizer_100' / 'hex_features.obj',
+            tet_mesh_object.path / 'PolyCut_3' / 'optimizer_100' / 'untangler' / 'untangler.hex_features.obj'
+        )
+    if (tet_mesh_object.path / 'PolyCut_3' / 'optimizer_100' / 'hex_highest_quality.mesh').exists():
+        move(
+            tet_mesh_object.path / 'PolyCut_3' / 'optimizer_100' / 'hex_highest_quality.mesh',
+            medit_hex_mesh_untangled
+        )
+    if (tet_mesh_object.path / 'PolyCut_3' / 'optimizer_100' / 'hex_scaled.mesh').exists():
+        move(
+            tet_mesh_object.path / 'PolyCut_3' / 'optimizer_100' / 'hex_scaled.mesh',
+            tet_mesh_object.path / 'PolyCut_3' / 'optimizer_100' / 'untangler' / 'untangler.hex_scaled.mesh'
+        )
+    if (tet_mesh_object.path / 'PolyCut_3' / 'optimizer_100' / 'hex_smooth.mesh').exists():
+        move(
+            tet_mesh_object.path / 'PolyCut_3' / 'optimizer_100' / 'hex_smooth.mesh',
+            tet_mesh_object.path / 'PolyCut_3' / 'optimizer_100' / 'untangler' / 'untangler.hex_smooth.mesh'
+        )
+    if (tet_mesh_object.path / 'PolyCut_3' / 'optimizer_100' / 'hex_smooth_scaled.mesh').exists():
+        move(
+            tet_mesh_object.path / 'PolyCut_3' / 'optimizer_100' / 'hex_smooth_scaled.mesh',
+            tet_mesh_object.path / 'PolyCut_3' / 'optimizer_100' / 'untangler' / 'untangler.hex_smooth_scaled.mesh'
+        )
+
+    # Write durations in a dedicated file
+    # After each stage, in case the next one has to be manually stopped
+    with open(tet_mesh_object.path / 'PolyCut_3' / 'PolyCut.durations.json','x') as durations_json:
+        json.dump(polycut_durations,durations_json, indent=4)
+
 def process_step(step_object: DataFolder):
     """
-    Run Gmsh, then call process_tet_mesh()
+    Run Gmsh (characteristic_length_factor=0.1), then call process_tet_mesh()
+    Expect a Gmsh output with characteristic_length_factor=0.15 for PolyCut
     """
     assert(step_object.type == 'step')
+
     # tetrahedrization if not already done
     # if not (step_object.path / 'Gmsh_0.1').exists():
     #     if user_confirmed_or_choose_autorun(GMSH_OUTPUT_MISSING_POLICY,MISSING_OUTPUT_LINE_TEMPLATE.format(algo='Gmsh', path=collapseuser(step_object.path))):
@@ -236,9 +490,11 @@ def process_step(step_object: DataFolder):
     # else:
     #     # Gmsh was already executed
     #     CONSOLE.print(EXISTING_OUTPUT_LINE_TEMPLATE.format(algo='Gmsh', path=collapseuser(step_object.path)))
-    # instantiate the tet mesh folder
+    # # instantiate the tet mesh folder
     # tet_mesh_object: DataFolder = DataFolder(step_object.path / 'Gmsh_0.1')
     # process_tet_mesh(tet_mesh_object)
+
+    # TODO run Gmsh with characteristic_length_factor=0.15 if not already done
     coarser_tet_mesh_for_PolyCut = DataFolder(step_object.path / 'Gmsh_0.15')
     if not coarser_tet_mesh_for_PolyCut.get_file('SURFACE_AND_VOLUME_MEDIT', must_exist=False, silent_output=True).exists():
         with CONSOLE.status(RUNNING_ALGO_LINE_TEMPLATE.format(algo='extract_surface+volume', path=collapseuser(coarser_tet_mesh_for_PolyCut.path))) as status:
@@ -248,11 +504,12 @@ def process_step(step_object: DataFolder):
     else:
         # extract_surface+volume has already been run
         CONSOLE.print(EXISTING_OUTPUT_LINE_TEMPLATE.format(algo='extract_surface+volume', path=collapseuser(coarser_tet_mesh_for_PolyCut.path)))
+    run_PolyCut_pipeline(coarser_tet_mesh_for_PolyCut)
 
 def main(input_folder: Path, arguments: list):
     # check `arguments`
     if len(arguments) != 0:
-        logging.fatal(f'batch_processing does not need other arguments than the input folder, but {arguments} were provided')
+        logging.fatal(f'{__file__} does not need other arguments than the input folder, but {arguments} were provided')
         exit(1)
     assert((input_folder / 'MAMBO').exists())
     for step_subfolder in sorted(get_subfolders_of_type(input_folder / 'MAMBO','step')):
