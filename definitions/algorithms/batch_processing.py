@@ -67,11 +67,16 @@ MISSING_OUTPUT_LINE_TEMPLATE          = "No [green]{algo}[/] output inside [cyan
 IGNORING_MISSING_OUTPUT_LINE_TEMPLATE = "\[[dark_orange]●[/]] Ignoring missing [green]{algo}[/] output inside [cyan]{path}[/]" # type: ignore
 
 POLYCUT_PATH = translate_path_keyword('POLYCUT')
+AUTOMATIC_POLYCUBE_PATH = translate_path_keyword('AUTOMATIC_POLYCUBE')
+assert(AUTOMATIC_POLYCUBE_PATH is not None)
+AUTOMATIC_POLYCUBE_PATH = Path(expanduser(AUTOMATIC_POLYCUBE_PATH))
+
 SURFACE_MESH_OBJ,_ = translate_filename_keyword('SURFACE_MESH_OBJ')
 SURFACE_MAP_TXT,_ = translate_filename_keyword('SURFACE_MAP_TXT')
 SURFACE_MESH_STATS_JSON,_ = translate_filename_keyword('SURFACE_MESH_STATS_JSON')
 SURFACE_MESH_GLB,_ = translate_filename_keyword('SURFACE_MESH_GLB')
 HEX_MESH_MEDIT,_ = translate_filename_keyword('HEX_MESH_MEDIT')
+SURFACE_LABELING_TXT,_ = translate_filename_keyword('SURFACE_LABELING_TXT')
 
 CONSOLE = Console(theme=Theme(inherit=False)) # better to create a global variable in dds.py ??
 
@@ -535,6 +540,44 @@ def process_step(step_object: DataFolder):
             CONSOLE.print(EXISTING_OUTPUT_LINE_TEMPLATE.format(algo='integerizer.exe', path=collapseuser(coarser_tet_mesh_for_PolyCut.path)))
             CONSOLE.print(EXISTING_OUTPUT_LINE_TEMPLATE.format(algo='vtu2mesh.exe', path=collapseuser(coarser_tet_mesh_for_PolyCut.path)))
             CONSOLE.print(EXISTING_OUTPUT_LINE_TEMPLATE.format(algo='untangler.exe', path=collapseuser(coarser_tet_mesh_for_PolyCut.path)))
+
+            # Post-processing: extract the .txt labeling from the labeled .obj PolyCut has generated
+            # and rename the hex-mesh file with the filename expected by data folders of type 'hex-mesh'
+
+            if not (coarser_tet_mesh_for_PolyCut.path / 'PolyCut_3' / SURFACE_LABELING_TXT).exists():
+                if (coarser_tet_mesh_for_PolyCut.path / 'PolyCut_3' / 'segmentation_XYZ.obj').exists():
+                    # from 'Gmsh_0.15' / 'PolyCut_3' / 'segmentation_XYZ.obj',
+                    # generate:
+                    #  - 'Gmsh_0.15' / 'PolyCut_3' / `SURFACE_LABELING_TXT`
+                    #  - 'Gmsh_0.15' / `SURFACE_MESH_OBJ`
+                    assert(AUTOMATIC_POLYCUBE_PATH is not None)
+                    assert((AUTOMATIC_POLYCUBE_PATH / 'convert_labeled_obj').exists())
+                    assert(not (coarser_tet_mesh_for_PolyCut.path / SURFACE_MESH_OBJ).exists())
+
+                    command_line = '{executable} {input_obj} {output_labeling} colorless_obj={output_obj}'.format(
+                        executable = AUTOMATIC_POLYCUBE_PATH / 'convert_labeled_obj',
+                        input_obj = coarser_tet_mesh_for_PolyCut.path / 'PolyCut_3' / 'segmentation_XYZ.obj',
+                        output_labeling = coarser_tet_mesh_for_PolyCut.path / 'PolyCut_3' / SURFACE_LABELING_TXT,
+                        output_obj = coarser_tet_mesh_for_PolyCut.path / SURFACE_MESH_OBJ
+                    )
+                    with CONSOLE.status(RUNNING_ALGO_LINE_TEMPLATE.format(algo="convert_labeled_obj",path=collapseuser(coarser_tet_mesh_for_PolyCut.path / 'PolyCut_3'))) as status:
+                        subprocess.run(command_line, shell=True, capture_output=False)
+                    CONSOLE.print(NEW_OUTPUT_LINE_TEMPLATE.format(algo='convert_labeled_obj', path=collapseuser(coarser_tet_mesh_for_PolyCut.path / 'PolyCut_3')))
+                    assert((coarser_tet_mesh_for_PolyCut.path / 'PolyCut_3' / SURFACE_LABELING_TXT).exists())
+                    assert((coarser_tet_mesh_for_PolyCut.path / SURFACE_MESH_OBJ).exists())
+                # else: PolyCut failed to generate 'segmentation_XYZ.obj', we cannot extract a .txt labeling
+
+            # sometimes there is no `HEX_MESH_MEDIT` in untangler/
+            # (which was 'hex_highest_quality.mesh' before run_PolyCut_pipeline() renamed it)
+            # -> if there is a 'untangler.hex_smooth.mesh', rename it `HEX_MESH_MEDIT`
+            # -> else, consider failed hex-mesh generation
+            if not (coarser_tet_mesh_for_PolyCut.path / 'PolyCut_3' / 'optimizer_100' / 'untangler' / HEX_MESH_MEDIT).exists():
+                if (coarser_tet_mesh_for_PolyCut.path / 'PolyCut_3' / 'optimizer_100' / 'untangler.hex_smooth.mesh' / HEX_MESH_MEDIT).exists():
+                    move(
+                        coarser_tet_mesh_for_PolyCut.path / 'PolyCut_3' / 'optimizer_100' / 'untangler.hex_smooth.mesh',
+                        coarser_tet_mesh_for_PolyCut.path / 'PolyCut_3' / 'optimizer_100' / HEX_MESH_MEDIT
+                    )
+
     
 
 def main(input_folder: Path, arguments: list):
