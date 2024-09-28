@@ -468,55 +468,73 @@ def process_step(step_object: DataFolder):
     """
     assert(step_object.type == 'step')
 
-    # tetrahedrization if not already done
+    # First tetrahedrization for Evocube, automatic_polycube and its init labeling
+    # characteristic_length_factor = 0.1
+
     if not (step_object.path / 'Gmsh_0.1').exists():
-        if user_confirmed_or_choose_autorun(GMSH_OUTPUT_MISSING_POLICY,MISSING_OUTPUT_LINE_TEMPLATE.format(algo='Gmsh', path=collapseuser(step_object.path))):
-            with CONSOLE.status(RUNNING_ALGO_LINE_TEMPLATE.format(algo='Gmsh', path=collapseuser(step_object.path))) as status:
-                step_object.run('Gmsh', {'characteristic_length_factor': 0.1}, silent_output=True)
+        if user_confirmed_or_choose_autorun(GMSH_OUTPUT_MISSING_POLICY,MISSING_OUTPUT_LINE_TEMPLATE.format(algo='Gmsh (coeff 0.1)', path=collapseuser(step_object.path))):
+            with CONSOLE.status(RUNNING_ALGO_LINE_TEMPLATE.format(algo='Gmsh (coeff 0.1)', path=collapseuser(step_object.path))) as status:
+                step_object.run('Gmsh (coeff 0.1)', {'characteristic_length_factor': 0.1}, silent_output=True)
             # here we assume Gmsh succeeded
-            CONSOLE.print(NEW_OUTPUT_LINE_TEMPLATE.format(algo='Gmsh', path=collapseuser(step_object.path)))
+            CONSOLE.print(NEW_OUTPUT_LINE_TEMPLATE.format(algo='Gmsh (coeff 0.1)', path=collapseuser(step_object.path)))
         else:
-            CONSOLE.print(IGNORING_MISSING_OUTPUT_LINE_TEMPLATE.format(algo='Gmsh', path=collapseuser(step_object.path)))
+            CONSOLE.print(IGNORING_MISSING_OUTPUT_LINE_TEMPLATE.format(algo='Gmsh (coeff 0.1)', path=collapseuser(step_object.path)))
     else:
         # Gmsh was already executed
-        CONSOLE.print(EXISTING_OUTPUT_LINE_TEMPLATE.format(algo='Gmsh', path=collapseuser(step_object.path)))
+        CONSOLE.print(EXISTING_OUTPUT_LINE_TEMPLATE.format(algo='Gmsh (coeff 0.1)', path=collapseuser(step_object.path)))
     
     if (step_object.path / 'Gmsh_0.1').exists():
         # instantiate the tet mesh folder
         tet_mesh_object: DataFolder = DataFolder(step_object.path / 'Gmsh_0.1')
         process_tet_mesh(tet_mesh_object)
+    
+    # Second tetrahedrization for PolyCut, in order to only have meshes with < 300k tetrahedra
+    # See 'tet_meshes_stats' algo
+    # characteristic_length_factor = 0.15
 
-    # TODO run Gmsh with characteristic_length_factor=0.15 if not already done
-    coarser_tet_mesh_for_PolyCut = DataFolder(step_object.path / 'Gmsh_0.15')
-    if not coarser_tet_mesh_for_PolyCut.get_file('SURFACE_AND_VOLUME_MEDIT', must_exist=False, silent_output=True).exists():
-        with CONSOLE.status(RUNNING_ALGO_LINE_TEMPLATE.format(algo='extract_surface+volume', path=collapseuser(coarser_tet_mesh_for_PolyCut.path))) as status:
-            coarser_tet_mesh_for_PolyCut.run('extract_surface+volume', silent_output=True)
-        # here we assume extract_surface+volume succeeded
-        CONSOLE.print(NEW_OUTPUT_LINE_TEMPLATE.format(algo='extract_surface+volume', path=collapseuser(coarser_tet_mesh_for_PolyCut.path)))
-    else:
-        # extract_surface+volume has already been run
-        CONSOLE.print(EXISTING_OUTPUT_LINE_TEMPLATE.format(algo='extract_surface+volume', path=collapseuser(coarser_tet_mesh_for_PolyCut.path)))
-
-    if not (coarser_tet_mesh_for_PolyCut.path / 'PolyCut_3').exists():
-        if user_confirmed_or_choose_autorun(POLYCUT_OUTPUT_MISSING_POLICY,MISSING_OUTPUT_LINE_TEMPLATE.format(algo='polycut.exe', path=collapseuser(coarser_tet_mesh_for_PolyCut.path))):
-            run_PolyCut_pipeline(coarser_tet_mesh_for_PolyCut)
+    if not (step_object.path / 'Gmsh_0.15').exists():
+        if user_confirmed_or_choose_autorun(GMSH_OUTPUT_MISSING_POLICY,MISSING_OUTPUT_LINE_TEMPLATE.format(algo='Gmsh (coeff 0.15)', path=collapseuser(step_object.path))):
+            with CONSOLE.status(RUNNING_ALGO_LINE_TEMPLATE.format(algo='Gmsh (coeff 0.15)', path=collapseuser(step_object.path))) as status:
+                step_object.run('Gmsh (coeff 0.15)', {'characteristic_length_factor': 0.15}, silent_output=True)
+            # here we assume Gmsh succeeded
+            CONSOLE.print(NEW_OUTPUT_LINE_TEMPLATE.format(algo='Gmsh (coeff 0.15)', path=collapseuser(step_object.path)))
         else:
-            CONSOLE.print(IGNORING_MISSING_OUTPUT_LINE_TEMPLATE.format(algo='mesh2vtu.exe', path=collapseuser(coarser_tet_mesh_for_PolyCut.path)))
-            CONSOLE.print(IGNORING_MISSING_OUTPUT_LINE_TEMPLATE.format(algo='polycut.exe', path=collapseuser(coarser_tet_mesh_for_PolyCut.path)))
-            CONSOLE.print(IGNORING_MISSING_OUTPUT_LINE_TEMPLATE.format(algo='cusy2.exe', path=collapseuser(coarser_tet_mesh_for_PolyCut.path)))
-            CONSOLE.print(IGNORING_MISSING_OUTPUT_LINE_TEMPLATE.format(algo='optimizer.exe', path=collapseuser(coarser_tet_mesh_for_PolyCut.path)))
-            CONSOLE.print(IGNORING_MISSING_OUTPUT_LINE_TEMPLATE.format(algo='integerizer.exe', path=collapseuser(coarser_tet_mesh_for_PolyCut.path)))
-            CONSOLE.print(IGNORING_MISSING_OUTPUT_LINE_TEMPLATE.format(algo='vtu2mesh.exe', path=collapseuser(coarser_tet_mesh_for_PolyCut.path)))
-            CONSOLE.print(IGNORING_MISSING_OUTPUT_LINE_TEMPLATE.format(algo='untangler.exe', path=collapseuser(coarser_tet_mesh_for_PolyCut.path)))
+            CONSOLE.print(IGNORING_MISSING_OUTPUT_LINE_TEMPLATE.format(algo='Gmsh (coeff 0.15)', path=collapseuser(step_object.path)))
     else:
-        # Here we expect the whole pipeline has already been executed
-        CONSOLE.print(EXISTING_OUTPUT_LINE_TEMPLATE.format(algo='mesh2vtu.exe', path=collapseuser(coarser_tet_mesh_for_PolyCut.path)))
-        CONSOLE.print(EXISTING_OUTPUT_LINE_TEMPLATE.format(algo='polycut.exe', path=collapseuser(coarser_tet_mesh_for_PolyCut.path)))
-        CONSOLE.print(EXISTING_OUTPUT_LINE_TEMPLATE.format(algo='cusy2.exe', path=collapseuser(coarser_tet_mesh_for_PolyCut.path)))
-        CONSOLE.print(EXISTING_OUTPUT_LINE_TEMPLATE.format(algo='optimizer.exe', path=collapseuser(coarser_tet_mesh_for_PolyCut.path)))
-        CONSOLE.print(EXISTING_OUTPUT_LINE_TEMPLATE.format(algo='integerizer.exe', path=collapseuser(coarser_tet_mesh_for_PolyCut.path)))
-        CONSOLE.print(EXISTING_OUTPUT_LINE_TEMPLATE.format(algo='vtu2mesh.exe', path=collapseuser(coarser_tet_mesh_for_PolyCut.path)))
-        CONSOLE.print(EXISTING_OUTPUT_LINE_TEMPLATE.format(algo='untangler.exe', path=collapseuser(coarser_tet_mesh_for_PolyCut.path)))
+        # Gmsh was already executed
+        CONSOLE.print(EXISTING_OUTPUT_LINE_TEMPLATE.format(algo='Gmsh (coeff 0.15)', path=collapseuser(step_object.path)))
+
+    if (step_object.path / 'Gmsh_0.15').exists():
+        coarser_tet_mesh_for_PolyCut = DataFolder(step_object.path / 'Gmsh_0.15')
+        if not coarser_tet_mesh_for_PolyCut.get_file('SURFACE_AND_VOLUME_MEDIT', must_exist=False, silent_output=True).exists():
+            with CONSOLE.status(RUNNING_ALGO_LINE_TEMPLATE.format(algo='extract_surface+volume', path=collapseuser(coarser_tet_mesh_for_PolyCut.path))) as status:
+                coarser_tet_mesh_for_PolyCut.run('extract_surface+volume', silent_output=True)
+            # here we assume extract_surface+volume succeeded
+            CONSOLE.print(NEW_OUTPUT_LINE_TEMPLATE.format(algo='extract_surface+volume', path=collapseuser(coarser_tet_mesh_for_PolyCut.path)))
+        else:
+            # extract_surface+volume has already been run
+            CONSOLE.print(EXISTING_OUTPUT_LINE_TEMPLATE.format(algo='extract_surface+volume', path=collapseuser(coarser_tet_mesh_for_PolyCut.path)))
+
+        if not (coarser_tet_mesh_for_PolyCut.path / 'PolyCut_3').exists():
+            if user_confirmed_or_choose_autorun(POLYCUT_OUTPUT_MISSING_POLICY,MISSING_OUTPUT_LINE_TEMPLATE.format(algo='polycut.exe', path=collapseuser(coarser_tet_mesh_for_PolyCut.path))):
+                run_PolyCut_pipeline(coarser_tet_mesh_for_PolyCut)
+            else:
+                CONSOLE.print(IGNORING_MISSING_OUTPUT_LINE_TEMPLATE.format(algo='mesh2vtu.exe', path=collapseuser(coarser_tet_mesh_for_PolyCut.path)))
+                CONSOLE.print(IGNORING_MISSING_OUTPUT_LINE_TEMPLATE.format(algo='polycut.exe', path=collapseuser(coarser_tet_mesh_for_PolyCut.path)))
+                CONSOLE.print(IGNORING_MISSING_OUTPUT_LINE_TEMPLATE.format(algo='cusy2.exe', path=collapseuser(coarser_tet_mesh_for_PolyCut.path)))
+                CONSOLE.print(IGNORING_MISSING_OUTPUT_LINE_TEMPLATE.format(algo='optimizer.exe', path=collapseuser(coarser_tet_mesh_for_PolyCut.path)))
+                CONSOLE.print(IGNORING_MISSING_OUTPUT_LINE_TEMPLATE.format(algo='integerizer.exe', path=collapseuser(coarser_tet_mesh_for_PolyCut.path)))
+                CONSOLE.print(IGNORING_MISSING_OUTPUT_LINE_TEMPLATE.format(algo='vtu2mesh.exe', path=collapseuser(coarser_tet_mesh_for_PolyCut.path)))
+                CONSOLE.print(IGNORING_MISSING_OUTPUT_LINE_TEMPLATE.format(algo='untangler.exe', path=collapseuser(coarser_tet_mesh_for_PolyCut.path)))
+        else:
+            # Here we expect the whole pipeline has already been executed
+            CONSOLE.print(EXISTING_OUTPUT_LINE_TEMPLATE.format(algo='mesh2vtu.exe', path=collapseuser(coarser_tet_mesh_for_PolyCut.path)))
+            CONSOLE.print(EXISTING_OUTPUT_LINE_TEMPLATE.format(algo='polycut.exe', path=collapseuser(coarser_tet_mesh_for_PolyCut.path)))
+            CONSOLE.print(EXISTING_OUTPUT_LINE_TEMPLATE.format(algo='cusy2.exe', path=collapseuser(coarser_tet_mesh_for_PolyCut.path)))
+            CONSOLE.print(EXISTING_OUTPUT_LINE_TEMPLATE.format(algo='optimizer.exe', path=collapseuser(coarser_tet_mesh_for_PolyCut.path)))
+            CONSOLE.print(EXISTING_OUTPUT_LINE_TEMPLATE.format(algo='integerizer.exe', path=collapseuser(coarser_tet_mesh_for_PolyCut.path)))
+            CONSOLE.print(EXISTING_OUTPUT_LINE_TEMPLATE.format(algo='vtu2mesh.exe', path=collapseuser(coarser_tet_mesh_for_PolyCut.path)))
+            CONSOLE.print(EXISTING_OUTPUT_LINE_TEMPLATE.format(algo='untangler.exe', path=collapseuser(coarser_tet_mesh_for_PolyCut.path)))
     
 
 def main(input_folder: Path, arguments: list):
