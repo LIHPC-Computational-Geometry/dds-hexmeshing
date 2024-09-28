@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+from collections import defaultdict
+
 from dds import *
 
 def main(input_folder: Path, arguments: list):
@@ -8,23 +10,8 @@ def main(input_folder: Path, arguments: list):
     if len(arguments) != 0:
         logging.fatal(f'generate_stats_table does not need other arguments than the input folder, but {arguments} were provided')
         exit(1)
-
-    class Fluxes:
-        def __init__(self, default_value: int = 0):
-            # /!\ the key type cannot contain a list because it is a mutable container -> use only tuples
-            self.fluxes: dict[tuple[int,int,int,int],int] = dict()
-            # self.fluxes maps (dataset, labeling method, source node, destination node) to a value
-            self.default_value = default_value
-
-        def __getitem__(self, key: tuple[int,int,int,int]):
-            if key not in self.fluxes:
-                return self.default_value # allow += 1 when the key does not exist
-            return self.fluxes.__getitem__(key)
     
-        def __setitem__(self, key: tuple[int,int,int,int], value: int):
-            return self.fluxes.__setitem__(key,value)
-    
-    fluxes: Fluxes = Fluxes()
+    fluxes: defaultdict = defaultdict(int) # if a given key is missing, use default value of int() == 0
     
     # Datasets & subsets
     MAMBO_BASIC        = 0
@@ -71,68 +58,20 @@ def main(input_folder: Path, arguments: list):
     HEX_MESHING_FAILURE         = 11
 
     # sum of average fidelities
-    sum_avg_fidelities: dict[tuple[int,int],float] = dict()
-    sum_avg_fidelities[MAMBO_BASIC,EVOCUBE]       = 0.0
-    sum_avg_fidelities[MAMBO_BASIC,OURS_2024_03]  = 0.0
-    sum_avg_fidelities[MAMBO_BASIC,GRAPHCUT]      = 0.0
-    sum_avg_fidelities[MAMBO_BASIC,OURS_2024_09]  = 0.0
-    sum_avg_fidelities[MAMBO_SIMPLE,EVOCUBE]      = 0.0
-    sum_avg_fidelities[MAMBO_SIMPLE,OURS_2024_03] = 0.0
-    sum_avg_fidelities[MAMBO_SIMPLE,GRAPHCUT]     = 0.0
-    sum_avg_fidelities[MAMBO_SIMPLE,OURS_2024_09] = 0.0
-    sum_avg_fidelities[MAMBO_MEDIUM,EVOCUBE]      = 0.0
-    sum_avg_fidelities[MAMBO_MEDIUM,OURS_2024_03] = 0.0
-    sum_avg_fidelities[MAMBO_MEDIUM,GRAPHCUT]     = 0.0
-    sum_avg_fidelities[MAMBO_MEDIUM,OURS_2024_09] = 0.0
+    sum_avg_fidelities: defaultdict[tuple[int,int],float] = defaultdict(float) # if a given key is missing, use default value of float() == 0.0
     # To have the global average, divide by the number of generated labelings,
     # that is the number of invalid + number of valid but non-monotone boundaries + number of succeeded
 
     # labeling generation durations
-    labeling_duration: dict[tuple[int,int],float] = dict()
-    labeling_duration[MAMBO_BASIC,EVOCUBE]       = 0.0
-    labeling_duration[MAMBO_BASIC,OURS_2024_03]  = 0.0
-    labeling_duration[MAMBO_BASIC,GRAPHCUT]      = 0.0
-    labeling_duration[MAMBO_BASIC,OURS_2024_09]  = 0.0
-    labeling_duration[MAMBO_SIMPLE,EVOCUBE]      = 0.0
-    labeling_duration[MAMBO_SIMPLE,OURS_2024_03] = 0.0
-    labeling_duration[MAMBO_SIMPLE,GRAPHCUT]     = 0.0
-    labeling_duration[MAMBO_SIMPLE,OURS_2024_09] = 0.0
-    labeling_duration[MAMBO_MEDIUM,EVOCUBE]      = 0.0
-    labeling_duration[MAMBO_MEDIUM,OURS_2024_03] = 0.0
-    labeling_duration[MAMBO_MEDIUM,GRAPHCUT]     = 0.0
-    labeling_duration[MAMBO_MEDIUM,OURS_2024_09] = 0.0
+    labeling_duration: dict[tuple[int,int],float] = defaultdict(float) # if a given key is missing, use default value of float() == 0.0
 
     # per dataset and labeling method sum of all minimum Scaled Jacobian
-    min_sj_sum: dict[tuple[int,int],float] = dict()
-    min_sj_sum[MAMBO_BASIC,EVOCUBE]       = 0.0
-    min_sj_sum[MAMBO_BASIC,OURS_2024_03]  = 0.0
-    min_sj_sum[MAMBO_BASIC,GRAPHCUT]      = 0.0
-    min_sj_sum[MAMBO_BASIC,OURS_2024_09]  = 0.0
-    min_sj_sum[MAMBO_SIMPLE,EVOCUBE]      = 0.0
-    min_sj_sum[MAMBO_SIMPLE,OURS_2024_03] = 0.0
-    min_sj_sum[MAMBO_SIMPLE,GRAPHCUT]     = 0.0
-    min_sj_sum[MAMBO_SIMPLE,OURS_2024_09] = 0.0
-    min_sj_sum[MAMBO_MEDIUM,EVOCUBE]      = 0.0
-    min_sj_sum[MAMBO_MEDIUM,OURS_2024_03] = 0.0
-    min_sj_sum[MAMBO_MEDIUM,GRAPHCUT]     = 0.0
-    min_sj_sum[MAMBO_MEDIUM,OURS_2024_09] = 0.0
+    min_sj_sum: dict[tuple[int,int],float] = defaultdict(float) # if a given key is missing, use default value of float() == 0.0
     # To have the global average, divide by the number of tried hex-mesh computations,
     # that is the number of valid but non-monotone boundaries + number of succeeded
 
     # per dataset and labeling method sum of all average Scaled Jacobian
-    avg_sj_sum: dict[tuple[int,int],float] = dict()
-    avg_sj_sum[MAMBO_BASIC,EVOCUBE]       = 0.0
-    avg_sj_sum[MAMBO_BASIC,OURS_2024_03]  = 0.0
-    avg_sj_sum[MAMBO_BASIC,GRAPHCUT]      = 0.0
-    avg_sj_sum[MAMBO_BASIC,OURS_2024_09]  = 0.0
-    avg_sj_sum[MAMBO_SIMPLE,EVOCUBE]      = 0.0
-    avg_sj_sum[MAMBO_SIMPLE,OURS_2024_03] = 0.0
-    avg_sj_sum[MAMBO_SIMPLE,GRAPHCUT]     = 0.0
-    avg_sj_sum[MAMBO_SIMPLE,OURS_2024_09] = 0.0
-    avg_sj_sum[MAMBO_MEDIUM,EVOCUBE]      = 0.0
-    avg_sj_sum[MAMBO_MEDIUM,OURS_2024_03] = 0.0
-    avg_sj_sum[MAMBO_MEDIUM,GRAPHCUT]     = 0.0
-    avg_sj_sum[MAMBO_MEDIUM,OURS_2024_09] = 0.0
+    avg_sj_sum: dict[tuple[int,int],float] = defaultdict(float) # if a given key is missing, use default value of float() == 0.0
     # To have the global average, divide by the number of tried hex-mesh computations,
     # that is the number of valid but non-monotone boundaries + number of succeeded
 
