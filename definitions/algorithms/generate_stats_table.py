@@ -50,6 +50,12 @@ def main(input_folder: Path, arguments: list):
     OURS_2024_09 = 3
     POLYCUT      = 4
 
+    SHOW_EVOCUBE_STATS      = True
+    SHOW_OURS_2024_03_STATS = True
+    SHOW_GRAPHCUT_STATS     = True
+    SHOW_OURS_2024_09_STATS = True
+    SHOW_POLYCUT_STATS      = True
+
     # Nodes = flux sources and destinations
     VOID                        = 0
     CAD                         = 1
@@ -381,121 +387,113 @@ def main(input_folder: Path, arguments: list):
         nb_CAD_models = fluxes[MAMBO_subset_id,N_A,VOID,CAD]
         assert(fluxes[MAMBO_subset_id,N_A,CAD,TET_MESHING_FAILURE] == 0) # expect all tet-mesh generations succeeded. easier for the stats
 
-        # EVOCUBE
+        if SHOW_EVOCUBE_STATS:
+            percentage_labeling_success = fluxes[MAMBO_subset_id,EVOCUBE,TET_MESHING_SUCCESS,LABELING_SUCCESS] / nb_CAD_models * 100
+            percentage_labeling_non_monotone = fluxes[MAMBO_subset_id,EVOCUBE,TET_MESHING_SUCCESS,LABELING_NON_MONOTONE] / nb_CAD_models * 100
+            percentage_labeling_invalid = fluxes[MAMBO_subset_id,EVOCUBE,TET_MESHING_SUCCESS,LABELING_INVALID] / nb_CAD_models * 100
+            percentage_labeling_failure = fluxes[MAMBO_subset_id,EVOCUBE,TET_MESHING_SUCCESS,LABELING_FAILURE] / nb_CAD_models * 100
+            nb_labeling_generated = \
+                fluxes[MAMBO_subset_id,EVOCUBE,TET_MESHING_SUCCESS,LABELING_SUCCESS] + \
+                fluxes[MAMBO_subset_id,EVOCUBE,TET_MESHING_SUCCESS,LABELING_NON_MONOTONE] + \
+                fluxes[MAMBO_subset_id,EVOCUBE,TET_MESHING_SUCCESS,LABELING_INVALID]
+            overall_average_fidelity = sum_avg_fidelities[MAMBO_subset_id,EVOCUBE] / nb_labeling_generated
+            nb_tried_hex_meshing = \
+                fluxes[MAMBO_subset_id,EVOCUBE,TET_MESHING_SUCCESS,LABELING_SUCCESS] + \
+                fluxes[MAMBO_subset_id,EVOCUBE,TET_MESHING_SUCCESS,LABELING_NON_MONOTONE]
+            nb_hex_meshes_with_positive_min_sj = \
+                fluxes[MAMBO_subset_id,EVOCUBE,LABELING_SUCCESS,HEX_MESHING_POSITIVE_MIN_SJ] + \
+                fluxes[MAMBO_subset_id,EVOCUBE,LABELING_NON_MONOTONE,HEX_MESHING_POSITIVE_MIN_SJ]
+            percentage_hex_mesh_positive_min_SJ = nb_hex_meshes_with_positive_min_sj / nb_tried_hex_meshing * 100
+            average_min_SJ = min_sj_sum[MAMBO_subset_id,EVOCUBE] / nb_tried_hex_meshing
+            average_avj_SJ = avg_sj_sum[MAMBO_subset_id,EVOCUBE] / nb_tried_hex_meshing
+            table.add_row(
+                f'MAMBO/{MAMBO_subset_str} ({nb_CAD_models})',
+                'Evocube',
+                f"{percentage_labeling_success:.1f} %\n{percentage_labeling_non_monotone:.1f} %\n{percentage_labeling_invalid:.1f} %\n{percentage_labeling_failure:.1f} %",
+                f"{overall_average_fidelity:.3f}",
+                f"{labeling_duration[MAMBO_subset_id,EVOCUBE]:.3f} s",
+                f"{percentage_hex_mesh_positive_min_SJ:.1f} %",
+                f"{average_min_SJ:.3f}\n{average_avj_SJ:.3f}"
+            )
+            table.add_section()
 
-        percentage_labeling_success = fluxes[MAMBO_subset_id,EVOCUBE,TET_MESHING_SUCCESS,LABELING_SUCCESS] / nb_CAD_models * 100
-        percentage_labeling_non_monotone = fluxes[MAMBO_subset_id,EVOCUBE,TET_MESHING_SUCCESS,LABELING_NON_MONOTONE] / nb_CAD_models * 100
-        percentage_labeling_invalid = fluxes[MAMBO_subset_id,EVOCUBE,TET_MESHING_SUCCESS,LABELING_INVALID] / nb_CAD_models * 100
-        percentage_labeling_failure = fluxes[MAMBO_subset_id,EVOCUBE,TET_MESHING_SUCCESS,LABELING_FAILURE] / nb_CAD_models * 100
-        nb_labeling_generated = \
-            fluxes[MAMBO_subset_id,EVOCUBE,TET_MESHING_SUCCESS,LABELING_SUCCESS] + \
-            fluxes[MAMBO_subset_id,EVOCUBE,TET_MESHING_SUCCESS,LABELING_NON_MONOTONE] + \
-            fluxes[MAMBO_subset_id,EVOCUBE,TET_MESHING_SUCCESS,LABELING_INVALID]
-        overall_average_fidelity = sum_avg_fidelities[MAMBO_subset_id,EVOCUBE] / nb_labeling_generated
-        nb_tried_hex_meshing = \
-            fluxes[MAMBO_subset_id,EVOCUBE,TET_MESHING_SUCCESS,LABELING_SUCCESS] + \
-            fluxes[MAMBO_subset_id,EVOCUBE,TET_MESHING_SUCCESS,LABELING_NON_MONOTONE]
-        nb_hex_meshes_with_positive_min_sj = \
-            fluxes[MAMBO_subset_id,EVOCUBE,LABELING_SUCCESS,HEX_MESHING_POSITIVE_MIN_SJ] + \
-            fluxes[MAMBO_subset_id,EVOCUBE,LABELING_NON_MONOTONE,HEX_MESHING_POSITIVE_MIN_SJ]
-        percentage_hex_mesh_positive_min_SJ = nb_hex_meshes_with_positive_min_sj / nb_tried_hex_meshing * 100
-        average_min_SJ = min_sj_sum[MAMBO_subset_id,EVOCUBE] / nb_tried_hex_meshing
-        average_avj_SJ = avg_sj_sum[MAMBO_subset_id,EVOCUBE] / nb_tried_hex_meshing
-        table.add_row(
-            f'MAMBO/{MAMBO_subset_str} ({nb_CAD_models})',
-            'Evocube',
-            f"{percentage_labeling_success:.1f} %\n{percentage_labeling_non_monotone:.1f} %\n{percentage_labeling_invalid:.1f} %\n{percentage_labeling_failure:.1f} %",
-            f"{overall_average_fidelity:.3f}",
-            f"{labeling_duration[MAMBO_subset_id,EVOCUBE]:.3f} s",
-            f"{percentage_hex_mesh_positive_min_SJ:.1f} %",
-            f"{average_min_SJ:.3f}\n{average_avj_SJ:.3f}"
-        )
+        if SHOW_OURS_2024_03_STATS:
+            percentage_labeling_success = fluxes[MAMBO_subset_id,OURS_2024_03,TET_MESHING_SUCCESS,LABELING_SUCCESS] / nb_CAD_models * 100
+            percentage_labeling_non_monotone = fluxes[MAMBO_subset_id,OURS_2024_03,TET_MESHING_SUCCESS,LABELING_NON_MONOTONE] / nb_CAD_models * 100
+            percentage_labeling_invalid = fluxes[MAMBO_subset_id,OURS_2024_03,TET_MESHING_SUCCESS,LABELING_INVALID] / nb_CAD_models * 100
+            percentage_labeling_failure = fluxes[MAMBO_subset_id,OURS_2024_03,TET_MESHING_SUCCESS,LABELING_FAILURE] / nb_CAD_models * 100
+            nb_labeling_generated = \
+                fluxes[MAMBO_subset_id,OURS_2024_03,TET_MESHING_SUCCESS,LABELING_SUCCESS] + \
+                fluxes[MAMBO_subset_id,OURS_2024_03,TET_MESHING_SUCCESS,LABELING_NON_MONOTONE] + \
+                fluxes[MAMBO_subset_id,OURS_2024_03,TET_MESHING_SUCCESS,LABELING_INVALID]
+            overall_average_fidelity = sum_avg_fidelities[MAMBO_subset_id,OURS_2024_03] / nb_labeling_generated
+            speedup_relative_to_Evocube = labeling_duration[MAMBO_subset_id,EVOCUBE] / labeling_duration[MAMBO_subset_id,OURS_2024_03]
+            nb_tried_hex_meshing = \
+                fluxes[MAMBO_subset_id,OURS_2024_03,TET_MESHING_SUCCESS,LABELING_SUCCESS] + \
+                fluxes[MAMBO_subset_id,OURS_2024_03,TET_MESHING_SUCCESS,LABELING_NON_MONOTONE]
+            nb_hex_meshes_with_positive_min_sj = \
+                fluxes[MAMBO_subset_id,OURS_2024_03,LABELING_SUCCESS,HEX_MESHING_POSITIVE_MIN_SJ] + \
+                fluxes[MAMBO_subset_id,OURS_2024_03,LABELING_NON_MONOTONE,HEX_MESHING_POSITIVE_MIN_SJ]
+            percentage_hex_mesh_positive_min_SJ = nb_hex_meshes_with_positive_min_sj / nb_tried_hex_meshing * 100
+            average_min_SJ = min_sj_sum[MAMBO_subset_id,OURS_2024_03] / nb_tried_hex_meshing
+            average_avj_SJ = avg_sj_sum[MAMBO_subset_id,OURS_2024_03] / nb_tried_hex_meshing
+            table.add_row(
+                f'MAMBO/{MAMBO_subset_str} ({nb_CAD_models})',
+                'Ours_2024-03',
+                f"{percentage_labeling_success:.1f} %\n{percentage_labeling_non_monotone:.1f} %\n{percentage_labeling_invalid:.1f} %\n{percentage_labeling_failure:.1f} %",
+                f"{overall_average_fidelity:.3f}",
+                f"{labeling_duration[MAMBO_subset_id,OURS_2024_03]:.3f} s\n({speedup_relative_to_Evocube:.1f})",
+                f"{percentage_hex_mesh_positive_min_SJ:.1f} %",
+                f"{average_min_SJ:.3f}\n{average_avj_SJ:.3f}"
+            )
+            table.add_section()
 
-        table.add_section()
-
-        # OURS_2024_03
-
-        percentage_labeling_success = fluxes[MAMBO_subset_id,OURS_2024_03,TET_MESHING_SUCCESS,LABELING_SUCCESS] / nb_CAD_models * 100
-        percentage_labeling_non_monotone = fluxes[MAMBO_subset_id,OURS_2024_03,TET_MESHING_SUCCESS,LABELING_NON_MONOTONE] / nb_CAD_models * 100
-        percentage_labeling_invalid = fluxes[MAMBO_subset_id,OURS_2024_03,TET_MESHING_SUCCESS,LABELING_INVALID] / nb_CAD_models * 100
-        percentage_labeling_failure = fluxes[MAMBO_subset_id,OURS_2024_03,TET_MESHING_SUCCESS,LABELING_FAILURE] / nb_CAD_models * 100
-        nb_labeling_generated = \
-            fluxes[MAMBO_subset_id,OURS_2024_03,TET_MESHING_SUCCESS,LABELING_SUCCESS] + \
-            fluxes[MAMBO_subset_id,OURS_2024_03,TET_MESHING_SUCCESS,LABELING_NON_MONOTONE] + \
-            fluxes[MAMBO_subset_id,OURS_2024_03,TET_MESHING_SUCCESS,LABELING_INVALID]
-        overall_average_fidelity = sum_avg_fidelities[MAMBO_subset_id,OURS_2024_03] / nb_labeling_generated
-        speedup_relative_to_Evocube = labeling_duration[MAMBO_subset_id,EVOCUBE] / labeling_duration[MAMBO_subset_id,OURS_2024_03]
-        nb_tried_hex_meshing = \
-            fluxes[MAMBO_subset_id,OURS_2024_03,TET_MESHING_SUCCESS,LABELING_SUCCESS] + \
-            fluxes[MAMBO_subset_id,OURS_2024_03,TET_MESHING_SUCCESS,LABELING_NON_MONOTONE]
-        nb_hex_meshes_with_positive_min_sj = \
-            fluxes[MAMBO_subset_id,OURS_2024_03,LABELING_SUCCESS,HEX_MESHING_POSITIVE_MIN_SJ] + \
-            fluxes[MAMBO_subset_id,OURS_2024_03,LABELING_NON_MONOTONE,HEX_MESHING_POSITIVE_MIN_SJ]
-        percentage_hex_mesh_positive_min_SJ = nb_hex_meshes_with_positive_min_sj / nb_tried_hex_meshing * 100
-        average_min_SJ = min_sj_sum[MAMBO_subset_id,OURS_2024_03] / nb_tried_hex_meshing
-        average_avj_SJ = avg_sj_sum[MAMBO_subset_id,OURS_2024_03] / nb_tried_hex_meshing
-        table.add_row(
-            f'MAMBO/{MAMBO_subset_str} ({nb_CAD_models})',
-            'Ours_2024-03',
-            f"{percentage_labeling_success:.1f} %\n{percentage_labeling_non_monotone:.1f} %\n{percentage_labeling_invalid:.1f} %\n{percentage_labeling_failure:.1f} %",
-            f"{overall_average_fidelity:.3f}",
-            f"{labeling_duration[MAMBO_subset_id,OURS_2024_03]:.3f} s\n({speedup_relative_to_Evocube:.1f})",
-            f"{percentage_hex_mesh_positive_min_SJ:.1f} %",
-            f"{average_min_SJ:.3f}\n{average_avj_SJ:.3f}"
-        )
-
-        table.add_section()
-
-        # GRAPHCUT
-
+        # needed for GRAPHCUT and OURS_2024_09 stats
         nb_init_labeling_generated = \
             fluxes[MAMBO_subset_id,GRAPHCUT,TET_MESHING_SUCCESS,LABELING_SUCCESS] + \
             fluxes[MAMBO_subset_id,GRAPHCUT,TET_MESHING_SUCCESS,LABELING_NON_MONOTONE] + \
             fluxes[MAMBO_subset_id,GRAPHCUT,TET_MESHING_SUCCESS,LABELING_INVALID]
 
-        percentage_labeling_success = fluxes[MAMBO_subset_id,GRAPHCUT,TET_MESHING_SUCCESS,LABELING_SUCCESS] / nb_CAD_models * 100
-        percentage_labeling_non_monotone = fluxes[MAMBO_subset_id,GRAPHCUT,TET_MESHING_SUCCESS,LABELING_NON_MONOTONE] / nb_CAD_models * 100
-        percentage_labeling_invalid = fluxes[MAMBO_subset_id,GRAPHCUT,TET_MESHING_SUCCESS,LABELING_INVALID] / nb_CAD_models * 100
-        percentage_labeling_failure = fluxes[MAMBO_subset_id,GRAPHCUT,TET_MESHING_SUCCESS,LABELING_FAILURE] / nb_CAD_models * 100
-        
-        overall_average_fidelity = sum_avg_fidelities[MAMBO_subset_id,GRAPHCUT] / nb_init_labeling_generated
-        table.add_row(
-            f'MAMBO/{MAMBO_subset_str} ({nb_CAD_models})',
-            'graphcut',
-            f"{percentage_labeling_success:.1f} %\n{percentage_labeling_non_monotone:.1f} %\n{percentage_labeling_invalid:.1f} %\n{percentage_labeling_failure:.1f} %",
-            f"{overall_average_fidelity:.3f}",
-            f"{labeling_duration[MAMBO_subset_id,GRAPHCUT]:.3f} s",
-            "-",
-            "-"
-        )
+        if SHOW_GRAPHCUT_STATS:
+            percentage_labeling_success = fluxes[MAMBO_subset_id,GRAPHCUT,TET_MESHING_SUCCESS,LABELING_SUCCESS] / nb_CAD_models * 100
+            percentage_labeling_non_monotone = fluxes[MAMBO_subset_id,GRAPHCUT,TET_MESHING_SUCCESS,LABELING_NON_MONOTONE] / nb_CAD_models * 100
+            percentage_labeling_invalid = fluxes[MAMBO_subset_id,GRAPHCUT,TET_MESHING_SUCCESS,LABELING_INVALID] / nb_CAD_models * 100
+            percentage_labeling_failure = fluxes[MAMBO_subset_id,GRAPHCUT,TET_MESHING_SUCCESS,LABELING_FAILURE] / nb_CAD_models * 100
+            overall_average_fidelity = sum_avg_fidelities[MAMBO_subset_id,GRAPHCUT] / nb_init_labeling_generated
+            table.add_row(
+                f'MAMBO/{MAMBO_subset_str} ({nb_CAD_models})',
+                'graphcut',
+                f"{percentage_labeling_success:.1f} %\n{percentage_labeling_non_monotone:.1f} %\n{percentage_labeling_invalid:.1f} %\n{percentage_labeling_failure:.1f} %",
+                f"{overall_average_fidelity:.3f}",
+                f"{labeling_duration[MAMBO_subset_id,GRAPHCUT]:.3f} s",
+                "-",
+                "-"
+            )
+            table.add_section()
 
-        table.add_section()
-
-        # OURS_2024_09
-
-        assert(nb_init_labeling_generated == nb_CAD_models) # assert tetrahedrization & graphcut_labeling did not failed. easier for the stats
-        percentage_labeling_success = fluxes[MAMBO_subset_id,OURS_2024_09,INIT_LABELING_SUCCESS,LABELING_SUCCESS] / nb_CAD_models * 100
-        percentage_labeling_non_monotone = fluxes[MAMBO_subset_id,OURS_2024_09,INIT_LABELING_SUCCESS,LABELING_NON_MONOTONE] / nb_CAD_models * 100
-        percentage_labeling_invalid = fluxes[MAMBO_subset_id,OURS_2024_09,INIT_LABELING_SUCCESS,LABELING_INVALID] / nb_CAD_models * 100
-        percentage_labeling_failure = fluxes[MAMBO_subset_id,OURS_2024_09,INIT_LABELING_SUCCESS,LABELING_FAILURE] / nb_CAD_models * 100
-        nb_labeling_generated = \
-            fluxes[MAMBO_subset_id,OURS_2024_09,INIT_LABELING_SUCCESS,LABELING_SUCCESS] + \
-            fluxes[MAMBO_subset_id,OURS_2024_09,INIT_LABELING_SUCCESS,LABELING_NON_MONOTONE] + \
-            fluxes[MAMBO_subset_id,OURS_2024_09,INIT_LABELING_SUCCESS,LABELING_INVALID]
-        overall_average_fidelity = sum_avg_fidelities[MAMBO_subset_id,OURS_2024_09] / nb_labeling_generated
-        total_duration = labeling_duration[MAMBO_subset_id,GRAPHCUT] + labeling_duration[MAMBO_subset_id,OURS_2024_09] # init labeling duration + ours labeling optimization duration
-        speedup_relative_to_Evocube = labeling_duration[MAMBO_subset_id,EVOCUBE] / total_duration
-        table.add_row(
-            f'MAMBO/{MAMBO_subset_str} ({nb_CAD_models})',
-            'Ours_2024-09',
-            f"{percentage_labeling_success:.1f} %\n{percentage_labeling_non_monotone:.1f} %\n{percentage_labeling_invalid:.1f} %\n{percentage_labeling_failure:.1f} %",
-            f"{overall_average_fidelity:.3f}",
-            f"{total_duration:.3f}* s\n({speedup_relative_to_Evocube:.1f})", # speedup relative to Evocube
-            "-",
-            "-"
-        )
-
-        table.add_section()
+        if SHOW_OURS_2024_09_STATS:
+            assert(nb_init_labeling_generated == nb_CAD_models) # assert tetrahedrization & graphcut_labeling did not failed. easier for the stats
+            percentage_labeling_success = fluxes[MAMBO_subset_id,OURS_2024_09,INIT_LABELING_SUCCESS,LABELING_SUCCESS] / nb_CAD_models * 100
+            percentage_labeling_non_monotone = fluxes[MAMBO_subset_id,OURS_2024_09,INIT_LABELING_SUCCESS,LABELING_NON_MONOTONE] / nb_CAD_models * 100
+            percentage_labeling_invalid = fluxes[MAMBO_subset_id,OURS_2024_09,INIT_LABELING_SUCCESS,LABELING_INVALID] / nb_CAD_models * 100
+            percentage_labeling_failure = fluxes[MAMBO_subset_id,OURS_2024_09,INIT_LABELING_SUCCESS,LABELING_FAILURE] / nb_CAD_models * 100
+            nb_labeling_generated = \
+                fluxes[MAMBO_subset_id,OURS_2024_09,INIT_LABELING_SUCCESS,LABELING_SUCCESS] + \
+                fluxes[MAMBO_subset_id,OURS_2024_09,INIT_LABELING_SUCCESS,LABELING_NON_MONOTONE] + \
+                fluxes[MAMBO_subset_id,OURS_2024_09,INIT_LABELING_SUCCESS,LABELING_INVALID]
+            overall_average_fidelity = sum_avg_fidelities[MAMBO_subset_id,OURS_2024_09] / nb_labeling_generated
+            total_duration = labeling_duration[MAMBO_subset_id,GRAPHCUT] + labeling_duration[MAMBO_subset_id,OURS_2024_09] # init labeling duration + ours labeling optimization duration
+            speedup_relative_to_Evocube = labeling_duration[MAMBO_subset_id,EVOCUBE] / total_duration
+            table.add_row(
+                f'MAMBO/{MAMBO_subset_str} ({nb_CAD_models})',
+                'Ours_2024-09',
+                f"{percentage_labeling_success:.1f} %\n{percentage_labeling_non_monotone:.1f} %\n{percentage_labeling_invalid:.1f} %\n{percentage_labeling_failure:.1f} %",
+                f"{overall_average_fidelity:.3f}",
+                f"{total_duration:.3f}* s\n({speedup_relative_to_Evocube:.1f})", # speedup relative to Evocube
+                "-",
+                "-"
+            )
+            table.add_section()
 
     console = Console()
     console.print(table)
