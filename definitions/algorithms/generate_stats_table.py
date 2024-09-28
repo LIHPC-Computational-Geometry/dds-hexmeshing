@@ -445,7 +445,7 @@ def main(input_folder: Path, arguments: list):
     table.add_column('Valid & monotone\nValid, non-monotone\nInvalid\nFailed')
     table.add_column('Overall\navg(fidelity)')
     table.add_column('Feature-edges:\nSharp & preserved\nSharp & lost\nIgnored')
-    table.add_column('Total\nlabeling\nduration\n(speedup)')
+    table.add_column('Total\nlabeling\nduration')
     table.add_column('min(SJ) ≥ 0')
     table.add_column('avg min(SJ)\navg avg(SJ)')
 
@@ -473,6 +473,7 @@ def main(input_folder: Path, arguments: list):
             percentage_feature_edges_sharp_and_preserved = nb_feature_edges_sharp_and_preserved[MAMBO_subset_id,EVOCUBE] / total_nb_feature_edges * 100
             percentage_feature_edges_sharp_and_lost = nb_feature_edges_sharp_and_lost[MAMBO_subset_id,EVOCUBE] / total_nb_feature_edges * 100
             percentage_feature_edges_ignored = nb_feature_edges_ignored[MAMBO_subset_id,EVOCUBE] / total_nb_feature_edges * 100
+            duration_factor_relative_to_Ours_2024_09 = labeling_duration[MAMBO_subset_id,EVOCUBE] / (labeling_duration[MAMBO_subset_id,GRAPHCUT]+labeling_duration[MAMBO_subset_id,OURS_2024_09])
             nb_tried_hex_meshing = \
                 fluxes[MAMBO_subset_id,EVOCUBE,TET_MESHING_SUCCESS,LABELING_SUCCESS] + \
                 fluxes[MAMBO_subset_id,EVOCUBE,TET_MESHING_SUCCESS,LABELING_NON_MONOTONE]
@@ -488,7 +489,7 @@ def main(input_folder: Path, arguments: list):
                 f"{percentage_labeling_success:.1f} %\n{percentage_labeling_non_monotone:.1f} %\n{percentage_labeling_invalid:.1f} %\n{percentage_labeling_failure:.1f} %",
                 f"{overall_average_fidelity:.3f}",
                 f"{percentage_feature_edges_sharp_and_preserved:.1f} %\n{percentage_feature_edges_sharp_and_lost:.1f} %\n{percentage_feature_edges_ignored:.1f} %",
-                f"{labeling_duration[MAMBO_subset_id,EVOCUBE]:.3f} s",
+                f"{labeling_duration[MAMBO_subset_id,EVOCUBE]:.3f} s\n(x{duration_factor_relative_to_Ours_2024_09:.1f} Ours_2024-09)",
                 f"{percentage_hex_mesh_positive_min_SJ:.1f} %",
                 f"{average_min_SJ:.3f}\n{average_avj_SJ:.3f}"
             )
@@ -505,6 +506,7 @@ def main(input_folder: Path, arguments: list):
                 fluxes[MAMBO_subset_id,POLYCUT,COARSER_TET_MESHING_SUCCESS,LABELING_NON_MONOTONE] + \
                 fluxes[MAMBO_subset_id,POLYCUT,COARSER_TET_MESHING_SUCCESS,LABELING_INVALID]
             overall_average_fidelity = sum_avg_fidelities[MAMBO_subset_id,POLYCUT] / nb_labeling_generated
+            duration_factor_relative_to_Ours_2024_09 = labeling_duration[MAMBO_subset_id,POLYCUT] / (labeling_duration[MAMBO_subset_id,GRAPHCUT]+labeling_duration[MAMBO_subset_id,OURS_2024_09])
             nb_tried_hex_meshing = \
                 fluxes[MAMBO_subset_id,POLYCUT,COARSER_TET_MESHING_SUCCESS,LABELING_SUCCESS] + \
                 fluxes[MAMBO_subset_id,POLYCUT,COARSER_TET_MESHING_SUCCESS,LABELING_NON_MONOTONE]
@@ -520,7 +522,7 @@ def main(input_folder: Path, arguments: list):
                 f"{percentage_labeling_success:.1f} %\n{percentage_labeling_non_monotone:.1f} %\n{percentage_labeling_invalid:.1f} %\n{percentage_labeling_failure:.1f} %",
                 f"{overall_average_fidelity:.3f}",
                 "-",
-                f"{labeling_duration[MAMBO_subset_id,POLYCUT]:.3f} s",
+                f"{labeling_duration[MAMBO_subset_id,POLYCUT]:.3f}† s\n(x{duration_factor_relative_to_Ours_2024_09:.1f} Ours_2024-09)",
                 f"{percentage_hex_mesh_positive_min_SJ:.1f} %",
                 f"{average_min_SJ:.3f}\n{average_avj_SJ:.3f}"
             )
@@ -543,7 +545,6 @@ def main(input_folder: Path, arguments: list):
             percentage_feature_edges_sharp_and_preserved = nb_feature_edges_sharp_and_preserved[MAMBO_subset_id,OURS_2024_03] / total_nb_feature_edges * 100
             percentage_feature_edges_sharp_and_lost = nb_feature_edges_sharp_and_lost[MAMBO_subset_id,OURS_2024_03] / total_nb_feature_edges * 100
             percentage_feature_edges_ignored = nb_feature_edges_ignored[MAMBO_subset_id,OURS_2024_03] / total_nb_feature_edges * 100
-            speedup_relative_to_Evocube = labeling_duration[MAMBO_subset_id,EVOCUBE] / labeling_duration[MAMBO_subset_id,OURS_2024_03]
             nb_tried_hex_meshing = \
                 fluxes[MAMBO_subset_id,OURS_2024_03,TET_MESHING_SUCCESS,LABELING_SUCCESS] + \
                 fluxes[MAMBO_subset_id,OURS_2024_03,TET_MESHING_SUCCESS,LABELING_NON_MONOTONE]
@@ -559,7 +560,7 @@ def main(input_folder: Path, arguments: list):
                 f"{percentage_labeling_success:.1f} %\n{percentage_labeling_non_monotone:.1f} %\n{percentage_labeling_invalid:.1f} %\n{percentage_labeling_failure:.1f} %",
                 f"{overall_average_fidelity:.3f}",
                 f"{percentage_feature_edges_sharp_and_preserved:.1f} %\n{percentage_feature_edges_sharp_and_lost:.1f} %\n{percentage_feature_edges_ignored:.1f} %",
-                f"{labeling_duration[MAMBO_subset_id,OURS_2024_03]:.3f} s\n({speedup_relative_to_Evocube:.1f})",
+                f"{labeling_duration[MAMBO_subset_id,OURS_2024_03]:.3f} s",
                 f"{percentage_hex_mesh_positive_min_SJ:.1f} %",
                 f"{average_min_SJ:.3f}\n{average_avj_SJ:.3f}"
             )
@@ -615,14 +616,13 @@ def main(input_folder: Path, arguments: list):
             percentage_feature_edges_sharp_and_lost = nb_feature_edges_sharp_and_lost[MAMBO_subset_id,OURS_2024_09] / total_nb_feature_edges * 100
             percentage_feature_edges_ignored = nb_feature_edges_ignored[MAMBO_subset_id,OURS_2024_09] / total_nb_feature_edges * 100
             total_duration = labeling_duration[MAMBO_subset_id,GRAPHCUT] + labeling_duration[MAMBO_subset_id,OURS_2024_09] # init labeling duration + ours labeling optimization duration
-            speedup_relative_to_Evocube = labeling_duration[MAMBO_subset_id,EVOCUBE] / total_duration
             table.add_row(
                 f'MAMBO/{MAMBO_subset_str} ({nb_CAD_models})',
                 'Ours_2024-09',
                 f"{percentage_labeling_success:.1f} %\n{percentage_labeling_non_monotone:.1f} %\n{percentage_labeling_invalid:.1f} %\n{percentage_labeling_failure:.1f} %",
                 f"{overall_average_fidelity:.3f}",
                 f"{percentage_feature_edges_sharp_and_preserved:.1f} %\n{percentage_feature_edges_sharp_and_lost:.1f} %\n{percentage_feature_edges_ignored:.1f} %",
-                f"{total_duration:.3f}* s\n({speedup_relative_to_Evocube:.1f})", # speedup relative to Evocube
+                f"{total_duration:.3f}* s",
                 "-",
                 "-"
             )
@@ -631,3 +631,5 @@ def main(input_folder: Path, arguments: list):
     console = Console()
     console.print(table)
     console.print('*init labeling duration (graphcut) + ours duration (automatic_polycube)')
+    console.print('†executed on a virtual machine, do not reflect actual performances')
+    
