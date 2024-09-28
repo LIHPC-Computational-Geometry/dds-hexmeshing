@@ -186,9 +186,10 @@ def main(input_folder: Path, arguments: list):
             hexmesh_minSJ = None
             if (labeling_folder.path / 'polycube_withHexEx_1.3/global_padding/inner_smoothing_50').exists():
                 hex_mesh_folder: DataFolder = DataFolder(labeling_folder.path / 'polycube_withHexEx_1.3/global_padding/inner_smoothing_50')
-                if 'quality' in hex_mesh_folder.get_mesh_stats_dict()['cells']: # type: ignore | see ../data_folder_types/hex-mesh.accessors.py
-                    avg_sj_sum[MAMBO_subset_id,EVOCUBE] += hex_mesh_folder.get_mesh_stats_dict()['cells']['quality']['hex_SJ']['avg'] # type: ignore | see ../data_folder_types/hex-mesh.accessors.py
-                    hexmesh_minSJ = hex_mesh_folder.get_mesh_stats_dict()['cells']['quality']['hex_SJ']['min'] # type: ignore | see ../data_folder_types/hex-mesh.accessors.py
+                hex_mesh_stats: dict = hex_mesh_folder.get_mesh_stats_dict() # type: ignore | see ../data_folder_types/hex-mesh.accessors.py
+                if 'quality' in hex_mesh_stats['cells']: 
+                    avg_sj_sum[MAMBO_subset_id,EVOCUBE] += hex_mesh_stats['cells']['quality']['hex_SJ']['avg']
+                    hexmesh_minSJ = hex_mesh_stats['cells']['quality']['hex_SJ']['min']
                     min_sj_sum[MAMBO_subset_id,EVOCUBE] += hexmesh_minSJ
                 else:
                     # HexEx failed, no cells in output file
@@ -252,9 +253,10 @@ def main(input_folder: Path, arguments: list):
             hexmesh_minSJ = None
             if (labeling_folder.path / 'polycube_withHexEx_1.3/global_padding/inner_smoothing_50').exists():
                 hex_mesh_folder: DataFolder = DataFolder(labeling_folder.path / 'polycube_withHexEx_1.3/global_padding/inner_smoothing_50')
-                if 'quality' in hex_mesh_folder.get_mesh_stats_dict()['cells']: # type: ignore | see ../data_folder_types/hex-mesh.accessors.py
-                    avg_sj_sum[MAMBO_subset_id,OURS_2024_03] += hex_mesh_folder.get_mesh_stats_dict()['cells']['quality']['hex_SJ']['avg'] # type: ignore | see ../data_folder_types/hex-mesh.accessors.py
-                    hexmesh_minSJ = hex_mesh_folder.get_mesh_stats_dict()['cells']['quality']['hex_SJ']['min'] # type: ignore | see ../data_folder_types/hex-mesh.accessors.py
+                hex_mesh_stats: dict = hex_mesh_folder.get_mesh_stats_dict() # type: ignore | see ../data_folder_types/hex-mesh.accessors.py
+                if 'quality' in hex_mesh_stats['cells']:
+                    avg_sj_sum[MAMBO_subset_id,OURS_2024_03] += hex_mesh_stats['cells']['quality']['hex_SJ']['avg']
+                    hexmesh_minSJ = hex_mesh_stats['cells']['quality']['hex_SJ']['min']
                     min_sj_sum[MAMBO_subset_id,OURS_2024_03] += hexmesh_minSJ
                 else:
                     # HexEx failed, no cells in output file
