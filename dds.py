@@ -447,7 +447,7 @@ class DataFolder():
             self.auto_generate_missing_file(filename_keyword, silent_output=silent_output)
             if path.exists():
                 return path # successful auto-generation
-            raise Exception(f'Missing file {path}')
+            raise FileNotFoundError(f'Missing file {path}')
         
     def get_closest_parent_of_type(self, data_folder_type: str, check_self = True):
         if check_self and self.type == data_folder_type:
