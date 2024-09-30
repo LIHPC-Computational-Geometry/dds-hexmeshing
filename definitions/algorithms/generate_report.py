@@ -263,7 +263,7 @@ def main(input_folder: Path, arguments: list):
             elif labeling_object.nb_turning_points() != 0: # type: ignore | see ../data_folder_types/labeling.accessors.py
                 nb_meshing_succeeded_2_labeling_non_monotone += 1
                 if ours_row['glb_hexmesh'] is not None:
-                    # an hex-mesh was successfully generated
+                    # a hex-mesh was successfully generated
                     assert(ours_row['minSJ'] is not None)
                     if ours_row['minSJ'] < 0.0:
                         nb_labeling_non_monotone_2_hexmesh_negative_min_sj += 1
@@ -276,7 +276,7 @@ def main(input_folder: Path, arguments: list):
                 # so we have a valid labeling with no turning-points
                 nb_meshing_succeeded_2_labeling_succeeded += 1
                 if ours_row['glb_hexmesh'] is not None:
-                    # an hex-mesh was successfully generated
+                    # a hex-mesh was successfully generated
                     assert(ours_row['minSJ'] is not None)
                     if ours_row['minSJ'] < 0.0:
                         nb_labeling_succeeded_2_hexmesh_negative_min_sj += 1
@@ -300,7 +300,7 @@ def main(input_folder: Path, arguments: list):
     nb_labeling_invalid = nb_meshing_succeeded_2_labeling_invalid
     nb_labeling_non_monotone = nb_meshing_succeeded_2_labeling_non_monotone
     nb_labeling_succeeded = nb_meshing_succeeded_2_labeling_succeeded
-    max_nb_hexmeshes = nb_labeling_non_monotone + nb_labeling_succeeded # other cases cannot lead to an hex-mesh
+    max_nb_hexmeshes = nb_labeling_non_monotone + nb_labeling_succeeded # other cases cannot lead to a hex-mesh
     nb_hexmesh_failed = nb_labeling_non_monotone_2_hexmesh_failed + nb_labeling_succeeded_2_hexmesh_failed
     nb_hexmesh_negative_min_sj = nb_labeling_non_monotone_2_hexmesh_negative_min_sj + nb_labeling_succeeded_2_hexmesh_negative_min_sj
     nb_hexmesh_positive_min_sj = nb_labeling_non_monotone_2_hexmesh_positive_min_sj + nb_labeling_succeeded_2_hexmesh_positive_min_sj

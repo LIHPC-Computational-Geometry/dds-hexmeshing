@@ -122,7 +122,7 @@ def main(input_folder: Path, arguments: list):
             # update duration sum
             labeling_duration[dataset_id,EVOCUBE] += Evocube_duration
 
-            # if there is an hex-mesh in the labeling folder, instantiate it and retrieve mesh stats
+            # if there is a hex-mesh in the labeling folder, instantiate it and retrieve mesh stats
             hexmesh_minSJ = None
             if (labeling_folder.path / 'polycube_withHexEx_1.3/global_padding/inner_smoothing_50').exists():
                 hex_mesh_folder: DataFolder = DataFolder(labeling_folder.path / 'polycube_withHexEx_1.3/global_padding/inner_smoothing_50')
@@ -142,7 +142,7 @@ def main(input_folder: Path, arguments: list):
             elif labeling_folder.nb_turning_points() != 0: # type: ignore | see ../data_folder_types/labeling.accessors.py
                 fluxes[dataset_id,EVOCUBE,TET_MESHING_SUCCESS,LABELING_NON_MONOTONE] += 1
                 if hexmesh_minSJ is not None:
-                    # an hex-mesh was successfully generated
+                    # a hex-mesh was successfully generated
                     if hexmesh_minSJ < 0.0:
                         fluxes[dataset_id,EVOCUBE,LABELING_NON_MONOTONE,HEX_MESHING_NEGATIVE_MIN_SJ] += 1
                     else:
@@ -153,7 +153,7 @@ def main(input_folder: Path, arguments: list):
             else:
                 fluxes[dataset_id,EVOCUBE,TET_MESHING_SUCCESS,LABELING_SUCCESS] += 1
                 if hexmesh_minSJ is not None:
-                    # an hex-mesh was successfully generated
+                    # a hex-mesh was successfully generated
                     if hexmesh_minSJ < 0.0:
                         fluxes[dataset_id,EVOCUBE,LABELING_SUCCESS,HEX_MESHING_NEGATIVE_MIN_SJ] += 1
                     else:
@@ -192,47 +192,15 @@ def main(input_folder: Path, arguments: list):
 
             # update duration sum
             labeling_duration[dataset_id,OURS_2024_03] += ours_duration
-
-            # if there is an hex-mesh in the labeling folder, instantiate it and retrieve mesh stats
-            hexmesh_minSJ = None
-            if (labeling_folder.path / 'polycube_withHexEx_1.3/global_padding/inner_smoothing_50').exists():
-                hex_mesh_folder: DataFolder = DataFolder(labeling_folder.path / 'polycube_withHexEx_1.3/global_padding/inner_smoothing_50')
-                hex_mesh_stats: dict = hex_mesh_folder.get_mesh_stats_dict() # type: ignore | see ../data_folder_types/hex-mesh.accessors.py
-                if 'quality' in hex_mesh_stats['cells']:
-                    avg_sj_sum[dataset_id,OURS_2024_03] += hex_mesh_stats['cells']['quality']['hex_SJ']['avg']
-                    hexmesh_minSJ = hex_mesh_stats['cells']['quality']['hex_SJ']['min']
-                    min_sj_sum[dataset_id,OURS_2024_03] += hexmesh_minSJ
-                else:
-                    # HexEx failed, no cells in output file
-                    avg_sj_sum[dataset_id,OURS_2024_03] += -1.0 # assume worse value
-                    min_sj_sum[dataset_id,OURS_2024_03] += -1.0 # assume worse value
             
             # update the counters
             if not labeling_folder.has_valid_labeling(): # type: ignore | see ../data_folder_types/labeling.accessors.py
                 fluxes[dataset_id,OURS_2024_03,TET_MESHING_SUCCESS,LABELING_INVALID] += 1
             elif labeling_folder.nb_turning_points() != 0: # type: ignore | see ../data_folder_types/labeling.accessors.py
                 fluxes[dataset_id,OURS_2024_03,TET_MESHING_SUCCESS,LABELING_NON_MONOTONE] += 1
-                if hexmesh_minSJ is not None:
-                    # an hex-mesh was successfully generated
-                    if hexmesh_minSJ < 0.0:
-                        fluxes[dataset_id,OURS_2024_03,LABELING_NON_MONOTONE,HEX_MESHING_NEGATIVE_MIN_SJ] += 1
-                    else:
-                        fluxes[dataset_id,OURS_2024_03,LABELING_NON_MONOTONE,HEX_MESHING_POSITIVE_MIN_SJ] += 1
-                else:
-                    # no hex-mesh
-                    fluxes[dataset_id,OURS_2024_03,LABELING_NON_MONOTONE,HEX_MESHING_FAILURE] += 1
             else:
                 # so we have a valid labeling with no turning-points
                 fluxes[dataset_id,OURS_2024_03,TET_MESHING_SUCCESS,LABELING_SUCCESS] += 1
-                if hexmesh_minSJ is not None:
-                    # an hex-mesh was successfully generated
-                    if hexmesh_minSJ < 0.0:
-                        fluxes[dataset_id,OURS_2024_03,LABELING_SUCCESS,HEX_MESHING_NEGATIVE_MIN_SJ] += 1
-                    else:
-                        fluxes[dataset_id,OURS_2024_03,LABELING_SUCCESS,HEX_MESHING_POSITIVE_MIN_SJ] += 1
-                else:
-                    # no hex-mesh
-                    fluxes[dataset_id,OURS_2024_03,LABELING_SUCCESS,HEX_MESHING_FAILURE] += 1
     
     def parse_Ours_2024_09(dataset_id: int, tet_mesh: DataFolder): # with parsing of the init labeling (graphcut)
         labeling_subfolders_generated_by_graphcut: list[Path] = tet_folder.get_subfolders_generated_by('graphcut_labeling')
@@ -303,15 +271,47 @@ def main(input_folder: Path, arguments: list):
 
                 # update duration sum
                 labeling_duration[dataset_id,OURS_2024_09] += ours_duration
+
+                # if there is a hex-mesh in the labeling folder, instantiate it and retrieve mesh stats
+                hexmesh_minSJ = None
+                if (labeling_ours_folder.path / 'polycube_withHexEx_1.3/global_padding/inner_smoothing_50').exists():
+                    hex_mesh_folder: DataFolder = DataFolder(labeling_ours_folder.path / 'polycube_withHexEx_1.3/global_padding/inner_smoothing_50')
+                    hex_mesh_stats: dict = hex_mesh_folder.get_mesh_stats_dict() # type: ignore | see ../data_folder_types/hex-mesh.accessors.py
+                    if 'quality' in hex_mesh_stats['cells']:
+                        avg_sj_sum[dataset_id,OURS_2024_09] += hex_mesh_stats['cells']['quality']['hex_SJ']['avg']
+                        hexmesh_minSJ = hex_mesh_stats['cells']['quality']['hex_SJ']['min']
+                        min_sj_sum[dataset_id,OURS_2024_09] += hexmesh_minSJ
+                    else:
+                        # HexEx failed, no cells in output file
+                        avg_sj_sum[dataset_id,OURS_2024_09] += -1.0 # assume worse value
+                        min_sj_sum[dataset_id,OURS_2024_09] += -1.0 # assume worse value
                 
                 # update the counters
                 if not labeling_ours_folder.has_valid_labeling():  # type: ignore | see ../data_folder_types/labeling.accessors.py
                     fluxes[dataset_id,OURS_2024_09,INIT_LABELING_SUCCESS,LABELING_INVALID] += 1
                 elif labeling_ours_folder.nb_turning_points() != 0:  # type: ignore | see ../data_folder_types/labeling.accessors.py
                     fluxes[dataset_id,OURS_2024_09,INIT_LABELING_SUCCESS,LABELING_NON_MONOTONE] += 1
+                    if hexmesh_minSJ is not None:
+                        # a hex-mesh was successfully generated
+                        if hexmesh_minSJ < 0.0:
+                            fluxes[dataset_id,OURS_2024_09,LABELING_NON_MONOTONE,HEX_MESHING_NEGATIVE_MIN_SJ] += 1
+                        else:
+                            fluxes[dataset_id,OURS_2024_09,LABELING_NON_MONOTONE,HEX_MESHING_POSITIVE_MIN_SJ] += 1
+                    else:
+                        # no hex-mesh
+                        fluxes[dataset_id,OURS_2024_09,LABELING_NON_MONOTONE,HEX_MESHING_FAILURE] += 1
                 else:
                     # so we have a valid labeling with no turning-points
                     fluxes[dataset_id,OURS_2024_09,INIT_LABELING_SUCCESS,LABELING_SUCCESS] += 1
+                    if hexmesh_minSJ is not None:
+                        # a hex-mesh was successfully generated
+                        if hexmesh_minSJ < 0.0:
+                            fluxes[dataset_id,OURS_2024_09,LABELING_SUCCESS,HEX_MESHING_NEGATIVE_MIN_SJ] += 1
+                        else:
+                            fluxes[dataset_id,OURS_2024_09,LABELING_SUCCESS,HEX_MESHING_POSITIVE_MIN_SJ] += 1
+                    else:
+                        # no hex-mesh
+                        fluxes[dataset_id,OURS_2024_09,LABELING_SUCCESS,HEX_MESHING_FAILURE] += 1
     
     def parse_PolyCut_output(dataset_id: int, tet_folder: DataFolder):
         if not (tet_folder.path / 'PolyCut_3').exists() or not (tet_folder.path / 'PolyCut_3' / surface_labeling_filename).exists():
@@ -337,7 +337,7 @@ def main(input_folder: Path, arguments: list):
             # update duration sum
             labeling_duration[dataset_id,POLYCUT] += polycut_durations['polycut'] # should we take into account the duration of cusy2.exe, which is the executable writing the labeling?
 
-            # if there is an hex-mesh in the labeling folder, instantiate it and retrieve mesh stats
+            # if there is a hex-mesh in the labeling folder, instantiate it and retrieve mesh stats
             hexmesh_minSJ = None
             if (labeling_folder.path / 'optimizer_100' / 'untangler' / hex_mesh_filename).exists():
                 hex_mesh_folder: DataFolder = DataFolder(labeling_folder.path / 'optimizer_100' / 'untangler')
@@ -383,7 +383,7 @@ def main(input_folder: Path, arguments: list):
             elif labeling_folder.nb_turning_points() != 0: # type: ignore | see ../data_folder_types/labeling.accessors.py
                 fluxes[dataset_id,POLYCUT,COARSER_TET_MESHING_SUCCESS,LABELING_NON_MONOTONE] += 1
                 if hexmesh_minSJ is not None:
-                    # an hex-mesh was successfully generated
+                    # a hex-mesh was successfully generated
                     if hexmesh_minSJ < 0.0:
                         fluxes[dataset_id,POLYCUT,LABELING_NON_MONOTONE,HEX_MESHING_NEGATIVE_MIN_SJ] += 1
                     else:
@@ -394,7 +394,7 @@ def main(input_folder: Path, arguments: list):
             else:
                 fluxes[dataset_id,POLYCUT,COARSER_TET_MESHING_SUCCESS,LABELING_SUCCESS] += 1
                 if hexmesh_minSJ is not None:
-                    # an hex-mesh was successfully generated
+                    # a hex-mesh was successfully generated
                     if hexmesh_minSJ < 0.0:
                         fluxes[dataset_id,POLYCUT,LABELING_SUCCESS,HEX_MESHING_NEGATIVE_MIN_SJ] += 1
                     else:
@@ -557,15 +557,6 @@ def main(input_folder: Path, arguments: list):
             percentage_feature_edges_sharp_and_preserved = nb_feature_edges_sharp_and_preserved[dataset_id,OURS_2024_03] / total_nb_feature_edges * 100
             percentage_feature_edges_sharp_and_lost = nb_feature_edges_sharp_and_lost[dataset_id,OURS_2024_03] / total_nb_feature_edges * 100
             percentage_feature_edges_ignored = nb_feature_edges_ignored[dataset_id,OURS_2024_03] / total_nb_feature_edges * 100
-            nb_tried_hex_meshing = \
-                fluxes[dataset_id,OURS_2024_03,TET_MESHING_SUCCESS,LABELING_SUCCESS] + \
-                fluxes[dataset_id,OURS_2024_03,TET_MESHING_SUCCESS,LABELING_NON_MONOTONE]
-            nb_hex_meshes_with_positive_min_sj = \
-                fluxes[dataset_id,OURS_2024_03,LABELING_SUCCESS,HEX_MESHING_POSITIVE_MIN_SJ] + \
-                fluxes[dataset_id,OURS_2024_03,LABELING_NON_MONOTONE,HEX_MESHING_POSITIVE_MIN_SJ]
-            percentage_hex_mesh_positive_min_SJ = nb_hex_meshes_with_positive_min_sj / nb_tried_hex_meshing * 100
-            average_min_SJ = min_sj_sum[dataset_id,OURS_2024_03] / nb_tried_hex_meshing
-            average_avj_SJ = avg_sj_sum[dataset_id,OURS_2024_03] / nb_tried_hex_meshing
             table.add_row(
                 f'{dataset_str} ({nb_CAD_models})',
                 'Ours_2024-03',
@@ -573,8 +564,8 @@ def main(input_folder: Path, arguments: list):
                 f"{overall_average_fidelity:.3f}",
                 f"{percentage_feature_edges_sharp_and_preserved:.1f} %\n{percentage_feature_edges_sharp_and_lost:.1f} %\n{percentage_feature_edges_ignored:.1f} %",
                 f"{labeling_duration[dataset_id,OURS_2024_03]:.3f} s",
-                f"{percentage_hex_mesh_positive_min_SJ:.1f} %",
-                f"{average_min_SJ:.3f}\n{average_avj_SJ:.3f}"
+                "-",
+                "-"
             )
             table.add_section()
 
@@ -628,6 +619,17 @@ def main(input_folder: Path, arguments: list):
             percentage_feature_edges_sharp_and_lost = 0 if dataset_id == OCTREE_MESHING_CAD else (nb_feature_edges_sharp_and_lost[dataset_id,OURS_2024_09] / total_nb_feature_edges * 100)
             percentage_feature_edges_ignored = 0 if dataset_id == OCTREE_MESHING_CAD else (nb_feature_edges_ignored[dataset_id,OURS_2024_09] / total_nb_feature_edges * 100)
             total_duration = labeling_duration[dataset_id,GRAPHCUT] + labeling_duration[dataset_id,OURS_2024_09] # init labeling duration + ours labeling optimization duration
+            nb_tried_hex_meshing = \
+                fluxes[dataset_id,OURS_2024_09,INIT_LABELING_SUCCESS,LABELING_SUCCESS] + \
+                fluxes[dataset_id,OURS_2024_09,INIT_LABELING_SUCCESS,LABELING_NON_MONOTONE]
+            assert(nb_tried_hex_meshing != 0)
+            nb_hex_meshes_with_positive_min_sj = \
+                fluxes[dataset_id,OURS_2024_09,LABELING_SUCCESS,HEX_MESHING_POSITIVE_MIN_SJ] + \
+                fluxes[dataset_id,OURS_2024_09,LABELING_NON_MONOTONE,HEX_MESHING_POSITIVE_MIN_SJ]
+            assert(nb_hex_meshes_with_positive_min_sj != 0)
+            percentage_hex_mesh_positive_min_SJ = nb_hex_meshes_with_positive_min_sj / nb_tried_hex_meshing * 100
+            average_min_SJ = min_sj_sum[dataset_id,OURS_2024_09] / nb_tried_hex_meshing
+            average_avj_SJ = avg_sj_sum[dataset_id,OURS_2024_09] / nb_tried_hex_meshing
             table.add_row(
                 f'{dataset_str} ({nb_CAD_models})',
                 'Ours_2024-09',
@@ -635,8 +637,8 @@ def main(input_folder: Path, arguments: list):
                 f"{overall_average_fidelity:.3f}",
                 "-" if dataset_id == OCTREE_MESHING_CAD else f"{percentage_feature_edges_sharp_and_preserved:.1f} %\n{percentage_feature_edges_sharp_and_lost:.1f} %\n{percentage_feature_edges_ignored:.1f} %",
                 f"{total_duration:.3f}* s",
-                "-",
-                "-"
+                f"{percentage_hex_mesh_positive_min_SJ:.1f} %",
+                f"{average_min_SJ:.3f}\n{average_avj_SJ:.3f}"
             )
             table.add_section()
 
