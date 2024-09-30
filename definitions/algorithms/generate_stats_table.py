@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 from collections import defaultdict
+from os import unlink
 
 from dds import *
 
@@ -59,6 +60,8 @@ def main(input_folder: Path, arguments: list):
     HEX_MESHING_NEGATIVE_MIN_SJ = 12
     HEX_MESHING_FAILURE         = 13
 
+    LABELING_STATS_JSON,_ = translate_filename_keyword('LABELING_STATS_JSON')
+
     # sum of average fidelities
     sum_avg_fidelities: defaultdict[tuple[int,int],float] = defaultdict(float) # if a given key is missing, use default value of float() == 0.0
     # To have the global average, divide by the number of generated labelings,
@@ -110,6 +113,9 @@ def main(input_folder: Path, arguments: list):
             assert(labeling_info_dict is not None)
             Evocube_duration = labeling_info_dict[ISO_datetime]['duration'][0]
 
+            # force recomputation of labeling stats
+            if (labeling_folder.path / LABELING_STATS_JSON).exists():
+                unlink(labeling_folder.path / LABELING_STATS_JSON)
             labeling_stats = labeling_folder.get_labeling_stats_dict() # type: ignore | see ../data_folder_types/labeling.accessors.py
 
             # update avg fidelity sum
@@ -180,7 +186,10 @@ def main(input_folder: Path, arguments: list):
             assert(ISO_datetime is not None)
             labeling_info_dict = labeling_folder.get_info_dict()
             assert(labeling_info_dict is not None)
-            ours_duration = labeling_info_dict[ISO_datetime]['duration'][0] 
+            ours_duration = labeling_info_dict[ISO_datetime]['duration'][0]
+            # force recomputation of labeling stats
+            if (labeling_folder.path / LABELING_STATS_JSON).exists():
+                unlink(labeling_folder.path / LABELING_STATS_JSON)
             labeling_stats = labeling_folder.get_labeling_stats_dict() # type: ignore | see ../data_folder_types/labeling.accessors.py
 
             # update avg fidelity sum
@@ -253,6 +262,9 @@ def main(input_folder: Path, arguments: list):
             init_labeling_info_dict = init_labeling_folder.get_info_dict()
             assert(init_labeling_info_dict is not None)
             graphcut_duration = init_labeling_info_dict[ISO_datetime]['duration'][0]
+            # force recomputation of labeling stats
+            if (init_labeling_folder.path / LABELING_STATS_JSON).exists():
+                unlink(init_labeling_folder.path / LABELING_STATS_JSON)
             labeling_stats = init_labeling_folder.get_labeling_stats_dict() # type: ignore | see ../data_folder_types/labeling.accessors.py
 
             # update avg fidelity sum
@@ -292,6 +304,9 @@ def main(input_folder: Path, arguments: list):
                 ours_labeling_info_dict = labeling_ours_folder.get_info_dict()
                 assert(ours_labeling_info_dict is not None)
                 ours_duration = ours_labeling_info_dict[ISO_datetime]['duration'][0]
+                # force recomputation of labeling stats
+                if (labeling_ours_folder.path / LABELING_STATS_JSON).exists():
+                    unlink(labeling_ours_folder.path / LABELING_STATS_JSON)
                 labeling_stats = labeling_ours_folder.get_labeling_stats_dict()  # type: ignore | see ../data_folder_types/labeling.accessors.py
 
                 # update avg fidelity sum
@@ -328,6 +343,9 @@ def main(input_folder: Path, arguments: list):
             with open(labeling_folder.path / 'PolyCut.durations.json','r') as polycut_durations_stream:
                polycut_durations = json.load(polycut_durations_stream)
 
+            # force recomputation of labeling stats
+            if (labeling_folder.path / LABELING_STATS_JSON).exists():
+                unlink(labeling_folder.path / LABELING_STATS_JSON)
             labeling_stats = labeling_folder.get_labeling_stats_dict() # type: ignore | see ../data_folder_types/labeling.accessors.py
 
             # update avg fidelity sum
