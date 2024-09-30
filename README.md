@@ -1,7 +1,7 @@
 <div align="center">
   <h1>dds</h1><br/>
   <p>Semantic data folders</p><br/>
-  <a href="https://github.com/LIHPC-Computational-Geometry/HexMeshWorkshop/blob/main/CHANGELOG.md">🔄 Changelog</a> • <a href="https://github.com/LIHPC-Computational-Geometry/HexMeshWorkshop/wiki/User-documentation">📖 User documentation</a> • <a href="https://github.com/LIHPC-Computational-Geometry/HexMeshWorkshop/wiki/Developer-documentation">🧑‍💻 Developer documentation</a>
+  <a href="https://github.com/LIHPC-Computational-Geometry/HexMeshWorkshop/blob/main/CHANGELOG.md">🔄 Changelog</a> • <a href="https://github.com/LIHPC-Computational-Geometry/HexMeshWorkshop/wiki/User-documentation">📖 User documentation</a>
 </div>
 
 Instead of having:
@@ -16,7 +16,7 @@ this project make it possible to keep each algorithm small and independent, and 
 <details>
 <summary>
     Auto-download the <a href="https://gitlab.com/franck.ledoux/mambo">MAMBO</a> dataset:<br/>
-    &emsp;<code>./import_MAMBO</code>
+    &emsp;<code>./dds.py run import_MAMBO ~/data</code>
 </summary>
 
 ```diff
@@ -34,7 +34,7 @@ this project make it possible to keep each algorithm small and independent, and 
 <details>
 <summary>
     Tetrahedrization of M7 with <a href="http://gmsh.info/">Gmsh</a>:<br/>
-    &emsp;<code>./Gmsh -i ~/data/M7 --mesh-size 0.2</code>
+    &emsp;<code>./dds.py run Gmsh ~/data/M7 characteristic_length_factor=0.2</code>
 </summary>
 
 <table>
@@ -58,7 +58,7 @@ this project make it possible to keep each algorithm small and independent, and 
 <details>
 <summary>
     Hmm, I need a finer mesh...</a><br/>
-    &emsp;<code>./Gmsh -i ~/data/M7 --mesh-size 0.05</code>
+    &emsp;<code>./dds.py run Gmsh ~/data/M7 characteristic_length_factor=0.05</code>
 </summary>
 
 <table>
@@ -83,7 +83,7 @@ this project make it possible to keep each algorithm small and independent, and 
 <details> 
 <summary>
     Alright. I wonder what the naive labeling looks like.</a><br/>
-    &emsp;<code>./naive_labeling -i ~/data/M7/Gmsh_0.05</code>
+    &emsp;<code>./dds.py run naive_labeling ~/data/M7/Gmsh_0.05</code>
 </summary>
 
 <table>
@@ -110,7 +110,7 @@ this project make it possible to keep each algorithm small and independent, and 
 <details> 
 <summary>
     Okay, it's not valid. Let me tweak the labeling by hand.</a><br/>
-    &emsp;<em>Sure:</em> <code>./labeling_painter -i ~/data/M7/Gmsh_0.05</code>
+    &emsp;<em>Sure:</em> <code>./dds.py run labeling_painter ~/data/M7/Gmsh_0.05</code>
 </summary>
 
 <table>
@@ -140,7 +140,7 @@ this project make it possible to keep each algorithm small and independent, and 
 <details> 
 <summary>
     Ho-ho! Can you extract a hex-mesh with <a href="https://www.graphics.rwth-aachen.de/software/libHexEx/">libHexEx</a>?<br/>
-    &emsp;<em>Indeed I can:</em> <code>./polycube_withHexEx -i ~/data/M7/Gmsh_0.05/labeling_painter</code>
+    &emsp;<em>Indeed I can:</em> <code>./dds.py run polycube_withHexEx ~/data/M7/Gmsh_0.05/labeling_painter</code>
 </summary>
 
 <table>
@@ -171,7 +171,7 @@ this project make it possible to keep each algorithm small and independent, and 
 <summary>
     Fantastic!! Can you also apply a global padding? 🥺<br/>
     &emsp;<em>You know I'm just a Python script, right?</em><br/>
-    &emsp;<code>./global_padding -i ~/data/M7/Gmsh_0.05/labeling_painter/polycube_withHexEx_1.0</code>
+    &emsp;<code>./dds.py run global_padding ~/data/M7/Gmsh_0.05/labeling_painter/polycube_withHexEx_1.0</code>
 </summary>
 
 <table>
@@ -205,51 +205,29 @@ Overview of the data subfolder types (boxes) and the wrapped algorithms (arrows)
 ```mermaid
 graph LR
     step(step)
-    tet_mesh(tet_mesh)
+    stl(stl)
+    tet-mesh(tet-mesh)
     labeling(labeling)
-    hex_mesh(hex_mesh)
-    step -- Gmsh --> tet_mesh
-    tet_mesh -- naive_labeling --> labeling
-    tet_mesh -- labeling_painter --> labeling
-    tet_mesh -- graphcut_labeling --> labeling
-    tet_mesh -- evocube --> labeling
-    tet_mesh -- automatic_polycube --> labeling
-    tet_mesh -- HexBox --> hex_mesh
-    tet_mesh -- AlgoHex --> hex_mesh
-    tet_mesh -- marchinghex --> hex_mesh
-    labeling -- polycube_withHexEx --> hex_mesh
-    labeling -- robustPolycube --> hex_mesh
-    hex_mesh -- global_padding --> hex_mesh
+    hex-mesh(hex-mesh)
+    step -- Gmsh --> tet-mesh
+    tet-mesh -- naive_labeling --> labeling
+    tet-mesh -- labeling_painter --> labeling
+    tet-mesh -- graphcut_labeling --> labeling
+    tet-mesh -- evocube --> labeling
+    tet-mesh -- automatic_polycube --> labeling
+    tet-mesh -- HexBox --> hex-mesh
+    tet-mesh -- AlgoHex --> hex-mesh
+    tet-mesh -- marchinghex --> hex-mesh
+    labeling -- polycube_withHexEx --> hex-mesh
+    labeling -- robustPolycube --> hex-mesh
+    hex-mesh -- global_padding --> hex-mesh
+    hex-mesh -- inner_smoothing --> hex-mesh
+    stl -- MG-Tetra --> tet-mesh
 ```
 
 Repository structure:
-- [`from_cli`](from_cli/): scripts to interact with the database from the command line
-- [`from_python`](from_python/): scripts to interact with the database from Python
-- [`glue_code`](glue_code/): pieces of code for other softwares
+- [`definitions/paths.yml`](definitions/paths.yml): links to external binaries
+- [`definitions/data_folder_types/*`](definitions/data_folder_types/): definition of the types that data folders can have (`tet-mesh`, `labeling`, etc)
+- [`definitions/algorithms/*`](definitions/algorithms/): definition of the runnable algorithms, wrapping binaries & creating/updating data folders
+- [`dds.py`](dds.py): command-line arguments interpreter, definitions parser & action execution
 - [`img`](img/): images displayed in the README
-- [`modules`](modules/): Python modules internal to the project
-
-<details>
-<summary>Yet another architecture revision</summary>
-
-Idea: declarative approach, infrastructure-as-code (like Terraform).
-Instead of editing Python scripts to describe data folder types and algorithms,
-we would rely on YAML files :
-- `data_folder_types/*.yml` : a type of data folder. interpret a folder as an object. description of the expected filenames inside
-- `algorithms/*.yml` : an wrapper around an executable, working on a specific data subfolder type
-
-There will be Python script for optional pre- and post-processing for algorithms, as well as for custom algorithms (not based on an external executable)
-
-Then we would have a `dds.py` that parse the necessary YAML files for the given instructions, eg:
-- run an algorithm: `./dds.py run <algo_name> <input_folder>`
-- print children of a given data folder: `./dds.py children <input_folder>`
-- print history of a given data folder: `./dds.py history <input_folder>`
-- list all data folder types: `./dds.py types list`
-- print info about a specific data folder type: `./dds.py types info <type_name>`
-- list all algorithms: `./dds.py algos list`
-- print info about a specific algorithm: `./dds.py algos info <algo_name>`
-
-Note:
-- (algorithms) to access a file in the (grand)parent folder, we no longer specify the reverse depth. We need to go up until the filename in found, and potentially restrict 2 data folder types to use the same filename and filename keyword.
-
-</details>
