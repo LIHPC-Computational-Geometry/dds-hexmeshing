@@ -136,6 +136,10 @@ def process_labeling(labeling_object: DataFolder):
     """
     assert(labeling_object.type == 'labeling')
     # hex-mesh extraction if not already done
+    # but only if the labeling is valid
+    if not labeling_object.has_valid_labeling(): # type: ignore | see ../data_folder_types/labeling.accessors.py
+        log.debug(f"Don't call 'polycube_withHexEx' on {labeling_object.path} because the labeling is invalid")
+        return
     if not (labeling_object.path / 'polycube_withHexEx_1.3').exists():
         if user_confirmed_or_choose_autorun(POLYCUBE_WITHHEXEX_OUTPUT_MISSING_POLICY,MISSING_OUTPUT_LINE_TEMPLATE.format(algo='polycube_withHexEx', path=collapseuser(labeling_object.path))):
             with CONSOLE.status(RUNNING_ALGO_LINE_TEMPLATE.format(algo='polycube_withHexEx', path=collapseuser(labeling_object.path))) as status:

@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 
 from collections import defaultdict
+from shutil import rmtree
+from rich.prompt import Confirm
 
 from dds import *
 
@@ -124,20 +126,22 @@ def main(input_folder: Path, arguments: list):
 
             # if there is a hex-mesh in the labeling folder, instantiate it and retrieve mesh stats
             hexmesh_minSJ = None
-            if (labeling_folder.path / 'polycube_withHexEx_1.3/global_padding/inner_smoothing_50').exists():
-                hex_mesh_folder: DataFolder = DataFolder(labeling_folder.path / 'polycube_withHexEx_1.3/global_padding/inner_smoothing_50')
+            post_processed_hex_mesh_path = labeling_folder.path / 'polycube_withHexEx_1.3' / 'global_padding' / 'inner_smoothing_50'
+            if post_processed_hex_mesh_path.exists():
+                hex_mesh_folder: DataFolder = DataFolder(post_processed_hex_mesh_path)
                 hex_mesh_stats: dict = hex_mesh_folder.get_mesh_stats_dict() # type: ignore | see ../data_folder_types/hex-mesh.accessors.py
                 if 'quality' in hex_mesh_stats['cells']: 
                     avg_sj_sum[dataset_id,EVOCUBE] += hex_mesh_stats['cells']['quality']['hex_SJ']['avg']
                     hexmesh_minSJ = hex_mesh_stats['cells']['quality']['hex_SJ']['min']
                     min_sj_sum[dataset_id,EVOCUBE] += hexmesh_minSJ
-                else:
-                    # HexEx failed, no cells in output file
-                    avg_sj_sum[dataset_id,EVOCUBE] += -1.0 # assume worse value
-                    min_sj_sum[dataset_id,EVOCUBE] += -1.0 # assume worse value
             
             # update the counters
             if not labeling_folder.has_valid_labeling(): # type: ignore | see ../data_folder_types/labeling.accessors.py
+                if (labeling_folder.path / 'polycube_withHexEx_1.3').exists():
+                    if Confirm(f"There is a 'polycube_withHexEx' output inside {labeling_folder.path}, but the labeling is invalid. Remove this hex-mesh folder?"):
+                        rmtree(labeling_folder.path / 'polycube_withHexEx_1.3')
+                assert(not post_processed_hex_mesh_path.exists())
+                assert(hexmesh_minSJ is None)
                 fluxes[dataset_id,EVOCUBE,TET_MESHING_SUCCESS,LABELING_INVALID] += 1
             elif labeling_folder.nb_turning_points() != 0: # type: ignore | see ../data_folder_types/labeling.accessors.py
                 fluxes[dataset_id,EVOCUBE,TET_MESHING_SUCCESS,LABELING_NON_MONOTONE] += 1
@@ -150,6 +154,9 @@ def main(input_folder: Path, arguments: list):
                 else:
                     # no hex-mesh
                     fluxes[dataset_id,EVOCUBE,LABELING_NON_MONOTONE,HEX_MESHING_FAILURE] += 1
+                    # also penalize minSJ & avgSJ sums
+                    avg_sj_sum[dataset_id,EVOCUBE] += -1.0 # assume worse value
+                    min_sj_sum[dataset_id,EVOCUBE] += -1.0 # assume worse value
             else:
                 fluxes[dataset_id,EVOCUBE,TET_MESHING_SUCCESS,LABELING_SUCCESS] += 1
                 if hexmesh_minSJ is not None:
@@ -161,6 +168,9 @@ def main(input_folder: Path, arguments: list):
                 else:
                     # no hex-mesh
                     fluxes[dataset_id,EVOCUBE,LABELING_SUCCESS,HEX_MESHING_FAILURE] += 1
+                    # also penalize minSJ & avgSJ sums
+                    avg_sj_sum[dataset_id,EVOCUBE] += -1.0 # assume worse value
+                    min_sj_sum[dataset_id,EVOCUBE] += -1.0 # assume worse value
 
     def parse_Ours_2024_03_output(dataset_id: int, tet_folder: DataFolder):
         labeling_subfolders_generated_by_ours: list[Path] = tet_folder.get_subfolders_generated_by('automatic_polycube')
@@ -195,6 +205,9 @@ def main(input_folder: Path, arguments: list):
             
             # update the counters
             if not labeling_folder.has_valid_labeling(): # type: ignore | see ../data_folder_types/labeling.accessors.py
+                if (labeling_folder.path / 'polycube_withHexEx_1.3').exists():
+                    if Confirm(f"There is a 'polycube_withHexEx' output inside {labeling_folder.path}, but the labeling is invalid. Remove this hex-mesh folder?"):
+                        rmtree(labeling_folder.path / 'polycube_withHexEx_1.3')
                 fluxes[dataset_id,OURS_2024_03,TET_MESHING_SUCCESS,LABELING_INVALID] += 1
             elif labeling_folder.nb_turning_points() != 0: # type: ignore | see ../data_folder_types/labeling.accessors.py
                 fluxes[dataset_id,OURS_2024_03,TET_MESHING_SUCCESS,LABELING_NON_MONOTONE] += 1
@@ -274,20 +287,22 @@ def main(input_folder: Path, arguments: list):
 
                 # if there is a hex-mesh in the labeling folder, instantiate it and retrieve mesh stats
                 hexmesh_minSJ = None
-                if (labeling_ours_folder.path / 'polycube_withHexEx_1.3/global_padding/inner_smoothing_50').exists():
-                    hex_mesh_folder: DataFolder = DataFolder(labeling_ours_folder.path / 'polycube_withHexEx_1.3/global_padding/inner_smoothing_50')
+                post_processed_hex_mesh_path = labeling_ours_folder.path / 'polycube_withHexEx_1.3' / 'global_padding' / 'inner_smoothing_50'
+                if post_processed_hex_mesh_path.exists():
+                    hex_mesh_folder: DataFolder = DataFolder(post_processed_hex_mesh_path)
                     hex_mesh_stats: dict = hex_mesh_folder.get_mesh_stats_dict() # type: ignore | see ../data_folder_types/hex-mesh.accessors.py
                     if 'quality' in hex_mesh_stats['cells']:
                         avg_sj_sum[dataset_id,OURS_2024_09] += hex_mesh_stats['cells']['quality']['hex_SJ']['avg']
                         hexmesh_minSJ = hex_mesh_stats['cells']['quality']['hex_SJ']['min']
                         min_sj_sum[dataset_id,OURS_2024_09] += hexmesh_minSJ
-                    else:
-                        # HexEx failed, no cells in output file
-                        avg_sj_sum[dataset_id,OURS_2024_09] += -1.0 # assume worse value
-                        min_sj_sum[dataset_id,OURS_2024_09] += -1.0 # assume worse value
                 
                 # update the counters
                 if not labeling_ours_folder.has_valid_labeling():  # type: ignore | see ../data_folder_types/labeling.accessors.py
+                    if (labeling_ours_folder.path / 'polycube_withHexEx_1.3').exists():
+                        if Confirm(f"There is a 'polycube_withHexEx' output inside {labeling_ours_folder.path}, but the labeling is invalid. Remove this hex-mesh folder?"):
+                            rmtree(labeling_ours_folder.path / 'polycube_withHexEx_1.3')
+                    assert(not post_processed_hex_mesh_path.exists())
+                    assert(hexmesh_minSJ is None)
                     fluxes[dataset_id,OURS_2024_09,INIT_LABELING_SUCCESS,LABELING_INVALID] += 1
                 elif labeling_ours_folder.nb_turning_points() != 0:  # type: ignore | see ../data_folder_types/labeling.accessors.py
                     fluxes[dataset_id,OURS_2024_09,INIT_LABELING_SUCCESS,LABELING_NON_MONOTONE] += 1
@@ -300,6 +315,9 @@ def main(input_folder: Path, arguments: list):
                     else:
                         # no hex-mesh
                         fluxes[dataset_id,OURS_2024_09,LABELING_NON_MONOTONE,HEX_MESHING_FAILURE] += 1
+                        # also penalize minSJ & avgSJ sums
+                        avg_sj_sum[dataset_id,OURS_2024_09] += -1.0 # assume worse value
+                        min_sj_sum[dataset_id,OURS_2024_09] += -1.0 # assume worse value
                 else:
                     # so we have a valid labeling with no turning-points
                     fluxes[dataset_id,OURS_2024_09,INIT_LABELING_SUCCESS,LABELING_SUCCESS] += 1
@@ -312,6 +330,9 @@ def main(input_folder: Path, arguments: list):
                     else:
                         # no hex-mesh
                         fluxes[dataset_id,OURS_2024_09,LABELING_SUCCESS,HEX_MESHING_FAILURE] += 1
+                        # also penalize minSJ & avgSJ sums
+                        avg_sj_sum[dataset_id,OURS_2024_09] += -1.0 # assume worse value
+                        min_sj_sum[dataset_id,OURS_2024_09] += -1.0 # assume worse value
     
     def parse_PolyCut_output(dataset_id: int, tet_folder: DataFolder):
         if not (tet_folder.path / 'PolyCut_3').exists() or not (tet_folder.path / 'PolyCut_3' / surface_labeling_filename).exists():
@@ -337,9 +358,12 @@ def main(input_folder: Path, arguments: list):
             # update duration sum
             labeling_duration[dataset_id,POLYCUT] += polycut_durations['polycut'] # should we take into account the duration of cusy2.exe, which is the executable writing the labeling?
 
-            # if there is a hex-mesh in the labeling folder, instantiate it and retrieve mesh stats
             hexmesh_minSJ = None
-            if (labeling_folder.path / 'optimizer_100' / 'untangler' / hex_mesh_filename).exists():
+            if not labeling_folder.has_valid_labeling(): # type: ignore | see ../data_folder_types/labeling.accessors.py
+                # ignore the potential hex-mesh. Same policy as Evocube & Ours : invalid labeling -> no hex-mesh generation
+                pass
+            # if there is a hex-mesh in the labeling folder, instantiate it and retrieve mesh stats
+            elif (labeling_folder.path / 'optimizer_100' / 'untangler' / hex_mesh_filename).exists():
                 hex_mesh_folder: DataFolder = DataFolder(labeling_folder.path / 'optimizer_100' / 'untangler')
                 hex_mesh_stats: dict = dict()
                 try:
@@ -379,6 +403,7 @@ def main(input_folder: Path, arguments: list):
             
             # update the counters
             if not labeling_folder.has_valid_labeling(): # type: ignore | see ../data_folder_types/labeling.accessors.py
+                assert(hexmesh_minSJ is None)
                 fluxes[dataset_id,POLYCUT,COARSER_TET_MESHING_SUCCESS,LABELING_INVALID] += 1
             elif labeling_folder.nb_turning_points() != 0: # type: ignore | see ../data_folder_types/labeling.accessors.py
                 fluxes[dataset_id,POLYCUT,COARSER_TET_MESHING_SUCCESS,LABELING_NON_MONOTONE] += 1
