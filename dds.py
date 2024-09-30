@@ -511,7 +511,7 @@ class DataFolder():
             if 'arguments' not in YAML_content:
                 log.error(f"{YAML_filepath} has no 'arguments' entry")
                 exit(1)
-            # add 'input_files' and 'output_files' arguments to the 'all_arguments' dict
+            # add 'input_files' and 'other' arguments to the 'all_arguments' dict
             if 'input_files' not in YAML_content['arguments']:
                 log.error(f"{YAML_filepath} has no '{self.type}/arguments/input_files' entry")
                 exit(1)
@@ -527,6 +527,19 @@ class DataFolder():
                 log.debug(f"view('{view_name}') on {self.path} : ⤷ the closest is {closest_parent_of_this_type.path}")
                 input_file_path = closest_parent_of_this_type.get_file(input_filename_keyword, True)
                 all_arguments[input_file_argument] = input_file_path
+            if 'others' in YAML_content['arguments']:
+                for other_argument in YAML_content['arguments']['others']:
+                    if other_argument in all_arguments:
+                        log.error(f"{YAML_filepath} has multiple arguments named '{other_argument}' in '{self.type}/arguments")
+                        exit(1)
+                    # only accepts constant adjacent filename into 'others' arguments
+                    if 'adjacent_file' in YAML_content['arguments']['others'][other_argument]:
+                        adj_file: Path = YAML_filepath.parent / YAML_content['arguments']['others'][other_argument]['adjacent_file']
+                        assert(adj_file.exists())
+                        all_arguments[other_argument] = str(adj_file.absolute())
+                    else:
+                        log.fatal(f"'{other_argument} in '{YAML_filepath} /arguments/others has no 'adjacent_file' field")
+                        exit(1)
             command_line = f'{executable_path} {command_line.format(**all_arguments)}'
             if 'prefix' in YAML_content['executable']:
                 command_line = YAML_content['executable']['prefix'] + ' ' + command_line

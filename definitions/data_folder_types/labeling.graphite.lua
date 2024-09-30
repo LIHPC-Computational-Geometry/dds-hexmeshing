@@ -1,6 +1,6 @@
 -- Lua (keep this comment, it is an indication for editor's 'run' command)
 
--- Graphite settings to display a labeled_surface.geogram
+-- Graphite settings to display a triangle mesh as .geogram having a facet attribute 'label' storing a polycube labeling (labels in [0:5])
 -- run with:
 -- path/to/graphite labeled_surface.geogram graphite_labeling.lua
 
@@ -12,6 +12,6 @@ scene_graph.current().shader.painting = 'ATTRIBUTE'
 scene_graph.current().shader.attribute = 'facets.label'
 scene_graph.current().shader.attribute_min = '0'
 scene_graph.current().shader.attribute_max = '5'
-scene_graph.current().shader.colormap = 'french;true;0;false;false'
+scene_graph.current().shader.colormap = 'red_white_blue;true;0;false;false' -- 'red_white_blue' is a custom colormap. use 'french' as an alternative
 scene_graph.current().shader.lighting = false
 camera.effect = 'SSAO'
