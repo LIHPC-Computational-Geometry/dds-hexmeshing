@@ -37,11 +37,11 @@ def main(input_folder: Path, arguments: list):
     OURS_2024_09 = 3
     POLYCUT      = 4
 
-    SHOW_EVOCUBE_STATS      = True
-    SHOW_OURS_2024_03_STATS = True
     SHOW_GRAPHCUT_STATS     = True
-    SHOW_OURS_2024_09_STATS = True
     SHOW_POLYCUT_STATS      = True
+    SHOW_EVOCUBE_STATS      = True
+    SHOW_OURS_2024_03_STATS = False
+    SHOW_OURS_2024_09_STATS = True
 
     # Nodes = flux sources and destinations
     VOID                        = 0
@@ -468,6 +468,70 @@ def main(input_folder: Path, arguments: list):
         assert(nb_CAD_models != 0)
         assert(fluxes[dataset_id,N_A,CAD,TET_MESHING_FAILURE] == 0) # expect all tet-mesh generations succeeded. easier for the stats
 
+        # needed for GRAPHCUT and OURS_2024_09 stats
+        nb_init_labeling_generated = \
+            fluxes[dataset_id,GRAPHCUT,TET_MESHING_SUCCESS,LABELING_SUCCESS] + \
+            fluxes[dataset_id,GRAPHCUT,TET_MESHING_SUCCESS,LABELING_NON_MONOTONE] + \
+            fluxes[dataset_id,GRAPHCUT,TET_MESHING_SUCCESS,LABELING_INVALID]
+
+        if SHOW_GRAPHCUT_STATS:
+            percentage_labeling_success = fluxes[dataset_id,GRAPHCUT,TET_MESHING_SUCCESS,LABELING_SUCCESS] / nb_CAD_models * 100
+            percentage_labeling_non_monotone = fluxes[dataset_id,GRAPHCUT,TET_MESHING_SUCCESS,LABELING_NON_MONOTONE] / nb_CAD_models * 100
+            percentage_labeling_invalid = fluxes[dataset_id,GRAPHCUT,TET_MESHING_SUCCESS,LABELING_INVALID] / nb_CAD_models * 100
+            percentage_labeling_failure = fluxes[dataset_id,GRAPHCUT,TET_MESHING_SUCCESS,LABELING_FAILURE] / nb_CAD_models * 100
+            overall_average_fidelity = sum_avg_fidelities[dataset_id,GRAPHCUT] / nb_init_labeling_generated
+            total_nb_feature_edges = 0 if dataset_id == OCTREE_MESHING_CAD else \
+                nb_feature_edges_sharp_and_preserved[dataset_id,GRAPHCUT] + \
+                nb_feature_edges_sharp_and_lost[dataset_id,GRAPHCUT] + \
+                nb_feature_edges_ignored[dataset_id,GRAPHCUT]
+            percentage_feature_edges_sharp_and_preserved = 0 if dataset_id == OCTREE_MESHING_CAD else (nb_feature_edges_sharp_and_preserved[dataset_id,GRAPHCUT] / total_nb_feature_edges * 100)
+            percentage_feature_edges_sharp_and_lost = 0 if dataset_id == OCTREE_MESHING_CAD else (nb_feature_edges_sharp_and_lost[dataset_id,GRAPHCUT] / total_nb_feature_edges * 100)
+            percentage_feature_edges_ignored = 0 if dataset_id == OCTREE_MESHING_CAD else (nb_feature_edges_ignored[dataset_id,GRAPHCUT] / total_nb_feature_edges * 100)
+            table.add_row(
+                f'{dataset_str} ({nb_CAD_models})',
+                'graphcut',
+                f"{percentage_labeling_success:.1f} %\n{percentage_labeling_non_monotone:.1f} %\n{percentage_labeling_invalid:.1f} %\n{percentage_labeling_failure:.1f} %",
+                f"{overall_average_fidelity:.3f}",
+                "-" if dataset_id == OCTREE_MESHING_CAD else f"{percentage_feature_edges_sharp_and_preserved:.1f} %\n{percentage_feature_edges_sharp_and_lost:.1f} %\n{percentage_feature_edges_ignored:.1f} %",
+                f"{labeling_duration[dataset_id,GRAPHCUT]:.3f} s",
+                "-",
+                "-"
+            )
+            table.add_section()
+
+        if SHOW_POLYCUT_STATS and dataset_id != OCTREE_MESHING_CAD:
+            assert(fluxes[dataset_id,N_A,CAD,COARSER_TET_MESHING_FAILURE] == 0) # expect all tet-mesh generations succeeded. easier for the stats
+            percentage_labeling_success = fluxes[dataset_id,POLYCUT,COARSER_TET_MESHING_SUCCESS,LABELING_SUCCESS] / nb_CAD_models * 100
+            percentage_labeling_non_monotone = fluxes[dataset_id,POLYCUT,COARSER_TET_MESHING_SUCCESS,LABELING_NON_MONOTONE] / nb_CAD_models * 100
+            percentage_labeling_invalid = fluxes[dataset_id,POLYCUT,COARSER_TET_MESHING_SUCCESS,LABELING_INVALID] / nb_CAD_models * 100
+            percentage_labeling_failure = fluxes[dataset_id,POLYCUT,COARSER_TET_MESHING_SUCCESS,LABELING_FAILURE] / nb_CAD_models * 100
+            nb_labeling_generated = \
+                fluxes[dataset_id,POLYCUT,COARSER_TET_MESHING_SUCCESS,LABELING_SUCCESS] + \
+                fluxes[dataset_id,POLYCUT,COARSER_TET_MESHING_SUCCESS,LABELING_NON_MONOTONE] + \
+                fluxes[dataset_id,POLYCUT,COARSER_TET_MESHING_SUCCESS,LABELING_INVALID]
+            overall_average_fidelity = sum_avg_fidelities[dataset_id,POLYCUT] / nb_labeling_generated
+            duration_factor_relative_to_Ours_2024_09 = labeling_duration[dataset_id,POLYCUT] / (labeling_duration[dataset_id,GRAPHCUT]+labeling_duration[dataset_id,OURS_2024_09])
+            nb_tried_hex_meshing = \
+                fluxes[dataset_id,POLYCUT,COARSER_TET_MESHING_SUCCESS,LABELING_SUCCESS] + \
+                fluxes[dataset_id,POLYCUT,COARSER_TET_MESHING_SUCCESS,LABELING_NON_MONOTONE]
+            nb_hex_meshes_with_positive_min_sj = \
+                fluxes[dataset_id,POLYCUT,LABELING_SUCCESS,HEX_MESHING_POSITIVE_MIN_SJ] + \
+                fluxes[dataset_id,POLYCUT,LABELING_NON_MONOTONE,HEX_MESHING_POSITIVE_MIN_SJ]
+            percentage_hex_mesh_positive_min_SJ = nb_hex_meshes_with_positive_min_sj / nb_tried_hex_meshing * 100
+            average_min_SJ = min_sj_sum[dataset_id,POLYCUT] / nb_tried_hex_meshing
+            average_avj_SJ = avg_sj_sum[dataset_id,POLYCUT] / nb_tried_hex_meshing
+            table.add_row(
+                f'{dataset_str} ({nb_CAD_models})',
+                'PolyCut',
+                f"{percentage_labeling_success:.1f} %\n{percentage_labeling_non_monotone:.1f} %\n{percentage_labeling_invalid:.1f} %\n{percentage_labeling_failure:.1f} %",
+                f"{overall_average_fidelity:.3f}",
+                "-",
+                f"{labeling_duration[dataset_id,POLYCUT]:.3f}† s\n(x{duration_factor_relative_to_Ours_2024_09:.1f} Ours_2024-09)",
+                f"{percentage_hex_mesh_positive_min_SJ:.1f} %",
+                f"{average_min_SJ:.3f}\n{average_avj_SJ:.3f}"
+            )
+            table.add_section()
+
         if SHOW_EVOCUBE_STATS:
             percentage_labeling_success = fluxes[dataset_id,EVOCUBE,TET_MESHING_SUCCESS,LABELING_SUCCESS] / nb_CAD_models * 100
             percentage_labeling_non_monotone = fluxes[dataset_id,EVOCUBE,TET_MESHING_SUCCESS,LABELING_NON_MONOTONE] / nb_CAD_models * 100
@@ -507,39 +571,6 @@ def main(input_folder: Path, arguments: list):
             )
             table.add_section()
 
-        if SHOW_POLYCUT_STATS and dataset_id != OCTREE_MESHING_CAD:
-            assert(fluxes[dataset_id,N_A,CAD,COARSER_TET_MESHING_FAILURE] == 0) # expect all tet-mesh generations succeeded. easier for the stats
-            percentage_labeling_success = fluxes[dataset_id,POLYCUT,COARSER_TET_MESHING_SUCCESS,LABELING_SUCCESS] / nb_CAD_models * 100
-            percentage_labeling_non_monotone = fluxes[dataset_id,POLYCUT,COARSER_TET_MESHING_SUCCESS,LABELING_NON_MONOTONE] / nb_CAD_models * 100
-            percentage_labeling_invalid = fluxes[dataset_id,POLYCUT,COARSER_TET_MESHING_SUCCESS,LABELING_INVALID] / nb_CAD_models * 100
-            percentage_labeling_failure = fluxes[dataset_id,POLYCUT,COARSER_TET_MESHING_SUCCESS,LABELING_FAILURE] / nb_CAD_models * 100
-            nb_labeling_generated = \
-                fluxes[dataset_id,POLYCUT,COARSER_TET_MESHING_SUCCESS,LABELING_SUCCESS] + \
-                fluxes[dataset_id,POLYCUT,COARSER_TET_MESHING_SUCCESS,LABELING_NON_MONOTONE] + \
-                fluxes[dataset_id,POLYCUT,COARSER_TET_MESHING_SUCCESS,LABELING_INVALID]
-            overall_average_fidelity = sum_avg_fidelities[dataset_id,POLYCUT] / nb_labeling_generated
-            duration_factor_relative_to_Ours_2024_09 = labeling_duration[dataset_id,POLYCUT] / (labeling_duration[dataset_id,GRAPHCUT]+labeling_duration[dataset_id,OURS_2024_09])
-            nb_tried_hex_meshing = \
-                fluxes[dataset_id,POLYCUT,COARSER_TET_MESHING_SUCCESS,LABELING_SUCCESS] + \
-                fluxes[dataset_id,POLYCUT,COARSER_TET_MESHING_SUCCESS,LABELING_NON_MONOTONE]
-            nb_hex_meshes_with_positive_min_sj = \
-                fluxes[dataset_id,POLYCUT,LABELING_SUCCESS,HEX_MESHING_POSITIVE_MIN_SJ] + \
-                fluxes[dataset_id,POLYCUT,LABELING_NON_MONOTONE,HEX_MESHING_POSITIVE_MIN_SJ]
-            percentage_hex_mesh_positive_min_SJ = nb_hex_meshes_with_positive_min_sj / nb_tried_hex_meshing * 100
-            average_min_SJ = min_sj_sum[dataset_id,POLYCUT] / nb_tried_hex_meshing
-            average_avj_SJ = avg_sj_sum[dataset_id,POLYCUT] / nb_tried_hex_meshing
-            table.add_row(
-                f'{dataset_str} ({nb_CAD_models})',
-                'PolyCut',
-                f"{percentage_labeling_success:.1f} %\n{percentage_labeling_non_monotone:.1f} %\n{percentage_labeling_invalid:.1f} %\n{percentage_labeling_failure:.1f} %",
-                f"{overall_average_fidelity:.3f}",
-                "-",
-                f"{labeling_duration[dataset_id,POLYCUT]:.3f}† s\n(x{duration_factor_relative_to_Ours_2024_09:.1f} Ours_2024-09)",
-                f"{percentage_hex_mesh_positive_min_SJ:.1f} %",
-                f"{average_min_SJ:.3f}\n{average_avj_SJ:.3f}"
-            )
-            table.add_section()
-
         if SHOW_OURS_2024_03_STATS and dataset_id != OCTREE_MESHING_CAD:
             percentage_labeling_success = fluxes[dataset_id,OURS_2024_03,TET_MESHING_SUCCESS,LABELING_SUCCESS] / nb_CAD_models * 100
             percentage_labeling_non_monotone = fluxes[dataset_id,OURS_2024_03,TET_MESHING_SUCCESS,LABELING_NON_MONOTONE] / nb_CAD_models * 100
@@ -564,37 +595,6 @@ def main(input_folder: Path, arguments: list):
                 f"{overall_average_fidelity:.3f}",
                 f"{percentage_feature_edges_sharp_and_preserved:.1f} %\n{percentage_feature_edges_sharp_and_lost:.1f} %\n{percentage_feature_edges_ignored:.1f} %",
                 f"{labeling_duration[dataset_id,OURS_2024_03]:.3f} s",
-                "-",
-                "-"
-            )
-            table.add_section()
-
-        # needed for GRAPHCUT and OURS_2024_09 stats
-        nb_init_labeling_generated = \
-            fluxes[dataset_id,GRAPHCUT,TET_MESHING_SUCCESS,LABELING_SUCCESS] + \
-            fluxes[dataset_id,GRAPHCUT,TET_MESHING_SUCCESS,LABELING_NON_MONOTONE] + \
-            fluxes[dataset_id,GRAPHCUT,TET_MESHING_SUCCESS,LABELING_INVALID]
-
-        if SHOW_GRAPHCUT_STATS:
-            percentage_labeling_success = fluxes[dataset_id,GRAPHCUT,TET_MESHING_SUCCESS,LABELING_SUCCESS] / nb_CAD_models * 100
-            percentage_labeling_non_monotone = fluxes[dataset_id,GRAPHCUT,TET_MESHING_SUCCESS,LABELING_NON_MONOTONE] / nb_CAD_models * 100
-            percentage_labeling_invalid = fluxes[dataset_id,GRAPHCUT,TET_MESHING_SUCCESS,LABELING_INVALID] / nb_CAD_models * 100
-            percentage_labeling_failure = fluxes[dataset_id,GRAPHCUT,TET_MESHING_SUCCESS,LABELING_FAILURE] / nb_CAD_models * 100
-            overall_average_fidelity = sum_avg_fidelities[dataset_id,GRAPHCUT] / nb_init_labeling_generated
-            total_nb_feature_edges = 0 if dataset_id == OCTREE_MESHING_CAD else \
-                nb_feature_edges_sharp_and_preserved[dataset_id,GRAPHCUT] + \
-                nb_feature_edges_sharp_and_lost[dataset_id,GRAPHCUT] + \
-                nb_feature_edges_ignored[dataset_id,GRAPHCUT]
-            percentage_feature_edges_sharp_and_preserved = 0 if dataset_id == OCTREE_MESHING_CAD else (nb_feature_edges_sharp_and_preserved[dataset_id,GRAPHCUT] / total_nb_feature_edges * 100)
-            percentage_feature_edges_sharp_and_lost = 0 if dataset_id == OCTREE_MESHING_CAD else (nb_feature_edges_sharp_and_lost[dataset_id,GRAPHCUT] / total_nb_feature_edges * 100)
-            percentage_feature_edges_ignored = 0 if dataset_id == OCTREE_MESHING_CAD else (nb_feature_edges_ignored[dataset_id,GRAPHCUT] / total_nb_feature_edges * 100)
-            table.add_row(
-                f'{dataset_str} ({nb_CAD_models})',
-                'graphcut',
-                f"{percentage_labeling_success:.1f} %\n{percentage_labeling_non_monotone:.1f} %\n{percentage_labeling_invalid:.1f} %\n{percentage_labeling_failure:.1f} %",
-                f"{overall_average_fidelity:.3f}",
-                "-" if dataset_id == OCTREE_MESHING_CAD else f"{percentage_feature_edges_sharp_and_preserved:.1f} %\n{percentage_feature_edges_sharp_and_lost:.1f} %\n{percentage_feature_edges_ignored:.1f} %",
-                f"{labeling_duration[dataset_id,GRAPHCUT]:.3f} s",
                 "-",
                 "-"
             )
