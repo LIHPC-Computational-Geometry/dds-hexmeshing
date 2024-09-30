@@ -493,7 +493,7 @@ def main(input_folder: Path, arguments: list):
                 f"{percentage_labeling_success:.1f} %\n{percentage_labeling_non_monotone:.1f} %\n{percentage_labeling_invalid:.1f} %\n{percentage_labeling_failure:.1f} %",
                 f"{overall_average_fidelity:.3f}",
                 "-" if dataset_id == OCTREE_MESHING_CAD else f"{percentage_feature_edges_sharp_and_preserved:.1f} %\n{percentage_feature_edges_sharp_and_lost:.1f} %\n{percentage_feature_edges_ignored:.1f} %",
-                f"{labeling_duration[dataset_id,GRAPHCUT]:.3f} s",
+                f"{labeling_duration[dataset_id,GRAPHCUT]:.2f} s",
                 "-",
                 "-"
             )
@@ -526,7 +526,7 @@ def main(input_folder: Path, arguments: list):
                 f"{percentage_labeling_success:.1f} %\n{percentage_labeling_non_monotone:.1f} %\n{percentage_labeling_invalid:.1f} %\n{percentage_labeling_failure:.1f} %",
                 f"{overall_average_fidelity:.3f}",
                 "-",
-                f"{labeling_duration[dataset_id,POLYCUT]:.3f}† s\n(x{duration_factor_relative_to_Ours_2024_09:.1f} Ours_2024-09)",
+                f"{labeling_duration[dataset_id,POLYCUT]:.2f}† s\n(x{duration_factor_relative_to_Ours_2024_09:.0f} Ours_2024-09)",
                 f"{percentage_hex_mesh_positive_min_SJ:.1f} %",
                 f"{average_min_SJ:.3f}\n{average_avj_SJ:.3f}"
             )
@@ -565,7 +565,7 @@ def main(input_folder: Path, arguments: list):
                 f"{percentage_labeling_success:.1f} %\n{percentage_labeling_non_monotone:.1f} %\n{percentage_labeling_invalid:.1f} %\n{percentage_labeling_failure:.1f} %",
                 f"{overall_average_fidelity:.3f}",
                 "-" if dataset_id == OCTREE_MESHING_CAD else f"{percentage_feature_edges_sharp_and_preserved:.1f} %\n{percentage_feature_edges_sharp_and_lost:.1f} %\n{percentage_feature_edges_ignored:.1f} %",
-                f"{labeling_duration[dataset_id,EVOCUBE]:.3f} s\n(x{duration_factor_relative_to_Ours_2024_09:.1f} Ours_2024-09)",
+                f"{labeling_duration[dataset_id,EVOCUBE]:.2f} s\n(x{duration_factor_relative_to_Ours_2024_09:.0f} Ours_2024-09)",
                 f"{percentage_hex_mesh_positive_min_SJ:.1f} %",
                 f"{average_min_SJ:.3f}\n{average_avj_SJ:.3f}"
             )
@@ -594,7 +594,7 @@ def main(input_folder: Path, arguments: list):
                 f"{percentage_labeling_success:.1f} %\n{percentage_labeling_non_monotone:.1f} %\n{percentage_labeling_invalid:.1f} %\n{percentage_labeling_failure:.1f} %",
                 f"{overall_average_fidelity:.3f}",
                 f"{percentage_feature_edges_sharp_and_preserved:.1f} %\n{percentage_feature_edges_sharp_and_lost:.1f} %\n{percentage_feature_edges_ignored:.1f} %",
-                f"{labeling_duration[dataset_id,OURS_2024_03]:.3f} s",
+                f"{labeling_duration[dataset_id,OURS_2024_03]:.2f} s",
                 "-",
                 "-"
             )
@@ -636,7 +636,7 @@ def main(input_folder: Path, arguments: list):
                 f"{percentage_labeling_success:.1f} %\n{percentage_labeling_non_monotone:.1f} %\n{percentage_labeling_invalid:.1f} %\n{percentage_labeling_failure:.1f} %",
                 f"{overall_average_fidelity:.3f}",
                 "-" if dataset_id == OCTREE_MESHING_CAD else f"{percentage_feature_edges_sharp_and_preserved:.1f} %\n{percentage_feature_edges_sharp_and_lost:.1f} %\n{percentage_feature_edges_ignored:.1f} %",
-                f"{total_duration:.3f}* s",
+                f"{total_duration:.2f}* s",
                 f"{percentage_hex_mesh_positive_min_SJ:.1f} %",
                 f"{average_min_SJ:.3f}\n{average_avj_SJ:.3f}"
             )
