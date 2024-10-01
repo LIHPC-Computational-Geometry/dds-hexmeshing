@@ -1,0 +1,18 @@
+description: |
+  Compute statistics on the tetrahedral mesh
+tet-mesh: { # case of 'tet_mesh_stats' applied on a 'tet-mesh' subfolder
+  executable: {
+    path: AUTOMATIC_POLYCUBE,
+    filename: mesh_stats,
+    command_line: '{mesh} {stats_json}'
+  },
+  # no `output_folder` -> transformative algorithm
+  arguments: {
+    input_files: {
+      mesh: TET_MESH_MEDIT
+    },
+    output_files: {
+      stats_json: TET_MESH_STATS_JSON
+    }
+  }
+}

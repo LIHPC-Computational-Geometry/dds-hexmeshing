@@ -1,0 +1,12 @@
+description: |
+  Open the hex-mesh with the dedicated Geogram-based viewer
+executable: {
+  path: AUTOMATIC_POLYCUBE,
+  filename: hex_mesh_viewer,
+  command_line: '{mesh}'
+}
+arguments: {
+  input_files: {
+    mesh: HEX_MESH_MEDIT
+  }
+}

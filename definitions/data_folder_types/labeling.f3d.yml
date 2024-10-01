@@ -1,0 +1,11 @@
+description: |
+  Open the labeled mesh as glTF with f3d
+executable: {
+  path: F3D,
+  command_line: '{gltf}'
+}
+arguments: {
+  input_files: {
+    gltf: LABELED_MESH_GLB
+  }
+}

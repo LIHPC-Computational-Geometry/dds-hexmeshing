@@ -1,0 +1,24 @@
+description: |
+  Inner vertices smoothing for hex meshes. See https://github.com/fprotais/hexsmoothing
+hex-mesh: { # case of 'inner_smoothing' applied on a 'hex-mesh' subfolder
+  executable: {
+    path: HEXSMOOTHING,
+    filename: innerSmoother,
+    command_line: '{input_mesh} {output_mesh} {nb_steps}'
+  },
+  output_folder: 'inner_smoothing_{nb_steps}',
+  arguments: {
+    input_files: {
+      input_mesh: HEX_MESH_MEDIT,
+    },
+    output_files: {
+      output_mesh: HEX_MESH_MEDIT
+    },
+    others: {
+      nb_steps: {
+        default: 50, # https://github.com/fprotais/hexsmoothing/blob/main/bin/innerSmoothing.cpp#L15
+        description: Number of smoothing iterations
+      }
+    }
+  }
+}

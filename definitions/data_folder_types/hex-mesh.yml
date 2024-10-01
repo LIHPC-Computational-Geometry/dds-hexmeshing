@@ -1,0 +1,9 @@
+filenames: {
+  HEX_MESH_MEDIT: hex.mesh,                 # hexahedral mesh, GMF/MEDIT ASCII format
+  HEX_MESH_OVM: hex_mesh.ovm,               # hexahedral mesh, OpenVolumeMesh format
+  HEX_MESH_STATS_JSON: hex_mesh.stats.json, # mesh stats (min/max/avg/sd of mesh metrics) computed on HEX_MESH_MEDIT, as JSON file
+  HEX_MESH_SURFACE_GLB: hex_mesh.glb,       # surface of HEX_MESH_MEDIT, colored by scaled jacobian, as glTF 2.0 binary file
+  INTEGER_GRID_MAP_TXT: IGM.txt             # an output of AlgoHex
+}
+distinctive_content: [HEX_MESH_MEDIT, HEX_MESH_OVM] # logical OR
+default_view: own-viewer

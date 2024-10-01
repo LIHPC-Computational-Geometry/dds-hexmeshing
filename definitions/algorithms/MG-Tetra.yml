@@ -1,0 +1,24 @@
+description: |
+  Tetrahedrization with MG-CADSurf & MG-Tetra from MeshGems, through SALOME
+stl: { # case of 'MG-Tetra' applied on a 'stl' subfolder
+  executable: {
+    prefix: "bash -c 'source",
+    path: SALOME,
+    filename: env_launch.sh,
+    command_line: "&& /usr/bin/python {SALOME_script} {input_STL} {output_tet_mesh}'", # use the system Python, the one expected by SALOME-9.12.0-native-UB22.04-SRC
+  },
+  output_folder: 'MG-Tetra',
+  arguments: {
+    input_files: {
+      input_STL: STL
+    },
+    output_files: { # will be emplaced inside the 'output_folder'
+      output_tet_mesh: TET_MESH_MEDIT
+    },
+    others: {
+      SALOME_script: {
+        adjacent_file: MG-Tetra.SALOME_script.py
+      }
+    }
+  }
+}

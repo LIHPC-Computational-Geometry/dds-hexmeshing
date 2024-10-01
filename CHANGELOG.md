@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- project renamed to "`dds` - semantic data folders". The "SDF" acronym is already used in the context of geometry processing (Signed Distance Function), so I went for the french translation acronym: _Dossiers de Données Sémantiques_.
+
 ## [0.7.0] - 2024-07-12
 
 ### Added

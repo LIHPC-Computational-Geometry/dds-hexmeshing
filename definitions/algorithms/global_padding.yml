@@ -1,0 +1,25 @@
+description: |
+  See the post-processing stage of https://github.com/fprotais/robustPolycube
+hex-mesh: { # case of 'global_padding' applied on a 'hex-mesh' subfolder
+  executable: {
+    path: ROBUST_POLYCUBE,
+    filename: rb_perform_postprocessing,
+    command_line: '{tet_mesh} {hex_mesh} {improved_hex_mesh}'
+  },
+  output_folder: global_padding,
+  arguments: {
+    input_files: {
+      tet_mesh: TET_MESH_MEDIT,
+      hex_mesh: HEX_MESH_MEDIT
+    },
+    output_files: {
+      improved_hex_mesh: HEX_MESH_MEDIT
+    },
+    others: {
+      keep_debug_files: {
+        default: false,
+        description: If the debug files written should be kept
+      }
+    }
+  }
+}

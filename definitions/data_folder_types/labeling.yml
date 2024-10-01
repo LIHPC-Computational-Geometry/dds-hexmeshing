@@ -1,0 +1,15 @@
+filenames: {
+  SURFACE_LABELING_TXT: surface_labeling.txt,                       # per-surface-triangle labels, values from 0 to 5 -> {+X,-X,+Y,-Y,+Z,-Z}
+  VOLUME_LABELING_TXT: volume_labeling.txt,                         # per-tet-facets labels, same values + "-1" for "no label"
+  POLYCUBE_SURFACE_MESH_OBJ: fastbndpolycube.obj,                   # polycube deformation of the surface mesh, in the Wavefront format
+  TET_MESH_REMESHED_MEDIT: tet.remeshed.mesh,                       # tet-mesh aiming bijectivity for the polycube. GMF/MEDIT ASCII format. Output of https://github.com/fprotais/robustPolycube
+  TET_MESH_REMESHED_LABELING_TXT: tet.remeshed.volume_labeling.txt, # volume labeling of remeshed_tet_mesh. Should be the same as volume_labeling.
+  POLYCUBOID_MESH_MEDIT: polycuboid.mesh,                           # polycuboid generated from remeshed_tet_mesh and its labeling. GMF/MEDIT ASCII format.
+  SURFACE_LABELING_MESH_GEOGRAM: labeled_surface.geogram,           # surface triangle mesh in the Geogram format with the surface labeling as facet attribute (to be visualized with Graphite)
+  POLYCUBE_LABELING_MESH_GEOGRAM: fastbndpolycube.geogram,          # same as the polycube surface mesh, but with the labeling as facet attribute and in the Geogram format (to be visualized with Graphite)
+  LABELING_STATS_JSON: labeling.stats.json,                         # labeling stats (nb charts/boundaries/corners/turning-points, nb invalid features) computed on SURFACE_LABELING_TXT, as JSON file
+  LABELED_MESH_GLB: labeled_mesh.glb,                               # SURFACE_MESH_OBJ colored according to SURFACE_LABELING_TXT as glTF 2.0 binary file
+  POLYCUBE_LABELING_MESH_ANIM_GLB: fastbndpolycube_anim.glb         # colored SURFACE_MESH_OBJ to POLYCUBE_SURFACE_MESH_OBJ deformation animation as glTF 2.0 binary file
+}
+distinctive_content: [SURFACE_LABELING_TXT]
+default_view: surface

@@ -1,0 +1,19 @@
+description: |
+  Compute statistics of a labeling
+labeling: { # case of 'labeling_stats' applied on a 'labeling' subfolder
+  executable: {
+    path: AUTOMATIC_POLYCUBE,
+    filename: labeling_stats,
+    command_line: '{mesh} {labeling} {stats_json}'
+  },
+  # no `output_folder` -> transformative algorithm
+  arguments: {
+    input_files: {
+      mesh: SURFACE_MESH_OBJ,
+      labeling: SURFACE_LABELING_TXT
+    },
+    output_files: {
+      stats_json: LABELING_STATS_JSON
+    }
+  }
+}

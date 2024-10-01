@@ -1,0 +1,11 @@
+description: |
+  Open the STEP file with f3d
+executable: {
+  path: F3D,
+  command_line: '{step}'
+}
+arguments: {
+  input_files: {
+    step: STEP
+  }
+}

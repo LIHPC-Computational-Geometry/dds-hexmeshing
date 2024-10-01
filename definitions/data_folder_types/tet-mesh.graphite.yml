@@ -1,0 +1,11 @@
+description: |
+  Open the surface mesh (.obj) with Graphite
+executable: {
+  path: GRAPHITE,
+  command_line: '{mesh}'
+}
+arguments: {
+  input_files: {
+    mesh: SURFACE_MESH_OBJ
+  }
+}

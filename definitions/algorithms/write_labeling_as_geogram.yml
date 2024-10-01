@@ -1,0 +1,19 @@
+description: |
+  Convert a surface mesh and a labeling as .geogram mesh containing the labeling as facet attribute
+labeling: { # case of 'write_labeling_as_geogram' applied on a 'labeling' subfolder
+  executable: {
+    path: AUTOMATIC_POLYCUBE,
+    filename: labeling_viewer,
+    command_line: '{mesh} {labeling} {dot_geogram}'
+  },
+  # no `output_folder` -> transformative algorithm
+  arguments: {
+    input_files: {
+      mesh: SURFACE_MESH_OBJ,
+      labeling: SURFACE_LABELING_TXT
+    },
+    output_files: {
+      dot_geogram: SURFACE_LABELING_MESH_GEOGRAM
+    }
+  }
+}

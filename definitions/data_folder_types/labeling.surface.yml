@@ -1,0 +1,14 @@
+# visualize a 'labeling' data subfolder with the 'labeling_viewer' binary of automatic_polycube
+description: |
+  Open the labeled surface mesh
+executable: {
+  path: AUTOMATIC_POLYCUBE,
+  filename: labeling_viewer,
+  command_line: '{mesh} {labeling}'
+}
+arguments: {
+  input_files: {
+    mesh: SURFACE_MESH_OBJ,
+    labeling: SURFACE_LABELING_TXT
+  }
+}

@@ -1,0 +1,18 @@
+description: |
+  See https://github.com/fprotais/fastbndpolycube
+labeling: { # case of 'fastbndpolycube' applied on a 'labeling' subfolder
+  executable: {
+    path: FASTBNDPOLYCUBE,
+    command_line: "{mesh} {labeling} {polycube}"
+  },
+  # no `output_folder` -> transformative algorithm
+  arguments: {
+    input_files: {
+      mesh: SURFACE_MESH_OBJ,
+      labeling: SURFACE_LABELING_TXT
+    },
+    output_files: {
+      polycube: POLYCUBE_SURFACE_MESH_OBJ
+    }
+  }
+}

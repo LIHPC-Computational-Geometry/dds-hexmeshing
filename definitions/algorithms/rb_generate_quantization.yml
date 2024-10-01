@@ -1,0 +1,30 @@
+description: |
+  See the main app of https://github.com/fprotais/robustPolycube
+labeling: { # case of 'rb_generate_quantization' applied on a 'labeling' subfolder
+  executable: {
+    path: ROBUST_POLYCUBE,
+    filename: rb_generate_quantization,
+    command_line: '{tet_remeshed} {tet_remeshed_labeling} {polycuboid} {element_sizing} {hex_mesh}'
+  },
+  output_folder: 'robustPolycube_{element_sizing}',
+  arguments: {
+    input_files: {
+      tet_remeshed: TET_MESH_REMESHED_MEDIT,
+      tet_remeshed_labeling: TET_MESH_REMESHED_LABELING_TXT,
+      polycuboid: POLYCUBOID_MESH_MEDIT
+    },
+    output_files: { # will be emplaced inside the 'output_folder'
+      hex_mesh: HEX_MESH_MEDIT
+    },
+    others: {
+      element_sizing: {
+        default: 1.0,
+        description: ratio compared to the input mesh edge size. smaller = more hexahedra
+      },
+      keep_debug_files: {
+        default: false,
+        description: If the debug files written should be kept
+      }
+    }
+  }
+}

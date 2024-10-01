@@ -1,0 +1,18 @@
+description: |
+  Compute statistics on the surface mesh
+tet-mesh: { # case of 'surface_mesh_stats' applied on a 'tet-mesh' subfolder
+  executable: {
+    path: AUTOMATIC_POLYCUBE,
+    filename: mesh_stats,
+    command_line: '{mesh} {stats_json}'
+  },
+  # no `output_folder` -> transformative algorithm
+  arguments: {
+    input_files: {
+      mesh: SURFACE_MESH_OBJ
+    },
+    output_files: {
+      stats_json: SURFACE_MESH_STATS_JSON
+    }
+  }
+}

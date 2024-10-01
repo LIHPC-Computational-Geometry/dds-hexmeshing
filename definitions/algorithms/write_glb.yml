@@ -1,0 +1,51 @@
+description:
+  Export a 3D model as glTF 2.0
+tet-mesh: { # case of 'write_glb' applied on a 'tet-mesh' subfolder
+  executable: {
+    path: AUTOMATIC_POLYCUBE,
+    filename: to_glTF,
+    command_line: '{mesh} {gltf}'
+  },
+  # no `output_folder` -> transformative algorithm
+  arguments: {
+    input_files: {
+      mesh: SURFACE_MESH_OBJ
+    },
+    output_files: {
+      gltf: SURFACE_MESH_GLB
+    }
+  }
+}
+labeling: { # case of 'write_glb' applied on a 'labeling' subfolder
+  executable: {
+    path: AUTOMATIC_POLYCUBE,
+    filename: to_glTF,
+    command_line: '{mesh} {gltf} labeling={labeling}'
+  },
+  # no `output_folder` -> transformative algorithm
+  arguments: {
+    input_files: {
+      mesh: SURFACE_MESH_OBJ,
+      labeling: SURFACE_LABELING_TXT
+    },
+    output_files: {
+      gltf: LABELED_MESH_GLB
+    }
+  }
+}
+hex-mesh: { # case of 'write_glb' applied on a 'hex-mesh' subfolder
+  executable: {
+    path: AUTOMATIC_POLYCUBE,
+    filename: to_glTF,
+    command_line: '{mesh} {gltf}'
+  },
+  # no `output_folder` -> transformative algorithm
+  arguments: {
+    input_files: {
+      mesh: HEX_MESH_MEDIT,
+    },
+    output_files: {
+      gltf: HEX_MESH_SURFACE_GLB
+    }
+  }
+}

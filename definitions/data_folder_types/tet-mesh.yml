@@ -1,0 +1,12 @@
+filenames: {
+  TET_MESH_MEDIT: tet.mesh,                         # tetrahedral mesh in the GMF/MEDIT ASCII format
+  TET_MESH_VTK: tet_mesh.vtk,                       # tetrahedral mesh in the VTK DataFile Version 2.0 ASCII
+  SURFACE_MESH_OBJ: surface.obj,                    # (triangle) surface of the tet-mesh, in the Wavefront format
+  SURFACE_AND_VOLUME_MEDIT: surface+volume.mesh,    # (triangle) surface and (tetrahedral) volume mesh in the same file, GMF/MEDIT ASCII format
+  SURFACE_MAP_TXT: surface_map.txt,                 # association between surface triangles and tet facets (see https://github.com/LIHPC-Computational-Geometry/automatic_polycube/blob/main/app/extract_surface.cpp for the format)
+  TET_MESH_STATS_JSON: tet_mesh.stats.json,         # mesh stats (min/max/avg/sd of mesh metrics) computed on TET_MESH_MEDIT, as JSON file
+  SURFACE_MESH_STATS_JSON: surface_mesh.stats.json, # mesh stats (min/max/avg/sd of mesh metrics) computed on SURFACE_MESH_OBJ, as JSON file
+  SURFACE_MESH_GLB: surface_mesh.glb                # SURFACE_MESH_OBJ as glTF 2.0 binary file
+}
+distinctive_content: [TET_MESH_MEDIT]
+default_view: graphite

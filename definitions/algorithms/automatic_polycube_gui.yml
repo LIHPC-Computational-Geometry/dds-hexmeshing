@@ -1,0 +1,37 @@
+description: |
+  See main app of https://github.com/LIHPC-Computational-Geometry/automatic_polycube
+tet-mesh: { # case of 'automatic_polycube_gui' applied on a 'tet-mesh' folder
+  executable: {
+    path: AUTOMATIC_POLYCUBE,
+    filename: automatic_polycube,
+    command_line: '{mesh} gui=true'
+  },
+  output_folder: 'automatic_polycube_%d',
+  arguments: {
+    input_files: {
+      mesh: SURFACE_MESH_OBJ
+    },
+    output_files: {
+      labeling: SURFACE_LABELING_TXT
+    }
+  },
+  note: "Save the output file as {labeling}"
+}
+labeling: { # case of 'automatic_polycube_gui' applied on a 'labeling' folder
+  executable: {
+    path: AUTOMATIC_POLYCUBE,
+    filename: automatic_polycube,
+    command_line: '{mesh} {init_labeling} gui=true output={output_labeling}'
+  },
+  output_folder: 'automatic_polycube_%d',
+  arguments: {
+    input_files: {
+      mesh: SURFACE_MESH_OBJ,
+      init_labeling: SURFACE_LABELING_TXT
+    },
+    output_files: {
+      output_labeling: SURFACE_LABELING_TXT
+    }
+  },
+  note: "Save the output file as {output_labeling}"
+}

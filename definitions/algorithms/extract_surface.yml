@@ -1,0 +1,19 @@
+description: |
+  Extract the surface triangle mesh of a tetrahedral mesh
+tet-mesh: { # case of 'extract_surface' applied on a 'tet-mesh' subfolder
+  executable: {
+    path: AUTOMATIC_POLYCUBE,
+    filename: extract_surface,
+    command_line: '{tet_mesh} {surface_mesh} {surface_map}'
+  },
+  # no `output_folder` -> transformative algorithm
+  arguments: {
+    input_files: {
+      tet_mesh: TET_MESH_MEDIT
+    },
+    output_files: {
+      surface_mesh: SURFACE_MESH_OBJ,
+      surface_map: SURFACE_MAP_TXT
+    }
+  }
+}

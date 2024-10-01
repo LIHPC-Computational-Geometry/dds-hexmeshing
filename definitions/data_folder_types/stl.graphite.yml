@@ -1,0 +1,11 @@
+description: |
+  Open the .stl CAD model with Graphite
+executable: {
+  path: GRAPHITE,
+  command_line: '{mesh}'
+}
+arguments: {
+  input_files: {
+    mesh: STL
+  }
+}

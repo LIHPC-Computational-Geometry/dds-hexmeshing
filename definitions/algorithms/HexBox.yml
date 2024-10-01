@@ -1,0 +1,14 @@
+description:
+  See https://github.com/cg3hci/HexBox
+tet-mesh: { # case of 'HexBox' applied on a 'tet-mesh' subfolder
+  executable: {
+    path: HEXBOX,
+    command_line: '{mesh}'
+  },
+  output_folder: 'HexBox_%d',
+  arguments: {
+    input_files: {
+      mesh: SURFACE_MESH_OBJ
+    }
+  }
+}

@@ -1,0 +1,16 @@
+description: |
+  Open the labeled surface mesh, as .geogram, with Graphite
+executable: {
+  path: GRAPHITE,
+  command_line: '{labeled_mesh} {lua_script}'
+}
+arguments: {
+  input_files: {
+    labeled_mesh: SURFACE_LABELING_MESH_GEOGRAM
+  },
+  others: {
+    lua_script: {
+      adjacent_file: labeling.graphite.lua
+    }
+  }
+}

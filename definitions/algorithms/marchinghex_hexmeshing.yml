@@ -1,0 +1,25 @@
+description: |
+  See https://github.com/fprotais/marchinghex
+marchinghex_grid: { # case of 'marchinghex_hexmeshing' applied on a 'marchinghex_grid' subfolder
+  executable: {
+    path: MARCHING_HEX,
+    filename: marchinghex_hexmeshing,
+    command_line: '{grid_mesh} {tet_mesh} {hex_mesh}'
+  },
+  # no `output_folder` -> transformative algorithm
+  arguments: {
+    input_files: {
+      grid_mesh: GRID_MESH_MEDIT,
+      tet_mesh: TET_MESH_MEDIT
+    },
+    output_files: { # will be emplaced inside the 'output_folder'
+      hex_mesh: HEX_MESH_MEDIT
+    },
+    others: {
+      keep_debug_files: {
+        default: false,
+        description: If the debug files written should be kept
+      }
+    }
+  }
+}
