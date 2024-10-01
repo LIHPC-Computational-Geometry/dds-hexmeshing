@@ -1,7 +1,7 @@
 <div align="center">
-  <h1>dds</h1><br/>
-  <p>Semantic data folders</p><br/>
-  <a href="https://github.com/LIHPC-Computational-Geometry/HexMeshWorkshop/blob/main/CHANGELOG.md">🔄 Changelog</a> • <a href="https://github.com/LIHPC-Computational-Geometry/HexMeshWorkshop/wiki/User-documentation">📖 User documentation</a>
+  <h1><code>dds-hexmeshing</code></h1><br/>
+  <p>Semantic data folders (dds) for hexahedral mesh generation</p><br/>
+  <a href="https://github.com/LIHPC-Computational-Geometry/dds-hexmeshing/blob/main/CHANGELOG.md">🔄 Changelog</a> • <a href="https://github.com/LIHPC-Computational-Geometry/dds-hexmeshing/wiki/dds%E2%80%90hexmeshing">📖 Documentation</a>
 </div>
 
 Instead of having:
