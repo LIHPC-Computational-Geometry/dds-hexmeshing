@@ -147,9 +147,15 @@
                     this.eGui = document.createElement('div');
                     this.eGui.classList.add('custom-element');
                     if(params.data.glb_labeling != null) {
-                        this.eGui.innerHTML = `
-                            <button class="open-viewer" onclick="make_dialog('${params.data.glb_labeling}')">Open</button>
-                        `;
+                        if(params.data.glb_labeling == '-') {
+                            this.eGui.innerHTML = '-' // indicate a intentionally missing 3D labeling view (used for graph-cuts outputs)
+                        }
+                        else {
+                            this.eGui.innerHTML = `
+                                <button class="open-viewer" onclick="make_dialog('${params.data.glb_labeling}')">Open</button>
+                            `;
+                        }
+                        
                     }
                 }
 
