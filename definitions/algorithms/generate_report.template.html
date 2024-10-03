@@ -218,7 +218,7 @@
                             { field: "valid",                   headerName: "valid",                cellDataType: 'boolean', filter: true },
                             { field: "nb_turning_points",       headerName: "#turning-points",      cellDataType: 'number',  filter: true },
                             { field: "duration",                headerName: "duration",             cellDataType: 'number',  filter: true, valueFormatter: p => p.value == null ? null : p.value.toFixed(3) + ' s' },
-                            { field: "speedup",                 headerName: "speedup",              cellDataType: 'number',  filter: true, valueFormatter: p => p.value == null ? null : p.value.toFixed(1) },
+                            { field: "relative_duration",       headerName: "relative duration",    cellDataType: 'number',  filter: true, valueFormatter: p => p.value == null ? null : '×' + p.value + ' ours' },
                             { field: "glb_labeling",            headerName: "open",                 cellRenderer: openLabelingViewerButton },
                         ]
                     },
