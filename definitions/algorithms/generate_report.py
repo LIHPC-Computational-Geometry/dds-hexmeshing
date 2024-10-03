@@ -447,8 +447,8 @@ def main(input_folder: Path, arguments: list):
             AG_Grid_rowData=json.dumps(AG_Grid_rowData),
             Sankey_diagram_data=json.dumps(Sankey_diagram_data)
         )
-        with open(output_folder / 'report.html','wt') as HTML_output_stream:
-            logging.info(f'Writing report.html...')
+        with open(output_folder / 'index.html','wt') as HTML_output_stream:
+            logging.info(f'Writing index.html...')
             HTML_output_stream.write(HTML_report)
 
     # Download Javascript libraries, so the report can be opened offline

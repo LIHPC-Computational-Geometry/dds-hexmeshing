@@ -15,14 +15,14 @@ such as the 3D models. You have 2 solutions:
 
 Open `about:config` and change the value of `security.fileuri.strict_origin_policy` from `true` to `false`
 
-Then open `report.html`
+Then open `index.html`
 
 ### Chrome
 
 Execute
 
 ```bash
-google-chrome report.html --allow-file-access-from-files
+google-chrome index.html --allow-file-access-from-files
 ```
 
 ## 2. Launch an HTTP server
@@ -33,7 +33,7 @@ For example with Python:
 python3 -m http.server
 ```
 
-Then open http://0.0.0.0:8000/ with your internet navigator and open `report.html`
+Then open http://0.0.0.0:8000/ with your internet navigator
 
 # Sankey diagram
 
