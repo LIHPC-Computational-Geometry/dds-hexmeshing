@@ -231,9 +231,9 @@
                     {
                         headerName: 'feature edges',
                         children: [
-                            { field: "ignored",             headerName: "removed",     cellDataType: 'number', filter: true, valueFormatter: p => p.value == null ? null : p.value.toFixed(2) + ' %' },
-                            { field: "sharp & lost",        headerName: "lost",        cellDataType: 'number', filter: true, valueFormatter: p => p.value == null ? null : p.value.toFixed(2) + ' %' },
-                            { field: "sharp & preserved",   headerName: "preserved",   cellDataType: 'number', filter: true, valueFormatter: p => p.value == null ? null : p.value.toFixed(2) + ' %' },
+                            { field: "percentage_removed",     headerName: "ignored",           cellDataType: 'number', filter: true, valueFormatter: p => p.value == null ? null : p.value.toFixed(2) + ' %' },
+                            { field: "percentage_lost",        headerName: "sharp & lost",      cellDataType: 'number', filter: true, valueFormatter: p => p.value == null ? null : p.value.toFixed(2) + ' %' },
+                            { field: "percentage_preserved",   headerName: "sharp & preserved", cellDataType: 'number', filter: true, valueFormatter: p => p.value == null ? null : p.value.toFixed(2) + ' %' },
                         ]
                     },
                     {
