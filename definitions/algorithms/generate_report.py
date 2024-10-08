@@ -158,7 +158,7 @@ def main(input_folder: Path, arguments: list):
             assert(ISO_datetime is not None)
             labeling_info_dict = Ours_labeling.get_info_dict()
             assert(labeling_info_dict is not None)
-            Ours_duration = labeling_info_dict[ISO_datetime]['duration'][0]
+            Ours_duration = labeling_info_dict[ISO_datetime]['duration'][0] + graphcut_duration # take into account the duration of the init labeling generation
             labeling_stats = Ours_labeling.get_labeling_stats_dict() # type: ignore | see ../data_folder_types/labeling.accessors.py
             ours_row['nb_charts']                = labeling_stats['charts']['nb']
             ours_row['nb_boundaries']            = labeling_stats['boundaries']['nb']
