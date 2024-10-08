@@ -59,6 +59,34 @@
                 box-shadow: 0px 0px 10px white;
             }
 
+            dialog #close-viewer {
+                position: absolute;
+                right: 0;
+                top: 0;
+            }
+
+            dialog button {
+                background: none;
+                color: inherit;
+                border: none;
+                margin: 2pt;
+                padding: 0;
+                font: inherit;
+                cursor: pointer;
+                outline: inherit;
+                border-radius: 50%;
+            }
+
+            dialog button:hover {
+                background-color: grey;
+            }
+
+            /* thanks Jason Ashdown https://codepen.io/jsonUK/pen/RqgeGp */
+            .bg-close {
+                background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40px' height='40px' viewbox='0 0 40 40'%3E%3Cpath d='M 10,10 L 30,30 M 30,10 L 10,30' stroke='white' stroke-width='4' stroke-linecap='butt' /%3E%3C/svg%3E");
+                background-size: 100%;
+            }
+
             dialog label {
                 color: white;
             }
@@ -72,7 +100,7 @@
     </head>
     <body>
         <dialog>
-            <button autofocus id="close-viewer">Close</button>
+            <button autofocus id="close-viewer"><div class="bg-close" style="width: 2em; height: 2em;"></div></button>
         </dialog>
         <details>
             <summary>Sankey diagram (our method)</summary>
