@@ -69,6 +69,7 @@ You can click on the name of a column to switch between ascending, descending an
 - avg(fidelity) : average per-triangle fidelity, in [0,1]
 - valid : if the labeling corresponds to a polycube topology or not
 - #turning-points : number of turning-points (high turns along boundaries)
+- similarity: percentage of facets having the same label, compared to our method
 - duration : duration of the labeling stage with file I/O, in seconds. For our method, the generation of the initial labeling with graph-cut is 
 - relative duration : duration divided by the duration of our method
 - open : open the 3D viewer. After 5s, the 3D model switches between the labeled mesh and a fast polycube estimation. If no labeling was generated, the triangle mesh is displayed instead. Screen Space Ambient Occlusion (SSAO) is on by default.

@@ -223,6 +223,7 @@
                             { field: "avg_fidelity",            headerName: "avg(fidelity)",        cellDataType: 'number',  filter: true, valueFormatter: p => p.value == null ? null : p.value.toFixed(3) },
                             { field: "valid",                   headerName: "valid",                cellDataType: 'boolean', filter: true },
                             { field: "nb_turning_points",       headerName: "#turning-points",      cellDataType: 'number',  filter: true },
+                            { field: "similarity",              headerName: "similarity",           cellDataType: 'number',  filter: true, valueFormatter: p => p.value == null ? null : p.value.toFixed(2) + ' %'},
                             { field: "duration",                headerName: "duration",             cellDataType: 'number',  filter: true, valueFormatter: p => p.value == null ? null : p.value.toFixed(3) + ' s' },
                             { field: "relative_duration",       headerName: "relative duration",    cellDataType: 'number',  filter: true, valueFormatter: p => p.value == null ? null : '×' + p.value + ' ours' },
                             { field: "glb_labeling",            headerName: "open",                 cellRenderer: openLabelingViewerButton },

@@ -93,11 +93,12 @@ def main(input_folder: Path, arguments: list):
 
     AG_Grid_rowData = list()
 
-    def process_Our_output(tet_mesh_object: DataFolder, row_template: dict) -> Optional[float]:
+    def process_Our_output(tet_mesh_object: DataFolder, row_template: dict) -> tuple[Optional[float],Optional[DataFolder]]:
         """
         Returns duration
         """
         Ours_duration: Optional[float] = None
+        Ours_labeling: Optional[DataFolder] = None
 
         graphcut_row = copy.deepcopy(row_template)
         graphcut_row['method'] = 'Graph-cut'
@@ -149,16 +150,16 @@ def main(input_folder: Path, arguments: list):
             ours_row['glb_labeling'] = glb_tet_mesh_filename # no labeling can be viewed, but at least the user will be able to view the input mesh
         else:
             # instantiate the labeling folder
-            labeling_object: DataFolder = DataFolder(labeling_subfolders_generated_by_ours[0])
-            assert(labeling_object.type == 'labeling')
+            Ours_labeling = DataFolder(labeling_subfolders_generated_by_ours[0])
+            assert(Ours_labeling.type == 'labeling')
             
             # retrieve datetime, labeling stats and feature edges info
-            ISO_datetime = labeling_object.get_datetime_key_of_algo_in_info_file('automatic_polycube')
+            ISO_datetime = Ours_labeling.get_datetime_key_of_algo_in_info_file('automatic_polycube')
             assert(ISO_datetime is not None)
-            labeling_info_dict = labeling_object.get_info_dict()
+            labeling_info_dict = Ours_labeling.get_info_dict()
             assert(labeling_info_dict is not None)
             Ours_duration = labeling_info_dict[ISO_datetime]['duration'][0]
-            labeling_stats = labeling_object.get_labeling_stats_dict() # type: ignore | see ../data_folder_types/labeling.accessors.py
+            labeling_stats = Ours_labeling.get_labeling_stats_dict() # type: ignore | see ../data_folder_types/labeling.accessors.py
             ours_row['nb_charts']                = labeling_stats['charts']['nb']
             ours_row['nb_boundaries']            = labeling_stats['boundaries']['nb']
             ours_row['nb_corners']               = labeling_stats['corners']['nb']
@@ -167,20 +168,23 @@ def main(input_folder: Path, arguments: list):
             ours_row['nb_invalid_corners']       = labeling_stats['corners']['invalid']
             ours_row['min_fidelity']             = labeling_stats['fidelity']['min']
             ours_row['avg_fidelity']             = labeling_stats['fidelity']['avg']
-            ours_row['valid']                    = labeling_object.has_valid_labeling() # type: ignore | see ../data_folder_types/labeling.accessors.py
-            ours_row['nb_turning_points']        = labeling_object.nb_turning_points() # type: ignore | see ../data_folder_types/labeling.accessors.py
+            ours_row['valid']                    = Ours_labeling.has_valid_labeling() # type: ignore | see ../data_folder_types/labeling.accessors.py
+            ours_row['nb_turning_points']        = Ours_labeling.nb_turning_points() # type: ignore | see ../data_folder_types/labeling.accessors.py
             ours_row['duration']                 = Ours_duration
             total_feature_edges = labeling_stats['feature-edges']['removed'] + labeling_stats['feature-edges']['lost'] + labeling_stats['feature-edges']['preserved']
             assert(total_feature_edges == surface_mesh_stats['edges']['nb'])
             ours_row['percentage_removed']       = None if total_feature_edges == 0 else labeling_stats['feature-edges']['removed']/total_feature_edges*100
             ours_row['percentage_lost']          = None if total_feature_edges == 0 else labeling_stats['feature-edges']['lost']/total_feature_edges*100
             ours_row['percentage_preserved']     = None if total_feature_edges == 0 else labeling_stats['feature-edges']['preserved']/total_feature_edges*100
+
+            # update Graph-cut row with labeling similarity relative to Ours
+            graphcut_row['similarity'] = labeling_object.compute_labeling_similarity_with(Ours_labeling)*100 # type: ignore | see ../data_folder_types/labeling.accessors.py
             
             # copy the labeling as glTF
-            if not labeling_object.get_file('POLYCUBE_SURFACE_MESH_OBJ',must_exist=False).exists():
+            if not Ours_labeling.get_file('POLYCUBE_SURFACE_MESH_OBJ',must_exist=False).exists():
                 # help the next .get_file() because the depth of missing files is > 1
-                labeling_object.run('fastbndpolycube',silent_output=False)
-            glb_labeling_file: Path = labeling_object.get_file('POLYCUBE_LABELING_MESH_ANIM_GLB',must_exist=True,silent_output=False)
+                Ours_labeling.run('fastbndpolycube',silent_output=False)
+            glb_labeling_file: Path = Ours_labeling.get_file('POLYCUBE_LABELING_MESH_ANIM_GLB',must_exist=True,silent_output=False)
             glb_labeling_filename = CAD_name + '_labeling_ours.glb'
             copyfile(glb_labeling_file, output_folder / 'glb' / glb_labeling_filename)
             ours_row['glb_labeling'] = glb_labeling_filename
@@ -189,9 +193,9 @@ def main(input_folder: Path, arguments: list):
             # TODO only if the labeling is valid
             postprocessed_hexmesh_object: Optional[DataFolder] = None
             try:
-                if not (labeling_object.path / 'polycube_withHexEx_1.3' / 'global_padding' / 'inner_smoothing_50').exists():
+                if not (Ours_labeling.path / 'polycube_withHexEx_1.3' / 'global_padding' / 'inner_smoothing_50').exists():
                     raise OSError()
-                postprocessed_hexmesh_object = DataFolder(labeling_object.path / 'polycube_withHexEx_1.3' / 'global_padding' / 'inner_smoothing_50')
+                postprocessed_hexmesh_object = DataFolder(Ours_labeling.path / 'polycube_withHexEx_1.3' / 'global_padding' / 'inner_smoothing_50')
                 assert(postprocessed_hexmesh_object.type == "hex-mesh")
                 if 'quality' in postprocessed_hexmesh_object.get_mesh_stats_dict()['cells']: # type: ignore | see ../data_folder_types/hex-mesh.accessors.py
                     ours_row['minSJ'] = postprocessed_hexmesh_object.get_mesh_stats_dict()['cells']['quality']['hex_SJ']['min'] # type: ignore | see ../data_folder_types/hex-mesh.accessors.py
@@ -206,9 +210,9 @@ def main(input_folder: Path, arguments: list):
                 pass
             
             # update the counters for the Sankey diagram
-            if not labeling_object.has_valid_labeling(): # type: ignore | see ../data_folder_types/labeling.accessors.py
+            if not Ours_labeling.has_valid_labeling(): # type: ignore | see ../data_folder_types/labeling.accessors.py
                 fluxes[TET_MESHING_SUCCESS,LABELING_INVALID] += 1
-            elif labeling_object.nb_turning_points() != 0: # type: ignore | see ../data_folder_types/labeling.accessors.py
+            elif Ours_labeling.nb_turning_points() != 0: # type: ignore | see ../data_folder_types/labeling.accessors.py
                 fluxes[TET_MESHING_SUCCESS,LABELING_NON_MONOTONE] += 1
                 if ours_row['glb_hexmesh'] is not None:
                     # a hex-mesh was successfully generated
@@ -235,9 +239,9 @@ def main(input_folder: Path, arguments: list):
                     fluxes[LABELING_SUCCESS,HEX_MESHING_FAILURE] += 1
         AG_Grid_rowData.append(graphcut_row)
         AG_Grid_rowData.append(ours_row)
-        return Ours_duration
+        return Ours_duration,Ours_labeling
 
-    def process_Evocube_output(tet_mesh_object: DataFolder, row_template: dict, Ours_duration: Optional[float]):
+    def process_Evocube_output(tet_mesh_object: DataFolder, row_template: dict, Ours_duration: Optional[float], Ours_labeling: Optional[DataFolder]):
         evocube_row = copy.deepcopy(row_template)
         evocube_row['method'] = 'Evocube'
 
@@ -273,6 +277,7 @@ def main(input_folder: Path, arguments: list):
             evocube_row['avg_fidelity']             = labeling_stats['fidelity']['avg']
             evocube_row['valid']                    = labeling_object.has_valid_labeling() # type: ignore | see ../data_folder_types/labeling.accessors.py
             evocube_row['nb_turning_points']        = labeling_object.nb_turning_points() # type: ignore | see ../data_folder_types/labeling.accessors.py
+            evocube_row['similarity']               = None if Ours_labeling is None else labeling_object.compute_labeling_similarity_with(Ours_labeling)*100 # type: ignore | see ../data_folder_types/labeling.accessors.py
             evocube_row['duration']                 = Evocube_duration
             evocube_row['relative_duration']        = None if Ours_duration is None else int(Evocube_duration / Ours_duration)
             total_feature_edges = labeling_stats['feature-edges']['removed'] + labeling_stats['feature-edges']['lost'] + labeling_stats['feature-edges']['preserved']
@@ -312,7 +317,7 @@ def main(input_folder: Path, arguments: list):
 
         AG_Grid_rowData.append(evocube_row)
 
-    def process_PolyCut_output(tet_mesh_object: DataFolder, row_template: dict, Ours_duration: Optional[float],surface_mesh: Path):
+    def process_PolyCut_output(tet_mesh_object: DataFolder, row_template: dict, Ours_duration: Optional[float], surface_mesh: Path):
         polycut_row = copy.deepcopy(row_template)
         polycut_row['method'] = 'PolyCut'
 
@@ -349,6 +354,7 @@ def main(input_folder: Path, arguments: list):
             polycut_row['avg_fidelity']             = labeling_stats['fidelity']['avg']
             polycut_row['valid']                    = labeling_object.has_valid_labeling() # type: ignore | see ../data_folder_types/labeling.accessors.py
             polycut_row['nb_turning_points']        = labeling_object.nb_turning_points() # type: ignore | see ../data_folder_types/labeling.accessors.py
+            # leave polycut_row['similarity'] at None, labeling not comparable to ours because not the same surface mesh 
             polycut_row['duration']                 = PolyCut_duration
             polycut_row['relative_duration']        = None if Ours_duration is None else int(PolyCut_duration / Ours_duration)
             # the .obj outputted by PolyCut has no feature edges
@@ -450,6 +456,7 @@ def main(input_folder: Path, arguments: list):
         row_template['avg_fidelity']             = None     # [float] the average geometric fidelity of the labeling
         row_template['valid']                    = None     # [bool] if the labeling is valid (no invalid chart/boundary/corner), or not 
         row_template['nb_turning_points']        = None     # [int] the number of turning-points in the labeling
+        row_template['similarity']               = None     # [float] percentage of facets having the same label, relative to our method (only filled for graphcut and Evocube, PolyCut has a coarser supporting mesh)
         row_template['duration']                 = None     # [float] the labeling duration (including I/O) in seconds
         row_template['relative_duration']        = None     # [int] the labeling duration relative to our method (only filled for Evocube and PolyCut)
         row_template['glb_labeling']             = None     # [str] filename of the labeling glTF asset
@@ -483,11 +490,11 @@ def main(input_folder: Path, arguments: list):
 
         # starts with the labeling generated by automatic_polycube, so that other methods can compute the relative duration
 
-        Ours_duration = process_Our_output(tet_mesh_object,row_template)
+        Ours_duration,Ours_labeling = process_Our_output(tet_mesh_object,row_template)
 
         # parse the labeling generated by evocube
         
-        process_Evocube_output(tet_mesh_object,row_template,Ours_duration)
+        process_Evocube_output(tet_mesh_object,row_template,Ours_duration,Ours_labeling)
 
         # parse the labeling generated by PolyCut
 
@@ -545,6 +552,7 @@ def main(input_folder: Path, arguments: list):
         row_template['avg_fidelity']             = None
         row_template['valid']                    = None
         row_template['nb_turning_points']        = None
+        row_template['similarity']               = None
         row_template['duration']                 = None
         row_template['relative_duration']        = None
         row_template['glb_labeling']             = None
@@ -557,11 +565,11 @@ def main(input_folder: Path, arguments: list):
 
         # starts with the labeling generated by automatic_polycube, so that other methods can compute the relative duration
 
-        Ours_duration = process_Our_output(depth_1_object,row_template)
+        Ours_duration,Ours_labeling = process_Our_output(depth_1_object,row_template)
 
         # parse the labeling generated by evocube
         
-        process_Evocube_output(depth_1_object,row_template,Ours_duration)
+        process_Evocube_output(depth_1_object,row_template,Ours_duration,Ours_labeling)
     
     # end of data folder parsing
     
