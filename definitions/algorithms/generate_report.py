@@ -23,7 +23,7 @@ def main(input_folder: Path, arguments: list):
 
     # check `arguments`
     if len(arguments) != 0:
-        logging.fatal(f'{__file__} does not need other arguments than the input folder, but {arguments} were provided')
+        log.fatal(f'{__file__} does not need other arguments than the input folder, but {arguments} were provided')
         exit(1)
 
     current_time = localtime()
@@ -53,6 +53,44 @@ def main(input_folder: Path, arguments: list):
     HEX_MESHING_POSITIVE_MIN_SJ = 12
     HEX_MESHING_NEGATIVE_MIN_SJ = 13
     HEX_MESHING_FAILURE         = 14
+    
+    def aggregate_fluxes(fluxes: dict[tuple[int,int],int], node: int) -> tuple[dict[int,int],dict[int,int]]:
+        ingoing_fluxes = dict()
+        outgoing_fluxes = dict()
+        for k,v in fluxes.items():
+            assert(type(k) == tuple)
+            assert(len(k) == 2) # two IDs : source and destination nodes
+            assert(type(v) == int)
+            if k[0] == node:
+                outgoing_fluxes[k[1]] = v
+            if k[1] == node:
+                ingoing_fluxes[k[0]] = v
+        return ingoing_fluxes, outgoing_fluxes
+    
+    def accumulate_fluxes(fluxes: dict[tuple[int,int],int], node: int) -> tuple[int,int]:
+        ingoing_fluxes, outgoing_fluxes = aggregate_fluxes(fluxes,node)
+        return sum(ingoing_fluxes.values()), sum(outgoing_fluxes.values())
+
+    # for nodes where we expect no ingoing flux
+    def start_node_quantity(fluxes: dict[tuple[int,int],int], node: int) -> int:
+        ingoing,outgoing = accumulate_fluxes(fluxes,node)
+        if (ingoing != 0):
+            raise RuntimeError(f"Start node {node} has non-zero ingoing fluxes ({ingoing})")
+        return outgoing
+
+    # for nodes where we expect the equilibrium between ingoing and outgoing fluxes
+    def intermediate_node_quantity(fluxes: dict[tuple[int,int],int], node: int) -> int:
+        ingoing,outgoing = accumulate_fluxes(fluxes,node)
+        if(ingoing != outgoing):
+            raise RuntimeError(f"Intermediate node {node} as {ingoing} ingoing and {outgoing} fluxes, no equilibrium")
+        return ingoing
+    
+    # for nodes where we expect no outgoing flux
+    def end_node_quantity(fluxes: dict[tuple[int,int],int], node: int) -> int:
+        ingoing,outgoing = accumulate_fluxes(fluxes,node)
+        if(outgoing != 0):
+            raise RuntimeError(f"End node {node} has non-zero outgoing fluxes ({outgoing})")
+        return ingoing
 
     AG_Grid_rowData = list()
 
@@ -64,10 +102,10 @@ def main(input_folder: Path, arguments: list):
             # instantiate this depth-1 folder
             depth_1_object = DataFolder(depth_1_folder)
             if(depth_1_object.type != 'step'):
-                logging.warning(f"Found a depth-1 folder that is not of type 'step' but '{depth_1_object.type}': {depth_1_folder}")
+                log.warning(f"Found a depth-1 folder that is not of type 'step' but '{depth_1_object.type}': {depth_1_folder}")
                 continue
         except DataFolderInstantiationError:
-            logging.warning(f"Found a depth-1 folder that cannot be instantiated: {depth_1_folder}")
+            log.warning(f"Found a depth-1 folder that cannot be instantiated: {depth_1_folder}")
             continue
 
         CAD_name = depth_1_folder.name
@@ -119,7 +157,7 @@ def main(input_folder: Path, arguments: list):
             tet_mesh_object = DataFolder(depth_1_folder / 'Gmsh_0.1/')
             assert(tet_mesh_object.type == 'tet-mesh')
             if not (depth_1_folder / 'Gmsh_0.1' / SURFACE_MESH_OBJ_filename).exists():
-                logging.warning(f"{depth_1_folder}/Gmsh_0.1/ exists, but there is no surface mesh inside")
+                log.warning(f"{depth_1_folder}/Gmsh_0.1/ exists, but there is no surface mesh inside")
                 raise OSError()
         except (OSError, DataFolderInstantiationError):
             # not even a tet-mesh for this CAD model
@@ -458,25 +496,27 @@ def main(input_folder: Path, arguments: list):
     # end of data folder parsing
     
     # Sankey diagram :
-    # - consider our algorithm, ignore Evocube results
+    # - consider our algorithm, ignore graph-cut, PolyCut and Evocube results
     # - no MAMBO subsets granularity
 
     # from links values (flow) to node values (containers)
-    nb_CAD = fluxes[VOID,MAMBO_BASIC] + fluxes[VOID,MAMBO_SIMPLE] + fluxes[VOID,MAMBO_MEDIUM] + fluxes[VOID,OCTREE_MESHING_CAD] # TODO automatic aggregation from `fluxes` and `CAD`
-    nb_tet_meshing_failed = fluxes[CAD,TET_MESHING_FAILURE]
-    nb_tet_meshing_succeeded = fluxes[CAD,TET_MESHING_SUCCESS]
-    nb_labeling_failed = fluxes[TET_MESHING_SUCCESS,LABELING_FAILURE]
-    nb_labeling_invalid = fluxes[TET_MESHING_SUCCESS,LABELING_INVALID]
-    nb_labeling_non_monotone = fluxes[TET_MESHING_SUCCESS,LABELING_NON_MONOTONE]
-    nb_labeling_succeeded = fluxes[TET_MESHING_SUCCESS,LABELING_SUCCESS]
-    max_nb_hexmeshes = nb_labeling_non_monotone + nb_labeling_succeeded # other cases cannot lead to a hex-mesh
-    nb_hexmesh_failed = fluxes[LABELING_NON_MONOTONE,HEX_MESHING_FAILURE] + fluxes[LABELING_SUCCESS,HEX_MESHING_FAILURE]
-    nb_hexmesh_negative_min_sj = fluxes[LABELING_NON_MONOTONE,HEX_MESHING_NEGATIVE_MIN_SJ] + fluxes[LABELING_SUCCESS,HEX_MESHING_NEGATIVE_MIN_SJ]
-    nb_hexmesh_positive_min_sj = fluxes[LABELING_NON_MONOTONE,HEX_MESHING_POSITIVE_MIN_SJ] + fluxes[LABELING_SUCCESS,HEX_MESHING_POSITIVE_MIN_SJ]
-
-    assert(nb_tet_meshing_failed + nb_tet_meshing_succeeded == nb_CAD)
-    assert(nb_labeling_failed + nb_labeling_invalid + nb_labeling_non_monotone + nb_labeling_succeeded == nb_tet_meshing_succeeded)
-    assert(nb_hexmesh_failed + nb_hexmesh_negative_min_sj + nb_hexmesh_positive_min_sj == max_nb_hexmeshes)
+    node_quantity = dict()
+    assert(intermediate_node_quantity(fluxes,MAMBO_BASIC) == 74)
+    assert(intermediate_node_quantity(fluxes,MAMBO_SIMPLE) == 30)
+    assert(intermediate_node_quantity(fluxes,MAMBO_MEDIUM) == 9)
+    node_quantity[CAD] = intermediate_node_quantity(fluxes,CAD)
+    node_quantity[TET_MESHING_FAILURE] = end_node_quantity(fluxes,TET_MESHING_FAILURE)
+    node_quantity[TET_MESHING_SUCCESS] = intermediate_node_quantity(fluxes,TET_MESHING_SUCCESS)
+    node_quantity[LABELING_FAILURE] = end_node_quantity(fluxes,LABELING_FAILURE)
+    node_quantity[LABELING_INVALID] = end_node_quantity(fluxes,LABELING_INVALID)
+    node_quantity[LABELING_NON_MONOTONE] = intermediate_node_quantity(fluxes,LABELING_NON_MONOTONE)
+    node_quantity[LABELING_SUCCESS] = intermediate_node_quantity(fluxes,LABELING_SUCCESS)
+    assert(node_quantity[LABELING_FAILURE] + node_quantity[LABELING_INVALID] + node_quantity[LABELING_NON_MONOTONE] + node_quantity[LABELING_SUCCESS] == node_quantity[TET_MESHING_SUCCESS])
+    max_nb_hexmeshes = node_quantity[LABELING_NON_MONOTONE] + node_quantity[LABELING_SUCCESS] # hex-meshing is only attempted if the labeling is valid (monotone or not)
+    node_quantity[HEX_MESHING_FAILURE] = end_node_quantity(fluxes,HEX_MESHING_FAILURE)
+    node_quantity[HEX_MESHING_NEGATIVE_MIN_SJ] = end_node_quantity(fluxes,HEX_MESHING_NEGATIVE_MIN_SJ)
+    node_quantity[HEX_MESHING_POSITIVE_MIN_SJ] = end_node_quantity(fluxes,HEX_MESHING_POSITIVE_MIN_SJ)
+    assert(node_quantity[HEX_MESHING_FAILURE] + node_quantity[HEX_MESHING_NEGATIVE_MIN_SJ] + node_quantity[HEX_MESHING_POSITIVE_MIN_SJ] == max_nb_hexmeshes)
 
     # Define nodes & links of the Sankey diagram
     # Some nodes will not be defined, if they are empty
@@ -490,207 +530,145 @@ def main(input_folder: Path, arguments: list):
     Sankey_diagram_data["nodes"] = list()
     Sankey_diagram_data["nodes"].append({
         "node": node_name_to_index[CAD],
-        "name": f"{nb_CAD} CAD models"
+        "name": f"{node_quantity[CAD]} CAD models"
     })
-    if nb_tet_meshing_failed != 0:
+    if node_quantity[TET_MESHING_FAILURE] != 0:
         node_name_to_index[TET_MESHING_FAILURE] = nb_nodes
         nb_nodes += 1
         Sankey_diagram_data["nodes"].append({
             "node": node_name_to_index[TET_MESHING_FAILURE],
-            "name": f"tet-meshing failed : {nb_tet_meshing_failed/nb_CAD*100:.2f} %"
+            "name": f"tet-meshing failed : {node_quantity[TET_MESHING_FAILURE]/node_quantity[CAD]*100:.2f} %"
         })
-    if nb_tet_meshing_succeeded != 0:
+    if node_quantity[TET_MESHING_SUCCESS] != 0:
         node_name_to_index[TET_MESHING_SUCCESS] = nb_nodes
         nb_nodes += 1
         Sankey_diagram_data["nodes"].append({
             "node": node_name_to_index[TET_MESHING_SUCCESS],
-            "name": f"tet-meshing succeeded : {nb_tet_meshing_succeeded/nb_CAD*100:.2f} %"
+            "name": f"tet-meshing succeeded : {node_quantity[TET_MESHING_SUCCESS]/node_quantity[CAD]*100:.2f} %"
         })
-    if nb_labeling_failed != 0:
+    if node_quantity[LABELING_FAILURE] != 0:
         node_name_to_index[LABELING_FAILURE] = nb_nodes
         nb_nodes += 1
         Sankey_diagram_data["nodes"].append({
             "node": node_name_to_index[LABELING_FAILURE],
-            "name": f"labeling failed : {nb_labeling_failed/nb_tet_meshing_succeeded*100:.2f} %"
+            "name": f"labeling failed : {node_quantity[LABELING_FAILURE]/node_quantity[TET_MESHING_SUCCESS]*100:.2f} %"
         })
-    if nb_labeling_invalid != 0:
+    if node_quantity[LABELING_INVALID] != 0:
         node_name_to_index[LABELING_INVALID] = nb_nodes
         nb_nodes += 1
         Sankey_diagram_data["nodes"].append({
             "node": node_name_to_index[LABELING_INVALID],
-            "name": f"invalid labeling : {nb_labeling_invalid/nb_tet_meshing_succeeded*100:.2f} %"
+            "name": f"invalid labeling : {node_quantity[LABELING_INVALID]/node_quantity[TET_MESHING_SUCCESS]*100:.2f} %"
         })
-    if nb_labeling_non_monotone != 0:
+    if node_quantity[LABELING_NON_MONOTONE] != 0:
         node_name_to_index[LABELING_NON_MONOTONE] = nb_nodes
         nb_nodes += 1
         Sankey_diagram_data["nodes"].append({
             "node": node_name_to_index[LABELING_NON_MONOTONE],
-            "name": f"valid but non-monotone labeling : {nb_labeling_non_monotone/nb_tet_meshing_succeeded*100:.2f} %"
+            "name": f"valid but non-monotone labeling : {node_quantity[LABELING_NON_MONOTONE]/node_quantity[TET_MESHING_SUCCESS]*100:.2f} %"
         })
-    if nb_labeling_succeeded != 0:
+    if node_quantity[LABELING_SUCCESS] != 0:
         node_name_to_index[LABELING_SUCCESS] = nb_nodes
         nb_nodes += 1
         Sankey_diagram_data["nodes"].append({
             "node": node_name_to_index[LABELING_SUCCESS],
-            "name": f"labeling succeeded : {nb_labeling_succeeded/nb_tet_meshing_succeeded*100:.2f} %"
+            "name": f"labeling succeeded : {node_quantity[LABELING_SUCCESS]/node_quantity[TET_MESHING_SUCCESS]*100:.2f} %"
         })
-    if nb_hexmesh_failed != 0:
+    if node_quantity[HEX_MESHING_FAILURE] != 0:
         node_name_to_index[HEX_MESHING_FAILURE] = nb_nodes
         nb_nodes += 1
         Sankey_diagram_data["nodes"].append({
             "node": node_name_to_index[HEX_MESHING_FAILURE],
-            "name": f"hex-meshing failed : {nb_hexmesh_failed/max_nb_hexmeshes*100:.2f} %"})
-    if nb_hexmesh_negative_min_sj != 0:
+            "name": f"hex-meshing failed : {node_quantity[HEX_MESHING_FAILURE]/max_nb_hexmeshes*100:.2f} %"
+        })
+    if node_quantity[HEX_MESHING_NEGATIVE_MIN_SJ] != 0:
         node_name_to_index[HEX_MESHING_NEGATIVE_MIN_SJ] = nb_nodes
         nb_nodes += 1
         Sankey_diagram_data["nodes"].append({
             "node": node_name_to_index[HEX_MESHING_NEGATIVE_MIN_SJ],
-            "name": f"hex-mesh w/ minSJ<0 : {nb_hexmesh_negative_min_sj/max_nb_hexmeshes*100:.2f} %"
+            "name": f"hex-mesh w/ minSJ<0 : {node_quantity[HEX_MESHING_NEGATIVE_MIN_SJ]/max_nb_hexmeshes*100:.2f} %"
         })
-    if nb_hexmesh_positive_min_sj != 0:
+    if node_quantity[HEX_MESHING_POSITIVE_MIN_SJ] != 0:
         node_name_to_index[HEX_MESHING_POSITIVE_MIN_SJ] = nb_nodes
         nb_nodes += 1
         Sankey_diagram_data["nodes"].append({
             "node": node_name_to_index[HEX_MESHING_POSITIVE_MIN_SJ],
-            "name": f"hex-mesh w/ minSJ≥0 : {nb_hexmesh_positive_min_sj/max_nb_hexmeshes*100:.2f} %"
+            "name": f"hex-mesh w/ minSJ≥0 : {node_quantity[HEX_MESHING_POSITIVE_MIN_SJ]/max_nb_hexmeshes*100:.2f} %"
         })
     
-    # TODO refactor next lines with a for src,dest in [(a,b),(c,d),...]
     Sankey_diagram_data["links"] = list()
-    if fluxes[CAD,TET_MESHING_FAILURE] != 0:
-        assert(nb_tet_meshing_failed != 0)
-        Sankey_diagram_data["nodes"].append({
-            "source": node_name_to_index[CAD],
-            "target": node_name_to_index[TET_MESHING_FAILURE],
-            "value": fluxes[CAD,TET_MESHING_FAILURE]
-        })
-    if fluxes[CAD,TET_MESHING_SUCCESS] != 0:
-        assert(nb_tet_meshing_succeeded != 0)
-        Sankey_diagram_data["links"].append({
-            "source": node_name_to_index[CAD],
-            "target": node_name_to_index[TET_MESHING_SUCCESS],
-            "value": fluxes[CAD,TET_MESHING_SUCCESS]
-        })
-    if fluxes[TET_MESHING_SUCCESS,LABELING_FAILURE] != 0:
-        assert(nb_labeling_failed != 0)
-        Sankey_diagram_data["links"].append({
-            "source": node_name_to_index[TET_MESHING_SUCCESS],
-            "target": node_name_to_index[LABELING_FAILURE],
-            "value": fluxes[TET_MESHING_SUCCESS,LABELING_FAILURE]
-        })
-    if fluxes[TET_MESHING_SUCCESS,LABELING_INVALID] != 0:
-        assert(nb_labeling_invalid != 0)
-        Sankey_diagram_data["links"].append({
-            "source": node_name_to_index[TET_MESHING_SUCCESS],
-            "target": node_name_to_index[LABELING_INVALID],
-            "value": fluxes[TET_MESHING_SUCCESS,LABELING_INVALID]
-        })
-    if fluxes[TET_MESHING_SUCCESS,LABELING_NON_MONOTONE] != 0:
-        assert(nb_labeling_non_monotone != 0)
-        Sankey_diagram_data["links"].append({
-            "source": node_name_to_index[TET_MESHING_SUCCESS],
-            "target": node_name_to_index[LABELING_NON_MONOTONE],
-            "value": fluxes[TET_MESHING_SUCCESS,LABELING_NON_MONOTONE]
-        })
-    if fluxes[TET_MESHING_SUCCESS,LABELING_SUCCESS] != 0:
-        assert(nb_labeling_succeeded != 0)
-        Sankey_diagram_data["links"].append({
-            "source": node_name_to_index[TET_MESHING_SUCCESS],
-            "target": node_name_to_index[LABELING_SUCCESS],
-            "value": fluxes[TET_MESHING_SUCCESS,LABELING_SUCCESS]
-        })
-    if fluxes[LABELING_NON_MONOTONE,HEX_MESHING_FAILURE] != 0:
-        assert(nb_hexmesh_failed != 0)
-        Sankey_diagram_data["links"].append({
-            "source": node_name_to_index[LABELING_NON_MONOTONE],
-            "target": node_name_to_index[HEX_MESHING_FAILURE],
-            "value": fluxes[LABELING_NON_MONOTONE,HEX_MESHING_FAILURE]
-        })
-    if fluxes[LABELING_NON_MONOTONE,HEX_MESHING_NEGATIVE_MIN_SJ] != 0:
-        assert(nb_hexmesh_negative_min_sj != 0)
-        Sankey_diagram_data["links"].append({
-            "source": node_name_to_index[LABELING_NON_MONOTONE],
-            "target": node_name_to_index[HEX_MESHING_NEGATIVE_MIN_SJ],
-            "value": fluxes[LABELING_NON_MONOTONE,HEX_MESHING_NEGATIVE_MIN_SJ]
-        })
-    if fluxes[LABELING_NON_MONOTONE,HEX_MESHING_POSITIVE_MIN_SJ] != 0:
-        assert(nb_hexmesh_positive_min_sj != 0)
-        Sankey_diagram_data["links"].append({
-            "source": node_name_to_index[LABELING_NON_MONOTONE],
-            "target": node_name_to_index[HEX_MESHING_POSITIVE_MIN_SJ],
-            "value": fluxes[LABELING_NON_MONOTONE,HEX_MESHING_POSITIVE_MIN_SJ]
-        })
-    if fluxes[LABELING_SUCCESS,HEX_MESHING_FAILURE] != 0:
-        assert(nb_hexmesh_failed != 0)
-        Sankey_diagram_data["links"].append({
-            "source": node_name_to_index[LABELING_SUCCESS],
-            "target": node_name_to_index[HEX_MESHING_FAILURE],
-            "value": fluxes[LABELING_SUCCESS,HEX_MESHING_FAILURE]
-        })
-    if fluxes[LABELING_SUCCESS,HEX_MESHING_NEGATIVE_MIN_SJ] != 0:
-        assert(nb_hexmesh_negative_min_sj != 0)
-        Sankey_diagram_data["links"].append({
-            "source": node_name_to_index[LABELING_SUCCESS],
-            "target": node_name_to_index[HEX_MESHING_NEGATIVE_MIN_SJ],
-            "value": fluxes[LABELING_SUCCESS,HEX_MESHING_NEGATIVE_MIN_SJ]
-        })
-    if fluxes[LABELING_SUCCESS,HEX_MESHING_POSITIVE_MIN_SJ] != 0:
-        assert(nb_hexmesh_positive_min_sj != 0)
-        Sankey_diagram_data["links"].append({
-            "source": node_name_to_index[LABELING_SUCCESS],
-            "target": node_name_to_index[HEX_MESHING_POSITIVE_MIN_SJ],
-            "value": fluxes[LABELING_SUCCESS,HEX_MESHING_POSITIVE_MIN_SJ]
-        })
+    for src,dest in [
+        (CAD,TET_MESHING_FAILURE),
+        (CAD,TET_MESHING_SUCCESS),
+        (TET_MESHING_SUCCESS,LABELING_FAILURE),
+        (TET_MESHING_SUCCESS,LABELING_INVALID),
+        (TET_MESHING_SUCCESS,LABELING_NON_MONOTONE),
+        (TET_MESHING_SUCCESS,LABELING_SUCCESS),
+        (LABELING_NON_MONOTONE,HEX_MESHING_FAILURE),
+        (LABELING_NON_MONOTONE,HEX_MESHING_NEGATIVE_MIN_SJ),
+        (LABELING_NON_MONOTONE,HEX_MESHING_POSITIVE_MIN_SJ),
+        (LABELING_SUCCESS,HEX_MESHING_FAILURE),
+        (LABELING_SUCCESS,HEX_MESHING_NEGATIVE_MIN_SJ),
+        (LABELING_SUCCESS,HEX_MESHING_POSITIVE_MIN_SJ)
+    ]:
+        if fluxes[src,dest] != 0:
+            assert(node_quantity[src] != 0)
+            assert(node_quantity[dest] != 0)
+            Sankey_diagram_data["links"].append({
+                "source": node_name_to_index[src],
+                "target": node_name_to_index[dest],
+                "value": fluxes[src,dest]
+            })
 
     # Assemble the HTML file
 
     with open(Path(__file__).parent / 'generate_report.template.html','rt') as HTML_template_stream:
         HTML_template = Template(HTML_template_stream.read())
         HTML_report = HTML_template.safe_substitute(
-            report_name=report_name,
-            AG_Grid_rowData=json.dumps(AG_Grid_rowData),
-            Sankey_diagram_data=json.dumps(Sankey_diagram_data)
+            report_name = report_name,
+            AG_Grid_rowData = json.dumps(AG_Grid_rowData),
+            Sankey_diagram_data = json.dumps(Sankey_diagram_data)
         )
         with open(output_folder / 'index.html','wt') as HTML_output_stream:
-            logging.info(f'Writing index.html...')
+            print(f'Writing index.html...')
             HTML_output_stream.write(HTML_report)
 
     # Download Javascript libraries, so the report can be opened offline
         
     # AG Grid https://www.ag-grid.com/
-    logging.info('Downloading AG Grid...')
+    print('Downloading AG Grid...')
     request.urlretrieve(
         url = 'https://cdn.jsdelivr.net/npm/ag-grid-community@31.1.1/dist/ag-grid-community.min.js',
         filename = str(output_folder / 'js' / 'ag-grid-community.min.js')
     )
     # D3 https://d3js.org/
-    logging.info('Downloading D3...')
+    print('Downloading D3...')
     request.urlretrieve(
         url = 'https://cdn.jsdelivr.net/npm/d3@4',
         filename = str(output_folder / 'js' / 'd3.v4.min.js')
     )
     # d3-sankey https://observablehq.com/collection/@d3/d3-sankey
-    logging.info('Downloading d3-sankey...')
+    print('Downloading d3-sankey...')
     request.urlretrieve(
         url = 'https://cdn.jsdelivr.net/gh/holtzy/D3-graph-gallery@master/LIB/sankey.js',
         filename = str(output_folder / 'js' / 'sankey.js')
     )
     # Three.js https://threejs.org/
     # for <model-viewer-effects>
-    logging.info('Downloading Three.js...')
+    print('Downloading Three.js...')
     request.urlretrieve(
         url = 'https://cdn.jsdelivr.net/npm/three@^0.167.1/build/three.module.min.js',
         filename = str(output_folder / 'js' / 'three.module.min.js')
     )
     # <model-viewer> https://modelviewer.dev/
     # module version which doesn't package Three.js
-    logging.info('Downloading <model-viewer>...')
+    print('Downloading <model-viewer>...')
     request.urlretrieve(
         url = 'https://cdn.jsdelivr.net/npm/@google/model-viewer/dist/model-viewer-module.min.js',
         filename = str(output_folder / 'js' / 'model-viewer-module.min.js')
     )
     # <model-viewer-effects> https://modelviewer.dev/examples/postprocessing/index.html
-    logging.info('Downloading <model-viewer-effects>...')
+    print('Downloading <model-viewer-effects>...')
     request.urlretrieve(
         url = 'https://cdn.jsdelivr.net/npm/@google/model-viewer-effects/dist/model-viewer-effects.min.js',
         filename = str(output_folder / 'js' / 'model-viewer-effects.min.js')
@@ -698,6 +676,7 @@ def main(input_folder: Path, arguments: list):
 
     # copy README.md
 
+    print(f'Copying README.md...')
     copyfile(
         Path(__file__).parent / 'generate_report.README.md',
         output_folder / 'README.md'
