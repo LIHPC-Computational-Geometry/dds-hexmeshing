@@ -82,7 +82,7 @@ def main(input_folder: Path, arguments: list):
     def intermediate_node_quantity(fluxes: dict[tuple[int,int],int], node: int) -> int:
         ingoing,outgoing = accumulate_fluxes(fluxes,node)
         if(ingoing != outgoing):
-            raise RuntimeError(f"Intermediate node {node} as {ingoing} ingoing and {outgoing} fluxes, no equilibrium")
+            raise RuntimeError(f"Intermediate node {node} has {ingoing} ingoing and {outgoing} fluxes, no equilibrium")
         return ingoing
     
     # for nodes where we expect no outgoing flux
@@ -94,86 +94,12 @@ def main(input_folder: Path, arguments: list):
 
     AG_Grid_rowData = list()
 
-    # parse the input_folder and fill `AG_Grid_rowData`
-    assert((input_folder / 'MAMBO').exists())
-    for depth_1_folder in sorted(get_subfolders_of_type(input_folder / 'MAMBO','step')):
-        depth_1_object: Optional[DataFolder] = None
-        try:
-            # instantiate this depth-1 folder
-            depth_1_object = DataFolder(depth_1_folder)
-            if(depth_1_object.type != 'step'):
-                log.warning(f"Found a depth-1 folder that is not of type 'step' but '{depth_1_object.type}': {depth_1_folder}")
-                continue
-        except DataFolderInstantiationError:
-            log.warning(f"Found a depth-1 folder that cannot be instantiated: {depth_1_folder}")
-            continue
+    def process_Our_output(tet_mesh_object: DataFolder, row_template: dict) -> Optional[float]:
+        """
+        Returns duration
+        """
+        Ours_duration: Optional[float] = None
 
-        CAD_name = depth_1_folder.name
-
-        if CAD_name[0] == 'B':
-            fluxes[VOID,MAMBO_BASIC] += 1
-            fluxes[MAMBO_BASIC,CAD] += 1
-        elif CAD_name[0] == 'S':
-            fluxes[VOID,MAMBO_SIMPLE] += 1
-            fluxes[MAMBO_SIMPLE,CAD] += 1
-        elif CAD_name[0] == 'M':
-            fluxes[VOID,MAMBO_MEDIUM] += 1
-            fluxes[MAMBO_MEDIUM,CAD] += 1
-        else:
-            log.fatal(f"Unrecognized CAD dataset from CAD model named {CAD_name}")
-            exit(1)
-
-        # prepare the AG Grid rows content
-        row_template = dict() # all columns to None expect the 'CAD_name'
-        row_template['CAD_name']                 = CAD_name # [str] the name of the 3D model
-        row_template['method']                   = None     # [str] the labeling generation method
-        row_template['nb_vertices']              = None     # [int] the number of vertices in the triangle mesh
-        row_template['nb_facets']                = None     # [int] the number of facets in the triangle mesh
-        row_template['area_sd']                  = None     # [float] the standard deviation of facets area in the triangle mesh
-        row_template['nb_charts']                = None     # [int] the number of charts in the labeling
-        row_template['nb_boundaries']            = None     # [int] the number of boundaries in the labeling
-        row_template['nb_corners']               = None     # [int] the number of corners in the labeling
-        row_template['nb_invalid_charts']        = None     # [int] the number of invalid charts in the labeling
-        row_template['nb_invalid_boundaries']    = None     # [int] the number of invalid boundaries in the labeling
-        row_template['nb_invalid_corners']       = None     # [int] the number of invalid corners in the labeling
-        row_template['min_fidelity']             = None     # [float] the minimum geometric fidelity of the labeling
-        row_template['avg_fidelity']             = None     # [float] the average geometric fidelity of the labeling
-        row_template['valid']                    = None     # [bool] if the labeling is valid (no invalid chart/boundary/corner), or not 
-        row_template['nb_turning_points']        = None     # [int] the number of turning-points in the labeling
-        row_template['duration']                 = None     # [float] the labeling duration (including I/O) in seconds
-        row_template['relative_duration']        = None     # [int] the labeling duration relative to our method (only filled for Evocube and PolyCut)
-        row_template['glb_labeling']             = None     # [str] filename of the labeling glTF asset
-        row_template['percentage_removed']       = None     # [float] percentage of CAD feature edges that have been removed (not sharp enough)
-        row_template['percentage_lost']          = None     # [float] percentage of CAD feature edges that have been lost (not on a labeling boundary, eg having the same label on both sides)
-        row_template['percentage_preserved']     = None     # [float] percentage of CAD feature edges that have been preserved
-        row_template['minSJ']                    = None     # [float] minimum Scaled Jacobian of the post-processed hex-mesh
-        row_template['avgSJ']                    = None     # [float] minimum Scaled Jacobian of the post-processed hex-mesh
-        row_template['glb_hexmesh']              = None     # [str] filename of the hex-mesh glTF asset
-
-        tet_mesh_object = None
-        try:
-            if not (depth_1_folder / 'Gmsh_0.1/').exists():
-                raise OSError()
-            tet_mesh_object = DataFolder(depth_1_folder / 'Gmsh_0.1/')
-            assert(tet_mesh_object.type == 'tet-mesh')
-            if not (depth_1_folder / 'Gmsh_0.1' / SURFACE_MESH_OBJ_filename).exists():
-                log.warning(f"{depth_1_folder}/Gmsh_0.1/ exists, but there is no surface mesh inside")
-                raise OSError()
-        except (OSError, DataFolderInstantiationError):
-            # not even a tet-mesh for this CAD model
-            fluxes[CAD,TET_MESHING_FAILURE] += 1
-            AG_Grid_rowData.append(row_template)
-            continue
-
-        fluxes[CAD,TET_MESHING_SUCCESS] += 1
-        surface_mesh_stats = tet_mesh_object.get_surface_mesh_stats_dict() # type: ignore | see ../data_folder_types/tet-mesh.accessors.py
-        row_template['nb_vertices'] = surface_mesh_stats['vertices']['nb']
-        row_template['nb_facets']   = surface_mesh_stats['facets']['nb']
-        row_template['area_sd']     = surface_mesh_stats['facets']['area']['sd']
-
-        # starts with the labeling generated by automatic_polycube, so that other methods can compute the relative duration
-
-        Ours_duration = None # in seconds
         graphcut_row = copy.deepcopy(row_template)
         graphcut_row['method'] = 'Graph-cut'
         graphcut_row['glb_labeling'] = '-' # deliberately no 3D view exported the initial labeling to reduce total folder size
@@ -310,8 +236,9 @@ def main(input_folder: Path, arguments: list):
                     fluxes[LABELING_SUCCESS,HEX_MESHING_FAILURE] += 1
         AG_Grid_rowData.append(graphcut_row)
         AG_Grid_rowData.append(ours_row)
+        return Ours_duration
 
-        # parse the labeling generated by evocube
+    def process_Evocube_output(tet_mesh_object: DataFolder, row_template: dict, Ours_duration: Optional[float]):
         evocube_row = copy.deepcopy(row_template)
         evocube_row['method'] = 'Evocube'
 
@@ -386,23 +313,7 @@ def main(input_folder: Path, arguments: list):
 
         AG_Grid_rowData.append(evocube_row)
 
-        # parse the labeling generated by PolyCut
-
-        assert((depth_1_folder / 'Gmsh_0.15/').exists())
-        tet_mesh_object = DataFolder(depth_1_folder / 'Gmsh_0.15/')
-        assert(tet_mesh_object.type == 'tet-mesh')
-        # do not expect `SURFACE_MESH_OBJ_filename`, it is an output of PolyCut and PolyCut can fail
-
-        row_template['nb_vertices'] = None
-        row_template['nb_facets']   = None
-        row_template['area_sd']     = None
-        surface_mesh = tet_mesh_object.get_file('SURFACE_MESH_OBJ',must_exist=False,silent_output=False)
-        if surface_mesh.exists():
-            surface_mesh_stats = tet_mesh_object.get_surface_mesh_stats_dict() # type: ignore | see ../data_folder_types/tet-mesh.accessors.py
-            row_template['nb_vertices'] = surface_mesh_stats['vertices']['nb']
-            row_template['nb_facets']   = surface_mesh_stats['facets']['nb']
-            row_template['area_sd']     = surface_mesh_stats['facets']['area']['sd']
-
+    def process_PolyCut_output(tet_mesh_object: DataFolder, row_template: dict, Ours_duration: Optional[float],surface_mesh: Path):
         polycut_row = copy.deepcopy(row_template)
         polycut_row['method'] = 'PolyCut'
 
@@ -490,8 +401,113 @@ def main(input_folder: Path, arguments: list):
                         copyfile(glb_hexmesh_file, output_folder / 'glb' / glb_hexmesh_filename)
                         polycut_row['glb_hexmesh'] = glb_hexmesh_filename
             # else: ignore the potential hex-mesh. Same policy as Evocube & Ours : invalid labeling -> no hex-mesh generation
-
         AG_Grid_rowData.append(polycut_row)
+
+    def process_tet_mesh(tet_mesh_object: DataFolder, row_template: dict, expect_coarser_mesh_for_PolyCut: bool):
+        # starts with the labeling generated by automatic_polycube, so that other methods can compute the relative duration
+
+        Ours_duration = process_Our_output(tet_mesh_object,row_template)
+
+        # parse the labeling generated by evocube
+        
+        process_Evocube_output(tet_mesh_object,row_template,Ours_duration)
+
+        # parse the labeling generated by PolyCut
+
+        if expect_coarser_mesh_for_PolyCut:
+            assert((depth_1_folder / 'Gmsh_0.15/').exists())
+            tet_mesh_object = DataFolder(depth_1_folder / 'Gmsh_0.15/')
+            assert(tet_mesh_object.type == 'tet-mesh')
+            # do not expect `SURFACE_MESH_OBJ_filename`, it is an output of PolyCut and PolyCut can fail
+            row_template['nb_vertices'] = None
+            row_template['nb_facets']   = None
+            row_template['area_sd']     = None
+            surface_mesh = tet_mesh_object.get_file('SURFACE_MESH_OBJ',must_exist=False,silent_output=False)
+            if surface_mesh.exists():
+                surface_mesh_stats = tet_mesh_object.get_surface_mesh_stats_dict() # type: ignore | see ../data_folder_types/tet-mesh.accessors.py
+                row_template['nb_vertices'] = surface_mesh_stats['vertices']['nb']
+                row_template['nb_facets']   = surface_mesh_stats['facets']['nb']
+                row_template['area_sd']     = surface_mesh_stats['facets']['area']['sd']
+            process_PolyCut_output(tet_mesh_object,row_template,Ours_duration,surface_mesh)
+
+    # parse the input_folder and fill `AG_Grid_rowData`
+    assert((input_folder / 'MAMBO').exists())
+    for depth_1_folder in sorted(get_subfolders_of_type(input_folder / 'MAMBO','step')):
+        depth_1_object: Optional[DataFolder] = None
+        try:
+            # instantiate this depth-1 folder
+            depth_1_object = DataFolder(depth_1_folder)
+            if(depth_1_object.type != 'step'):
+                log.warning(f"Found a depth-1 folder that is not of type 'step' but '{depth_1_object.type}': {depth_1_folder}")
+                continue
+        except DataFolderInstantiationError:
+            log.warning(f"Found a depth-1 folder that cannot be instantiated: {depth_1_folder}")
+            continue
+
+        CAD_name = depth_1_folder.name
+
+        if CAD_name[0] == 'B':
+            fluxes[VOID,MAMBO_BASIC] += 1
+            fluxes[MAMBO_BASIC,CAD] += 1
+        elif CAD_name[0] == 'S':
+            fluxes[VOID,MAMBO_SIMPLE] += 1
+            fluxes[MAMBO_SIMPLE,CAD] += 1
+        elif CAD_name[0] == 'M':
+            fluxes[VOID,MAMBO_MEDIUM] += 1
+            fluxes[MAMBO_MEDIUM,CAD] += 1
+        else:
+            log.fatal(f"Unrecognized CAD dataset from CAD model named {CAD_name}")
+            exit(1)
+
+        # prepare the AG Grid rows content
+        row_template = dict() # all columns to None expect the 'CAD_name'
+        row_template['CAD_name']                 = CAD_name # [str] the name of the 3D model
+        row_template['method']                   = None     # [str] the labeling generation method
+        row_template['nb_vertices']              = None     # [int] the number of vertices in the triangle mesh
+        row_template['nb_facets']                = None     # [int] the number of facets in the triangle mesh
+        row_template['area_sd']                  = None     # [float] the standard deviation of facets area in the triangle mesh
+        row_template['nb_charts']                = None     # [int] the number of charts in the labeling
+        row_template['nb_boundaries']            = None     # [int] the number of boundaries in the labeling
+        row_template['nb_corners']               = None     # [int] the number of corners in the labeling
+        row_template['nb_invalid_charts']        = None     # [int] the number of invalid charts in the labeling
+        row_template['nb_invalid_boundaries']    = None     # [int] the number of invalid boundaries in the labeling
+        row_template['nb_invalid_corners']       = None     # [int] the number of invalid corners in the labeling
+        row_template['min_fidelity']             = None     # [float] the minimum geometric fidelity of the labeling
+        row_template['avg_fidelity']             = None     # [float] the average geometric fidelity of the labeling
+        row_template['valid']                    = None     # [bool] if the labeling is valid (no invalid chart/boundary/corner), or not 
+        row_template['nb_turning_points']        = None     # [int] the number of turning-points in the labeling
+        row_template['duration']                 = None     # [float] the labeling duration (including I/O) in seconds
+        row_template['relative_duration']        = None     # [int] the labeling duration relative to our method (only filled for Evocube and PolyCut)
+        row_template['glb_labeling']             = None     # [str] filename of the labeling glTF asset
+        row_template['percentage_removed']       = None     # [float] percentage of CAD feature edges that have been removed (not sharp enough)
+        row_template['percentage_lost']          = None     # [float] percentage of CAD feature edges that have been lost (not on a labeling boundary, eg having the same label on both sides)
+        row_template['percentage_preserved']     = None     # [float] percentage of CAD feature edges that have been preserved
+        row_template['minSJ']                    = None     # [float] minimum Scaled Jacobian of the post-processed hex-mesh
+        row_template['avgSJ']                    = None     # [float] minimum Scaled Jacobian of the post-processed hex-mesh
+        row_template['glb_hexmesh']              = None     # [str] filename of the hex-mesh glTF asset
+
+        tet_mesh_object = None
+        try:
+            if not (depth_1_folder / 'Gmsh_0.1/').exists():
+                raise OSError()
+            tet_mesh_object = DataFolder(depth_1_folder / 'Gmsh_0.1/')
+            assert(tet_mesh_object.type == 'tet-mesh')
+            if not (depth_1_folder / 'Gmsh_0.1' / SURFACE_MESH_OBJ_filename).exists():
+                log.warning(f"{depth_1_folder}/Gmsh_0.1/ exists, but there is no surface mesh inside")
+                raise OSError()
+        except (OSError, DataFolderInstantiationError):
+            # not even a tet-mesh for this CAD model
+            fluxes[CAD,TET_MESHING_FAILURE] += 1
+            AG_Grid_rowData.append(row_template)
+            continue
+
+        fluxes[CAD,TET_MESHING_SUCCESS] += 1
+        surface_mesh_stats = tet_mesh_object.get_surface_mesh_stats_dict() # type: ignore | see ../data_folder_types/tet-mesh.accessors.py
+        row_template['nb_vertices'] = surface_mesh_stats['vertices']['nb']
+        row_template['nb_facets']   = surface_mesh_stats['facets']['nb']
+        row_template['area_sd']     = surface_mesh_stats['facets']['area']['sd']
+
+        process_tet_mesh(tet_mesh_object,row_template,True)
     
     # end of data folder parsing
     
