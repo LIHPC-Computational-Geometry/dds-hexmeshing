@@ -24,14 +24,14 @@ Then open the printed address (usually http://0.0.0.0:8000/) with your internet 
 - with the [http-server](https://www.npmjs.com/package/http-server) Node.js package: `http-server .`
 - with [Ruby](https://www.ruby-lang.org/en/) and [WEBrick](https://github.com/ruby/webrick): `ruby -run -ehttpd .`
 
-### Other method: Temporarily change the security policy of your internet navigator
+### Other method: Temporarily change the [CORS](https://developer.mozilla.org/en-US/docs/Web/Security/Same-origin_policy#file_origins) policy of your internet navigator
 
 - with Firefox: open `about:config` and change the value of `security.fileuri.strict_origin_policy` from `true` to `false`, then open `index.html`
 - with Chrome: execute `google-chrome index.html --allow-file-access-from-files`
 
 ## Sankey diagram
 
-Above the interactive grid, there is a collapsed section hiding a Sankey diagram, which gives high level stats on our method only. You can adjust the vertical position of the nodes, and hovering them gives the number of models.
+Above the interactive grid, there is a collapsed section hiding a Sankey diagram, which gives high level stats on our method only. You can adjust the vertical position of the nodes, and hovering them gives the number of items.
 
 ## Column filters
 
@@ -72,7 +72,7 @@ You can click on the name of a column to switch between ascending, descending an
 - similarity: percentage of facets having the same label, compared to our method
 - duration : duration of the labeling stage with file I/O, in seconds. For our method, the generation of the initial labeling with graph-cut is taken into account
 - relative duration : duration divided by the duration of our method
-- open : open the 3D viewer. After 5s, the 3D model switches between the labeled mesh and a fast polycube estimation. If no labeling was generated, the triangle mesh is displayed instead. Screen Space Ambient Occlusion (SSAO) is on by default.
+- open : open the 3D viewer. After 5s, the 3D model switches between the labeled mesh and a fast polycube estimation. If no labeling was generated, the triangle mesh is displayed instead. Note that we do not provide 3D views for the initial labeling (graph-cut outputs) to reduce total size. Screen Space Ambient Occlusion (SSAO) is on by default.
 
 "feature edges" group
 
