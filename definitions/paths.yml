@@ -18,12 +18,12 @@ GRAPHITE: ~/.local/bin/graphite
 # http://gmsh.info/
 # Mesh generator
 # Path to the binary
-GMSH: ~/.local/Gmsh/gmsh-4.11.1-Linux64/bin/gmsh
+GMSH: ~/.local/bin/gmsh
 
 # https://github.com/fprotais/fastbndpolycube
 # Surface polycube estimation
 # Path to the binary
-FASTBNDPOLYCUBE: ~/.local/fastbndpolycube/build_Release/fastpolycube
+FASTBNDPOLYCUBE: ~/.local/fastbndpolycube/build/fastpolycube
 
 # https://github.com/cg3hci/HexBox
 # Interactive tool for creating hex-meshes
