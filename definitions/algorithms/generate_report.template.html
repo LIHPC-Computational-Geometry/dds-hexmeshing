@@ -92,7 +92,7 @@
             }
             
             dialog model-viewer{
-                height: calc(100% - 25px);
+                height: calc(100% - 30px);
                 width: 100%;
                 background-color: #181d1f;
             }
@@ -128,8 +128,10 @@
             closeButton.addEventListener("click", () => {
                 dialog.close();
                 dialog.removeChild(document.querySelector("dialog model-viewer"));
-                dialog.removeChild(document.querySelector("dialog label"));
-                dialog.removeChild(document.querySelector("dialog input"));
+                dialog.removeChild(document.querySelector("dialog .ssao-label"));
+                dialog.removeChild(document.querySelector("dialog .slider-label"));
+                dialog.removeChild(document.querySelector("dialog .ssao"));
+                dialog.removeChild(document.querySelector("dialog .slider-animation"));
             });
             // fill the dialog with a <model-viewer>
             function make_dialog(filename) {
@@ -137,13 +139,28 @@
                 // create a checkbox and an associated label
                 let ssaoLabel = dialog.appendChild(document.createElement("label"));
                 ssaoLabel.setAttribute("for","ssao");
+                ssaoLabel.setAttribute("class","ssao-label");
                 ssaoLabel.innerText = "SSAO";
                 let ssaoCheckbox = dialog.appendChild(document.createElement("input"));
                 ssaoCheckbox.setAttribute("type","checkbox");
                 ssaoCheckbox.setAttribute("id","ssao");
+                ssaoCheckbox.setAttribute("class","ssao");
                 if(SSAO_initially_activated) {
                     ssaoCheckbox.setAttribute("checked","1");
                 }
+                // create a slider
+                let sliderLabel = dialog.appendChild(document.createElement("label"));
+                sliderLabel.setAttribute("for","ssao");
+                sliderLabel.setAttribute("class","slider-label");
+                sliderLabel.innerText = "animation polycube";
+                let slider = dialog.appendChild(document.createElement("input"));
+                slider.setAttribute("type","range");
+                slider.setAttribute("min","5");
+                slider.setAttribute("max","10");
+                slider.setAttribute("step","0.1");
+                slider.setAttribute("value","5");
+                slider.setAttribute("id","slider-animation");
+                slider.setAttribute("class","slider-animation");
                 // create a <model-viewer>
                 let model_viewer = dialog.appendChild(document.createElement("model-viewer"));
                 model_viewer.setAttribute("alt","labeling 3D viewer");
@@ -153,7 +170,7 @@
                 model_viewer.setAttribute("tone-mapping","neutral");
                 model_viewer.setAttribute("camera-controls",true);
                 model_viewer.setAttribute("touch-action","pan-y");
-                model_viewer.setAttribute("autoplay",true);
+                model_viewer.setAttribute("animation-name","polycube");
                 let effect_composer = model_viewer.appendChild(document.createElement("effect-composer"));
                 let ssao_effect = effect_composer.appendChild(document.createElement("ssao-effect"));
                 if(SSAO_initially_activated) {
@@ -164,6 +181,14 @@
                 }
                 // toggle SSAO with the dedicated checkbox
                 ssaoCheckbox.addEventListener('change', (e) => ssao_effect.blendMode = e.target.checked ? 'default' : 'skip');
+                // control polycube animation with the slider
+                slider.addEventListener("input", () => {
+                    const progress = slider.value;
+                    model_viewer.currentTime = progress; // Set current time based on slider
+                });
+                model_viewer.addEventListener("frameupdate", () => {
+                    slider.value = progress;
+                });
                 dialog.showModal();
             }
 
