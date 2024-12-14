@@ -13,27 +13,32 @@
 # `input_folder`
 # ├── MAMBO
 # │   └── <every 'step' data folder>
-# │       └── Gmsh_0.1
-# │           ├── graphcut_labeling_1_6_1e-9_0.05         # compactness=1, fidelity=6, sensitivity=1e-9, angle of rotation=0.05
-# │           │   └── automatic_polycube_YYYYMMDD_HHMMSS
-# │           │       └── polycube_withHexEx_1.3
-# │           │           └── global_padding
-# │           │               └── inner_smoothing_50
-# │           └── evocube_YYYYMMDD_HHMMSS
-# │               └── polycube_withHexEx_1.3
-# │                   └── global_padding
-# │                       └── inner_smoothing_50
+# │       ├── Gmsh_0.1
+# │       │   ├── graphcut_labeling_1_6_1e-9_0.05         # compactness=1, fidelity=6, sensitivity=1e-9, angle of rotation=0.05
+# │       │   │   └── automatic_polycube_YYYYMMDD_HHMMSS
+# │       │   │       └── polycube_withHexEx_1.3          # scale of 1.3
+# │       │   │           └── global_padding
+# │       │   │               └── inner_smoothing_50      # 50 smoothing iterations
+# │       │   └── evocube_YYYYMMDD_HHMMSS
+# │       │       └── polycube_withHexEx_1.3              # scale of 1.3
+# │       │           └── global_padding
+# │       │               └── inner_smoothing_50          # 50 smoothing iterations
+# │       └── Gmsh_0.15                                   # coarser tetrahedal mesh to fall below the 300k cells limits of the polycut demo executable
+# │           └── PolyCut_3                               # compactness factor of 3
+# │               └── optimizer_100                       # hex-mesh extraction method by PolyCut authors
+# │                   └── untangler                       # hex-mesh untangling method by PolyCut authors, Livesu et al. 2015, doi:10.1145/2766905
 # └── OctreeMeshing
-#     └── <every 'tet-mesh' data folder>
-#         ├── graphcut_labeling_1_6_1e-9_0.05         # compactness=1, fidelity=6, sensitivity=1e-9, angle of rotation=0.05
-#         │   └── automatic_polycube_YYYYMMDD_HHMMSS
-#         │       └── polycube_withHexEx_1.3
-#         │           └── global_padding
-#         │               └── inner_smoothing_50
-#         └── evocube_YYYYMMDD_HHMMSS
-#             └── polycube_withHexEx_1.3
-#                 └── global_padding
-#                     └── inner_smoothing_50
+#     └── cad
+#         └── <every 'tet-mesh' data folder>
+#             ├── graphcut_labeling_1_6_1e-9_0.05         # compactness=1, fidelity=6, sensitivity=1e-9, angle of rotation=0.05
+#             │   └── automatic_polycube_YYYYMMDD_HHMMSS
+#             │       └── polycube_withHexEx_1.3          # scale of 1.3
+#             │           └── global_padding
+#             │               └── inner_smoothing_50      # 50 smoothing iterations
+#             └── evocube_YYYYMMDD_HHMMSS
+#                 └── polycube_withHexEx_1.3              # scale of 1.3
+#                     └── global_padding
+#                         └── inner_smoothing_50          # 50 smoothing iterations
 
 # based on :
 # https://github.com/LIHPC-Computational-Geometry/HexMeshWorkshop/blob/ee4f61e239678bf9274cbc22e9d054664f01b1ec/modules/data_folder_types.py#L1318
