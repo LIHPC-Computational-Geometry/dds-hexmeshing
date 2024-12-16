@@ -14,7 +14,7 @@
 # ├── MAMBO
 # │   └── <every 'step' data folder>
 # │       ├── Gmsh_0.1
-# │       │   ├── graphcut_labeling_1_6_1e-9_0.05         # compactness=1, fidelity=6, sensitivity=1e-9, angle of rotation=0.05
+# │       │   ├── graphcut_labeling_1_6_1e-9_0.05         # compactness=1, fidelity=6, sensitivity=1e-9, angle of rotation=0.05. init labeling for automatic_polycube
 # │       │   │   └── automatic_polycube_YYYYMMDD_HHMMSS
 # │       │   │       └── polycube_withHexEx_1.3          # scale of 1.3
 # │       │   │           └── global_padding
@@ -25,12 +25,15 @@
 # │       │               └── inner_smoothing_50          # 50 smoothing iterations
 # │       └── Gmsh_0.15                                   # coarser tetrahedal mesh to fall below the 300k cells limits of the polycut demo executable
 # │           └── PolyCut_3                               # compactness factor of 3
-# │               └── optimizer_100                       # hex-mesh extraction method by PolyCut authors
-# │                   └── untangler                       # hex-mesh untangling method by PolyCut authors, Livesu et al. 2015, doi:10.1145/2766905
+# │               ├── optimizer_100                       # hex-mesh extraction method by PolyCut authors
+# │               │   └── untangler                       # hex-mesh untangling method by PolyCut authors, Livesu et al. 2015, doi:10.1145/2766905
+# │               └── polycube_withHexEx_1.3              # scale of 1.3
+# │                   └── global_padding
+# │                       └── inner_smoothing_50          # 50 smoothing iterations
 # └── OctreeMeshing
 #     └── cad
 #         └── <every 'tet-mesh' data folder>
-#             ├── graphcut_labeling_1_6_1e-9_0.05         # compactness=1, fidelity=6, sensitivity=1e-9, angle of rotation=0.05
+#             ├── graphcut_labeling_1_6_1e-9_0.05         # compactness=1, fidelity=6, sensitivity=1e-9, angle of rotation=0.05. init labeling for automatic_polycube
 #             │   └── automatic_polycube_YYYYMMDD_HHMMSS
 #             │       └── polycube_withHexEx_1.3          # scale of 1.3
 #             │           └── global_padding
@@ -61,9 +64,9 @@ GRAPHCUT_LABELING_OUTPUT_MISSING_POLICY  = 'ask'
 AUTOMATIC_POLYCUBE_OUTPUT_MISSING_POLICY = 'ask'
 EVOCUBE_OUTPUT_MISSING_POLICY            = 'ask'
 POLYCUT_OUTPUT_MISSING_POLICY            = 'pass' # on Windows only. selector for not only PolyCut itself, but the whole pipeline their provide (with hex-meshing & untangling)
-POLYCUBE_WITHHEXEX_OUTPUT_MISSING_POLICY = 'run'
-GLOBAL_PADDING_OUTPUT_MISSING_POLICY     = 'run'
-INNER_SMOOTHING_OUTPUT_MISSING_POLICY    = 'run'
+POLYCUBE_WITHHEXEX_OUTPUT_MISSING_POLICY = 'ask'
+GLOBAL_PADDING_OUTPUT_MISSING_POLICY     = 'ask'
+INNER_SMOOTHING_OUTPUT_MISSING_POLICY    = 'ask'
 
 RUNNING_ALGO_LINE_TEMPLATE            = "Running [green]{algo}[/] on [cyan]{path}[/]"
 EXISTING_OUTPUT_LINE_TEMPLATE         = "\[[bright_black]-[/]] [green]{algo}[/] on [cyan]{path}[/]" # type: ignore
