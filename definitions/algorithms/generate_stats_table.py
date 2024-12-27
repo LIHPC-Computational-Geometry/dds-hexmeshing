@@ -359,50 +359,21 @@ def main(input_folder: Path, arguments: list):
             labeling_duration[dataset_id,POLYCUT] += polycut_durations['polycut'] # should we take into account the duration of cusy2.exe, which is the executable writing the labeling?
 
             hexmesh_minSJ = None
-            if not labeling_folder.has_valid_labeling(): # type: ignore | see ../data_folder_types/labeling.accessors.py
-                # ignore the potential hex-mesh. Same policy as Evocube & Ours : invalid labeling -> no hex-mesh generation
-                pass
-            # if there is a hex-mesh in the labeling folder, instantiate it and retrieve mesh stats
-            elif (labeling_folder.path / 'optimizer_100' / 'untangler' / hex_mesh_filename).exists():
-                hex_mesh_folder: DataFolder = DataFolder(labeling_folder.path / 'optimizer_100' / 'untangler')
-                hex_mesh_stats: dict = dict()
-                try:
-                    hex_mesh_stats = hex_mesh_folder.get_mesh_stats_dict() # type: ignore | see ../data_folder_types/hex-mesh.accessors.py
-                except FileNotFoundError:
-                    avg_sj_sum[dataset_id,POLYCUT] += -1.0 # assume worse value
-                    min_sj_sum[dataset_id,POLYCUT] += -1.0 # assume worse value
-                    pass # failure to generate a hex-mesh stats JSON because .mesh with no cells and no vertices !
-                if len(hex_mesh_stats) > 0:
-                    if 'quality' in hex_mesh_stats['cells']: 
-                        avg_sj_sum[dataset_id,POLYCUT] += hex_mesh_stats['cells']['quality']['hex_SJ']['avg']
-                        hexmesh_minSJ = hex_mesh_stats['cells']['quality']['hex_SJ']['min']
-                        min_sj_sum[dataset_id,POLYCUT] += hexmesh_minSJ
-                    else:
-                        # hex-mesh generation failed, no cells in output file
-                        avg_sj_sum[dataset_id,POLYCUT] += -1.0 # assume worse value
-                        min_sj_sum[dataset_id,POLYCUT] += -1.0 # assume worse value
-            elif (labeling_folder.path / 'optimizer_100' / hex_mesh_filename).exists():
-                # no untangled hex-mesh, use the initial hex-mesh
-                hex_mesh_folder: DataFolder = DataFolder(labeling_folder.path / 'optimizer_100')
-                hex_mesh_stats: dict = dict()
-                try:
-                    hex_mesh_stats = hex_mesh_folder.get_mesh_stats_dict() # type: ignore | see ../data_folder_types/hex-mesh.accessors.py
-                except FileNotFoundError:
-                    avg_sj_sum[dataset_id,POLYCUT] += -1.0 # assume worse value
-                    min_sj_sum[dataset_id,POLYCUT] += -1.0 # assume worse value
-                    pass # failure to generate a hex-mesh stats JSON because .mesh with no cells and no vertices !
-                if len(hex_mesh_stats) > 0:
-                    if 'quality' in hex_mesh_stats['cells']: 
-                        avg_sj_sum[dataset_id,POLYCUT] += hex_mesh_stats['cells']['quality']['hex_SJ']['avg']
-                        hexmesh_minSJ = hex_mesh_stats['cells']['quality']['hex_SJ']['min']
-                        min_sj_sum[dataset_id,POLYCUT] += hexmesh_minSJ
-                    else:
-                        # hex-mesh generation, no cells in output file
-                        avg_sj_sum[dataset_id,POLYCUT] += -1.0 # assume worse value
-                        min_sj_sum[dataset_id,POLYCUT] += -1.0 # assume worse value
+            post_processed_hex_mesh_path = labeling_folder.path / 'polycube_withHexEx_1.3' / 'global_padding' / 'inner_smoothing_50'
+            if post_processed_hex_mesh_path.exists():
+                hex_mesh_folder: DataFolder = DataFolder(post_processed_hex_mesh_path)
+                hex_mesh_stats: dict = hex_mesh_folder.get_mesh_stats_dict() # type: ignore | see ../data_folder_types/hex-mesh.accessors.py
+                if 'quality' in hex_mesh_stats['cells']:
+                    avg_sj_sum[dataset_id,POLYCUT] += hex_mesh_stats['cells']['quality']['hex_SJ']['avg']
+                    hexmesh_minSJ = hex_mesh_stats['cells']['quality']['hex_SJ']['min']
+                    min_sj_sum[dataset_id,POLYCUT] += hexmesh_minSJ
             
             # update the counters
             if not labeling_folder.has_valid_labeling(): # type: ignore | see ../data_folder_types/labeling.accessors.py
+                if (labeling_folder.path / 'polycube_withHexEx_1.3').exists():
+                    if Confirm(f"There is a 'polycube_withHexEx' output inside {labeling_folder.path}, but the labeling is invalid. Remove this hex-mesh folder?"):
+                        rmtree(labeling_folder.path / 'polycube_withHexEx_1.3')
+                assert(not post_processed_hex_mesh_path.exists())
                 assert(hexmesh_minSJ is None)
                 fluxes[dataset_id,POLYCUT,COARSER_TET_MESHING_SUCCESS,LABELING_INVALID] += 1
             elif labeling_folder.nb_turning_points() != 0: # type: ignore | see ../data_folder_types/labeling.accessors.py
